@@ -1,4 +1,6 @@
 import sys, os
+sys.path.insert(0, 'libraries')
+
 import json
 import tweepy
 import time

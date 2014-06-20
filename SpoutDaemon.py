@@ -1,6 +1,9 @@
-import subprocess
-import time
 import sys
+sys.path.insert(0, 'libraries')
+import subprocess
+from time import sleep
+
+
 
 format = "\033[91m\033[1m"
 end = "\033[0m"
@@ -13,11 +16,15 @@ sleepEvery = (secondsPerDay*daysToRefresh)/delay
 while True:
     count += 1
     try:
-        fileIn = open(str(sys.argv[1]))
+        fileIn = open('daemonScripts/'+str(sys.argv[1]))
         print "Opened file",sys.argv[1]
     except:
-        fileIn = open('gdiAccounts')
-        print "Opened file gdiAccounts"
+        try:
+            fileIn = open(str(sys.argv[1]))
+            print "Opened file",sys.argv[1]
+        except: 
+            fileIn = open('daemonScripts/'+'gdiAccounts')
+            print "Opened file gdiAccounts"
     
     urls = set()
     
@@ -56,8 +63,8 @@ while True:
     for url in notRunning:
         try:
             subprocess.Popen(['python','TwitterSpout.py', url])
-            time.sleep(30)
+            sleep(30)
         except:
             print "Process",url,"has stopped"
             None
-    time.sleep(delay)
+    sleep(delay)

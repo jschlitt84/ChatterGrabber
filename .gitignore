@@ -1,5 +1,9 @@
-studies/*
-daemonScripts/*
+studies/*/
+daemonScripts/gdi*
 logins/*
 lists/*
-nlpTrainers/*
+nlpTrainers/*.csv
+*.swp
+*.pyc
+*GeoPickle
+

@@ -175,7 +175,7 @@ def sendCSV(cfg, directory):
     
 def loadGDIAccount(gDocURL,directory):
     """Pulls subscriber info & settings from local config file"""
-    fileIn = open(directory+'gdiAccounts')
+    fileIn = open(directory+'daemonScripts/'+'gdiAccounts')
     content = fileIn.readlines()
     found = False
     public = True
