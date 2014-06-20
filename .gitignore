@@ -1,9 +1,10 @@
 studies/*/
+studiesTemp*
 daemonScripts/gdi*
 logins/*
 lists/*
 nlpTrainers/*.csv
+nlpTrainers/*.pickle
 *.swp
 *.pyc
 *GeoPickle
-

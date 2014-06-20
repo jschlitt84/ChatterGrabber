@@ -8,7 +8,7 @@ from GISpy import *
 
 
 class giSeeker():
-    def __init__(self, conditions, qualifiers, exclusions, api, cfg, name, testSpace, geoCache):
+    def __init__(self, conditions, qualifiers, exclusions, api, cfg, name, testSpace, geoCache, NLPClassifier):
         self.delay = 30
         self.qualifiers = qualifiers
         self.conditions = conditions
@@ -20,31 +20,35 @@ class giSeeker():
         self.rateLimit = 180
         self.rateIncrement = 900
         self.geoCache = geoCache
-        self.useNLTK = False
-        self.NLTK = 'null'
+        self.useNLP = False
+        self.NLP = NLPClassifier
+        self.extra = ''
         
-        if cfg['OnlyKeepNLTK'] != False:
+        if cfg['OnlyKeepNLP'] != False:
             global TweetMatch
             import TweetMatch
-            self.useNLTK = True
-            temp = cfg['OnlyKeepNLTK']
+            self.useNLP = True
+            temp = cfg['OnlyKeepNLP']
             if type(temp) is str:
-                self.cfg['OnlyKeepNLTK'] = temp.split('_')
+                if '_' in temp:
+                    self.cfg['OnlyKeepNLP'] = temp.split('_')
+                else:
+                    self.cfg['OnlyKeepNLP'] = temp.split(' ')
             if type(temp) is list:
-                self.cfg['OnlyKeepNLTK'] = temp
-	    if type(self.cfg['OnlyKeepNLTK']) is not list:
-		self.cfg['OnlyKeepNLTK'] = [str(temp)]
-            self.cfg['OnlyKeepNLTK'] = [str(key) for key in self.cfg['OnlyKeepNLTK']]
+                self.cfg['OnlyKeepNLP'] = temp
+	    if type(self.cfg['OnlyKeepNLP']) is not list:
+		self.cfg['OnlyKeepNLP'] = [str(temp)]
+            self.cfg['OnlyKeepNLP'] = [str(key) for key in self.cfg['OnlyKeepNLP']]
             
-            if '-f' not in cfg['args']:
-            	self.NLTK = TweetMatch.getClassifier(cfg['NLTKFile'])
+            #if '-f' not in cfg['args']:
+            #	self.NLP = TweetMatch.getClassifier(cfg['NLPFile'])
         
         giSeeker.flushTweets(self)
         giSeeker.makeQueries(self)
         
         geoTemp = getGeo(cfg)
         
-        self.pathOut = self.cfg['OutDir']+'search/'
+        self.pathOut = 'studies/'+self.cfg['OutDir']+'search/'
         if not os.path.exists(self.pathOut):
             os.makedirs(self.pathOut) 
         fileOut = openWhenReady(self.pathOut + 'checkbits','w')
@@ -152,13 +156,13 @@ class giSeeker():
                 self.cfg['_login_'] = login
                 
                 self.cfg['Directory'] = directory
-                reformatOld(directory, lists, self.cfg, self.geoCache,self.NLTK)
+                reformatOld(directory, lists, self.cfg, self.geoCache,self.NLP)
                 
                 tillSend =  datetime.datetime.now().day % int(self.cfg['SendEvery'])
                 if tillSend == 0:
                     print "Sending results to GDI user"
                     try:
-                        sendCSV(self.cfg,directory)
+                        sendCSV(self.cfg,directory,self.extra)
                     except:
                         print "Unable to send email"
                 else:
@@ -166,7 +170,7 @@ class giSeeker():
                 
             else:
                 lists = updateWordBanks(directory, self.cfg)
-                reformatOld(directory, lists, self.cfg, self.geoCache,self.NLTK)
+                reformatOld(directory, lists, self.cfg, self.geoCache,self.NLP)
                 self.cfg = getConfig(directory+self.cfg['ConfigFile'])
                 
             if self.cfg['UseStacking']:
@@ -232,7 +236,7 @@ class giSeeker():
         else:
             print "No tweets found for date"
         print "Updating geoPickle"
-        updateGeoPickle(self.geoCache,self.cfg['Directory']+pickleName)
+        updateGeoPickle(self.geoCache,self.cfg['Directory']+'caches/'+pickleName)
 
 
 
@@ -341,15 +345,15 @@ class giSeeker():
                                                             count = 100)
                                 
                                 allFound += len(cellCollected)
-				if self.useNLTK:
-				    if self.cfg['KeepDiscardsNLTK']:
-				        cellCollected = [status for status in cellCollected if status.id not in foundIDs and (TweetMatch.classifySingle(status.text,self.NLTK) in self.cfg['OnlyKeepNLTK'] or uniform(0,1)<self.cfg['DiscardSampleNLTK'])]
+				if self.useNLP:
+				    if self.cfg['KeepDiscardsNLP']:
+				        cellCollected = [status for status in cellCollected if status.id not in foundIDs and (TweetMatch.classifySingle(status.text,self.NLP,self.cfg['NLPnGrams']) in self.cfg['OnlyKeepNLP'] or uniform(0,1)<self.cfg['DiscardSampleNLP'])]
 				    else:
-                                        cellCollected = [status for status in cellCollected if TweetMatch.classifySingle(status.text,self.NLTK) in self.cfg['OnlyKeepNLTK'] and status.id not in foundIDs]
+                                        cellCollected = [status for status in cellCollected if TweetMatch.classifySingle(status.text,self.NLP,self.cfg['NLPnGrams']) in self.cfg['OnlyKeepNLP'] and status.id not in foundIDs]
                                 
                                 for cell in cellCollected:
                                     foundIDs.add(cell.id)
-				    #print cell.text,"CLASS:", TweetMatch.classifySingle(cell.text,self.NLTK) 
+				    #print cell.text,"CLASS:", TweetMatch.classifySingle(cell.text,self.NLP) 
                                 
                                 if len(cellCollected)>0:
                                     collected += cellCollected
@@ -437,11 +441,11 @@ class giSeeker():
                                                         result_type="recent",
                                                         count = 100)
                                                     
-                            if self.useNLTK:
-				    if self.cfg['KeepDiscardsNLTK']:
-				        cellCollected = [status for status in cellCollected if status.id not in foundIDs and (TweetMatch.classifySingle(status.text,self.NLTK) in self.cfg['OnlyKeepNLTK'] or uniform(0,1)<self.cfg['DiscardSampleNLTK'])]
+                            if self.useNLP:
+				    if self.cfg['KeepDiscardsNLP']:
+				        cellCollected = [status for status in cellCollected if status.id not in foundIDs and (TweetMatch.classifySingle(status.text,self.NLP,self.cfg['NLPnGrams']) in self.cfg['OnlyKeepNLP'] or uniform(0,1)<self.cfg['DiscardSampleNLP'])]
 				    else:
-                                        cellCollected = [status for status in cellCollected if TweetMatch.classifySingle(status.text,self.NLTK) in self.cfg['OnlyKeepNLTK'] and status.id not in foundIDs]                        
+                                        cellCollected = [status for status in cellCollected if TweetMatch.classifySingle(status.text,self.NLP,self.cfg['NLPnGrams']) in self.cfg['OnlyKeepNLP'] and status.id not in foundIDs]                        
                                 
                             for cell in cellCollected:
                                 foundIDs.add(cell.id)
@@ -558,8 +562,8 @@ class giSeeker():
                         'day':tweetLocalTime['day'],
                         'time':tweetLocalTime['time'],
                         'date':tweetLocalTime['date']}
-                    if self.cfg['OnlyKeepNLTK']:
-                        self.tweetTypes[str(status.id)]['nltkCat'] = TweetMatch.classifySingle(status.text,self.NLTK)
+                    if self.cfg['OnlyKeepNLP']:
+                        self.tweetTypes[str(status.id)]['NLPCat'] = TweetMatch.classifySingle(status.text,self.NLP,self.cfg['NLPnGrams'])
                     
             
             if newDay:
@@ -599,7 +603,7 @@ class giSeeker():
     
     
 class giListener(tweepy.StreamListener):
-    def __init__(self, conditions, qualifiers, exclusions, api, cfg, name, testSpace, geoCache):
+    def __init__(self, conditions, qualifiers, exclusions, api, cfg, name, testSpace, geoCache, NLPClassifier):
         self.qualifiers = qualifiers
         self.conditions = conditions
         self.api = api
@@ -611,7 +615,7 @@ class giListener(tweepy.StreamListener):
         giListener.flushTweets(self)
         print "Initiated listener '%s' with %s conditions, %s qualifiers, and %s exclusions" % (name, len(conditions), len(qualifiers), len(exclusions))
         
-        self.pathOut = self.cfg['OutDir']+'stream/'
+        self.pathOut = 'studies/'+self.cfg['OutDir']+'stream/'
         if not os.path.exists(self.pathOut):
             os.makedirs(self.pathOut)
             
@@ -675,7 +679,7 @@ class giListener(tweepy.StreamListener):
         outFile.close()
         giListener.flushTweets(self) 
         print "Updating geoPickle"
-        updateGeoPickle(self.geoCache,self.cfg['Directory']+pickleName) 
+        updateGeoPickle(self.geoCache,self.cfg['Directory']+'caches/'+pickleName) 
     
     def on_status(self, status):
         try:
@@ -729,8 +733,8 @@ class giListener(tweepy.StreamListener):
                         'day':tweetLocalTime['day'],
                         'time':tweetLocalTime['time'],
                         'date':tweetLocalTime['date']} 
-                if self.cfg['OnlyKeepNLTK']:
-                    self.tweetTypes[str(status.id)]['nltkCat'] = TweetMatch.classifySingle(status.text,self.NLTK)            
+                if self.cfg['OnlyKeepNLP']:
+                    self.tweetTypes[str(status.id)]['NLPCat'] = TweetMatch.classifySingle(status.text,self.NLP)            
                 
         except Exception, e:
             print "Encountered exception:", e

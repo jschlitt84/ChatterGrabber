@@ -43,32 +43,32 @@ def postTweet(api,text,image):
         
 
                                                       
-def getTweets(login, cfg, conditions, qualifiers, exclusions, geoCache):
+def getTweets(login, cfg, conditions, qualifiers, exclusions, geoCache, NLPClassifier):
     """selects method of tweet aquisition"""
     if cfg['Method'].lower() == 'stream':
-        getViaStream(login, cfg, conditions, qualifiers, exclusions, geoCache)
+        getViaStream(login, cfg, conditions, qualifiers, exclusions, geoCache, NLPClassifier)
     elif cfg['Method'].lower() == 'search':
-        getViaSearch(login, cfg, conditions, qualifiers, exclusions, geoCache)
-    getViaStream(login, cfg, conditions, qualifiers, exclusions)
+        getViaSearch(login, cfg, conditions, qualifiers, exclusions, geoCache, NLPClassifier)
+    getViaStream(login, cfg, conditions, qualifiers, exclusions, NLPClassifier)
         
         
         
 
-def getViaSearch(login, cfg, conditions, qualifiers, exclusions, geoCache):
+def getViaSearch(login, cfg, conditions, qualifiers, exclusions, geoCache, NLPClassifier):
     """acquires tweets via search method"""
     print "\nSetting up search(es)"
     filterType = cfg['FilterType'].lower()
     if	cfg['MultiLogin']:
 	name = 'multi'
-	seeker = giSeeker(conditions,qualifiers,exclusions,login,cfg,name,'null',geoCache)
+	seeker = giSeeker(conditions,qualifiers,exclusions,login,cfg,name,'null',geoCache, NLPClassifier)
     else:
 	name = login['name']
-	seeker = giSeeker(conditions,qualifiers,exclusions,login['api'],cfg,name,'null',geoCache)
+	seeker = giSeeker(conditions,qualifiers,exclusions,login['api'],cfg,name,'null',geoCache, NLPClassifier)
     seeker.run()
         
         
                
-def getViaStream(login, cfg, conditions, qualifiers, exclusions, geoCache):
+def getViaStream(login, cfg, conditions, qualifiers, exclusions, geoCache, NLPClassifier):
     """acquires tweets via geo stream"""
     print "\nSetting up listener(s)"
     name = login['name']
@@ -96,8 +96,9 @@ def getViaStream(login, cfg, conditions, qualifiers, exclusions, geoCache):
 
 def main():
     usingGDoc = False
-    NLTKClassifier = 'null'
+    NLPClassifier = 'null'
     keepKeys = 'null'
+    extra = dict()
     
     skipReformat = '-s' in sys.argv
     quickReformat = '-r' in sys.argv and not skipReformat
@@ -136,24 +137,24 @@ def main():
             login = getLogins(directory,[temp['login']])[temp['login']]
         cfg['Directory'] = directory
         geoCache = dict()
-        updateGeoPickle(geoCache,directory+pickleName)
+        updateGeoPickle(geoCache,directory+'caches/'+pickleName)
         
-        if cfg['OnlyKeepNLTK'] != False:
-            temp = cfg['OnlyKeepNLTK']
+        if cfg['OnlyKeepNLP'] != False:
+            temp = cfg['OnlyKeepNLP']
             if type(temp) is str:
-                cfg['OnlyKeepNLTK'] = temp.split('_')
+                cfg['OnlyKeepNLP'] = temp.split('_')
             if type(temp) is list:
-                cfg['OnlyKeepNLTK'] = temp
-	    if type(cfg['OnlyKeepNLTK']) is not list:
-		cfg['OnlyKeepNLTK'] = [str(temp)]
-            cfg['OnlyKeepNLTK'] = [str(key) for key in cfg['OnlyKeepNLTK']]
-            NLTKClassifier = TweetMatch.getClassifier(cfg['NLTKFile'])
+                cfg['OnlyKeepNLP'] = temp
+	    if type(cfg['OnlyKeepNLP']) is not list:
+		cfg['OnlyKeepNLP'] = [str(temp)]
+            cfg['OnlyKeepNLP'] = [str(key) for key in cfg['OnlyKeepNLP']]
+            NLPClassifier = TweetMatch.getClassifier(cfg['NLPFile'],cfg)
         
         if not skipReformat:
-	    reformatOld(directory,lists,cfg,geoCache,NLTKClassifier)
+	    reformatOld(directory,lists,cfg,geoCache,NLPClassifier)
+	    updateGeoPickle(geoCache,directory+'caches/'+pickleName)
             if quickReformat:
                 quit()        	
-	    updateGeoPickle(geoCache,directory+pickleName)
         
     else: 
         print "Loading parameters from config file '%s' in directory '%s'" % (configFile, directory)
@@ -163,12 +164,12 @@ def main():
         logins = getLogins(directory, cfg['Logins'])
         lists = updateWordBanks(directory, cfg)
         geoCache = dict()
-        updateGeoPickle(geoCache,directory+pickleName)
+        updateGeoPickle(geoCache,directory+'caches/'+pickleName)
 	if not skipReformat:        
-		reformatOld(directory,lists,cfg,geoCache,NLTKClassifier) 
+		reformatOld(directory,lists,cfg,geoCache,NLPClassifier) 
 		if quickReformat:
 			quit()        
-		updateGeoPickle(geoCache,directory+pickleName)
+		updateGeoPickle(geoCache,directory+'caches/'+pickleName)
         
         
         print "\nPlease choose login number:"
@@ -187,7 +188,6 @@ def main():
  
         login = logins[userLogin]
     
-    del NLTKClassifier
     
     if cfg['MultiLogin']:
         for key in login.keys():
@@ -206,6 +206,6 @@ def main():
     cfg['Directory'] = directory
     cfg['args'] = sys.argv  
  
-    getTweets(login,cfg,lists['conditions'],lists['qualifiers'],lists['exclusions'],geoCache)
+    getTweets(login,cfg,lists['conditions'],lists['qualifiers'],lists['exclusions'],geoCache,NLPClassifier)
 
 main()

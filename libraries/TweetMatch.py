@@ -4,10 +4,14 @@ import sys
 import unicodedata
 import pandas as pd
 import urllib
+import pickle
+import cPickle
 
 import nltk.classify.util
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.corpus import stopwords
+from os.path import isfile
+from random import shuffle
 
 #Analys Methods from: 
 #http://www.slideshare.net/ogrisel/nltk-scikit-learnpyconfr2010ogrisel#btnPrevious
@@ -17,14 +21,8 @@ from nltk.corpus import stopwords
 
 textColumn = 'text'
 categoryColumn = 'check1'
-defaultFile = 'NLTK_Ready_Tweets.csv'
-#classMode = 'naive bayes'
-classMode = 'max ent'
-#classMode = 'decision tree'
-#degreesToUse = [1,2,3,4]
-degreesToUse = [1]
+defaultFile = 'nlpTrainers/NLTK_Ready_Tweets.csv'
 cutoff = .75
-#resultKey = {1:"no suspicion of infectious illness",2:"suspicion of infectious illness, type unknown",3:"suspicion of infectious GI illness"}
 resultKey = {1:"Category 1",2:"Category 2",3:"Category 3"}
 
 
@@ -43,14 +41,11 @@ def loadFile(text):
     outPut = []
     if text == "null":
         text = defaultFile
-    try:
-        if type(text) is list:
-            fileIn = open(text[1],'rU')
-        else:
-            fileIn = open(text,'rU')
-    except:
-        fileIn = open(defaultFile,'rU')
-    
+    if type(text) is list:
+        fileIn = open('nlpTrainers/'+text[1],'rU')
+    else:
+        fileIn = open('nlpTrainers/'+text,'rU')
+
     loaded = pd.read_csv(fileIn)
     
     for pos in loaded.index:
@@ -161,7 +156,7 @@ def collectNGrams(categorized, degreesUsed):
     return collected
                                              
  
-def classifySingle(text, classifier):
+def classifySingle(text, classifier,degreesToUse):
     temp = getNGrams(prepTweet(text),degreesToUse)
     result = classifier.classify(temp)
     if __name__ == '__main__':
@@ -172,31 +167,49 @@ def classifySingle(text, classifier):
             print "Result:", result
     return str(result)
      
-def getClassifier(tweetfile):
-    print "Loading content & preparing text"
-    content = prepText(loadFile(tweetfile))
-    print "Categorizing contents"
-    categorized = prepClassifications(content)
-    print "Deriving NGrams"
-    NGrammized = collectNGrams(categorized,degreesToUse)
-    print "Compiling Results"
-    readyToSend = []
-    for category in NGrammized.keys():
-        readyToSend += NGrammized[category]
+def getClassifier(tweetfile,cfg):
+    degreesToUse = cfg['NLPnGrams']
+    classMode = cfg['NLPMode']
+    shortClass = classMode.replace(' ','').lower()
+    pickleFile = 'nlpTrainers/'+tweetfile.replace('.csv','.'+shortClass+'.pickle')
+    
+    if isfile(pickleFile):
+        print "Loading pickled", shortClass, "classifier"
+        fileIn = open(pickleFile)
+        classifier = cPickle.load(fileIn)
+        fileIn.close()
+    
+    else:
+        print "Loading content & preparing text"
+        content = prepText(loadFile(tweetfile))
+        print "Categorizing contents"
+        categorized = prepClassifications(content)
+        print "Deriving NGrams of length(s)", degreesToUse
+        NGrammized = collectNGrams(categorized,degreesToUse)
+        print "Compiling Results"
+        readyToSend = []
+        for category in NGrammized.keys():
+            readyToSend += NGrammized[category]
+            
+        print "Attempting Classification by mode", classMode
+        if classMode == 'naive bayes':
+            from nltk.classify import NaiveBayesClassifier
+            classifier = NaiveBayesClassifier.train(readyToSend)
+        elif classMode == 'max ent':
+            from nltk.classify import MaxentClassifier
+            classifier = MaxentClassifier.train(readyToSend)
+        elif classMode == 'decision tree':
+            from nltk.classify import decisiontree
+            classifier = decisiontree.train(readyToSend) 
         
-    print "Attempting Classification"
-    if classMode == 'naive bayes':
-        from nltk.classify import NaiveBayesClassifier
-        classifier = NaiveBayesClassifier.train(readyToSend)
-    elif classMode == 'max ent':
-        from nltk.classify import MaxentClassifier
-        classifier = MaxentClassifier.train(readyToSend)
-    elif classMode == 'decision tree':
-	from nltk.classify import decisiontree
-	classifier = decisiontree.train(readyToSend)    
+        print "Pickling Classifier"
+        fileOut = open(pickleFile, 'wb')
+        cPickle.dump(classifier, fileOut)
+        fileOut.close() 
+              
     print
-    classifier.show_most_informative_features(n=200)
-    classifier.show_most_informative_features()
+    classifier.show_most_informative_features(n=150)
+    
     return classifier
 
 def main(tweetfile):
@@ -216,6 +229,29 @@ def main(tweetfile):
             if query.lower() == 'quit':
                 quit()
             classifySingle(query, classifier)
+            
+            
+def evalAccuracy(tweetFile,mode,degrees):
+    outPut = []
+    pieces = []
+    remainders = []
+    segments = 10
+    
+    if tweetFile == "null":
+        text = defaultFile
+    else:
+        fileIn = open('nlpTrainers/'+tweetFile,'rU')
+
+    loaded = pd.read_csv(fileIn)
+    
+    for pos in loaded.index:
+        outPut.append({'text': loaded[textColumn][pos], 'category': loaded[categoryColumn][pos]})
+
+    outPut.shuffle()
+    
+    print "Loaded",len(outPut),"entries"
+    return outPut
+    
 
 
 if __name__ == '__main__':

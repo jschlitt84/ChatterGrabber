@@ -58,6 +58,7 @@ def updateGeoPickle(dictionary,fileRef):
         cPickle.dump(dictionary, pickleOut)
         pickleOut.close()
         time.sleep(.5)
+    #print "DEBOOOOPCIKEL", len(dictionary.keys()),fileRef
     
     
 
@@ -129,11 +130,11 @@ def fillBox(cfg,self):
 
 
 
-def sendCSV(cfg, directory):
+def sendCSV(cfg, directory,extra):
     #Adapting method from http://kutuma.blogspot.com/2007/08/sending-emails-via-gmail-with-python.html
     """Emails results to GDI subscriber(s)"""
     outName = cfg['FileName']+"_CollectedTweets"
-    attachment = cfg['OutDir']+outName+'.csv'
+    attachment = 'studies/'+cfg['OutDir']+outName+'.csv'
 
     print "Preparing to send CSV file:", attachment
         
@@ -310,9 +311,9 @@ def giSpyGDILoad(gDocURL,directory):
     cfg['GDI'] = gdi
     cfg['UseGDI'] = True
     
-    #if cfg['OnlyKeepNLTK'] != False and cfg['OnlyKeepNLTK'] != 'null':
-    #    if type(cfg['OnlyKeepNLTK']) != list:
-    #        cfg['OnlyKeepNLTK'] = [str(cfg['OnlyKeepNLTK'])]
+    #if cfg['OnlyKeepNLP'] != False and cfg['OnlyKeepNLP'] != 'null':
+    #    if type(cfg['OnlyKeepNLP']) != list:
+    #        cfg['OnlyKeepNLP'] = [str(cfg['OnlyKeepNLP'])]
     
     if not public:
         uglyLists = gd.getScript(account['userName'], account['password'], account['fileName'], gdiLists, -1, "default", False, [])
@@ -591,7 +592,7 @@ def isInBox(cfg,geoCache,status):
     cacheRef = (unicode(coordinates) + unicode(userLoc)).lower()
     if cacheRef in geoCache.keys():
         if 'Cores' not in cfg.keys():
-            print "DEBOOO: Inboxed from memory", cacheRef
+            print "GEOCACHE: Inboxed from memory", cacheRef
         loaded = geoCache[cacheRef]
         if loaded['lat'] != 'NaN' and loaded['lon'] != 'NaN':
             place = loaded['place']
@@ -602,7 +603,7 @@ def isInBox(cfg,geoCache,status):
         else:
             return loaded
     elif 'Cores' not in cfg.keys():       
-        print "DEBOOO: Looking up", cacheRef
+        print "GEOCACHE: Looking up", cacheRef
     
     
     if type(coordinates) is list:
@@ -750,13 +751,13 @@ def dictToJsonFix(jsonOut):
             jsonOut[row] = json.dump(jsonOut[row])   
 
 
-def getReformatted(directory, lists, cfg, pickleMgmt, fileList, core, out_q, keepTypes, NLTKClassifier):
+def getReformatted(directory, lists, cfg, pickleMgmt, fileList, core, out_q, keepTypes, NLPClassifier):
     count = 0
     collectedContent = []
     collectedTypes = {}
     geoPickle = dict(pickleMgmt.items())
     
-    useNLTK = NLTKClassifier != 'null' and NLTKClassifier != False
+    useNLP = NLPClassifier != 'null' and NLPClassifier != False
     
     for fileName in fileList:
             inFile = open(directory+fileName)
@@ -776,8 +777,6 @@ def getReformatted(directory, lists, cfg, pickleMgmt, fileList, core, out_q, kee
                 count += 1
                 if count%250 == 0:
                     print "\tCore",core,count,"tweets sorted"
-                #if count%cfg['PickleInterval'] == 0:
-                #    updateGeoPickle(pickleMgmt,cfg['Directory']+pickleName)
                 tweet['text'] = tweet['text'].replace('\n',' ')
                 tweetType = checkTweet(lists['conditions'],lists['qualifiers'],lists['exclusions'], tweet['text'], cfg)
                 if tweetType in keepTypes:
@@ -793,20 +792,23 @@ def getReformatted(directory, lists, cfg, pickleMgmt, fileList, core, out_q, kee
                             'day':timeData['day'],
                             'time':timeData['time'],
                             'date':timeData['date']}
-                        if useNLTK:
-                            collectedTypes[str(tweet['id'])]['nltkCat'] = str(TweetMatch.classifySingle(tweet['text'],NLTKClassifier))
+                        if useNLP:
+                            collectedTypes[str(tweet['id'])]['NLPCat'] = str(TweetMatch.classifySingle(tweet['text'],NLPClassifier,cfg['NLPnGrams']))
                         
                     filteredContent.append(tweet)
             
             collectedContent += filteredContent  
-            #print "DEBOOO123", useNLTK,cfg['OnlyKeepNLTK'],count,len(collectedContent) , len(collectedTypes)              
-            filteredContent = cleanJson(filteredContent,cfg,collectedTypes)
+           
+            try:
+                filteredContent = cleanJson(filteredContent,cfg,collectedTypes)
+            except:
+                print "DEBOOO123", cfg['OnlyKeepNLP'],count,len(collectedContent),len(filteredContent), len(collectedTypes) 
             
             outName = fileName.replace('Raw','FilteredTweets')
 
             if cfg['MakeFilteredJson']:
                 print "\tSaving file as", outName
-                with open(directory+outName, 'w') as outFile:
+                with open(directory+'studies/'+outName, 'w') as outFile:
                     json.dump(filteredContent,outFile)
                 outFile.close()
             
@@ -817,7 +819,7 @@ def getReformatted(directory, lists, cfg, pickleMgmt, fileList, core, out_q, kee
     out_q.put({'content'+str(core):collectedContent})        
 
 
-def reformatOld(directory, lists, cfg, geoCache, NLTKClassifier):
+def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
     """Keeps old content up to date with latests queries & settings"""
     keepTypes = ['accepted']*cfg['KeepAccepted']+['partial']*cfg['KeepPartial']+['excluded']*cfg['KeepExcluded']
     homeDirectory = directory
@@ -826,7 +828,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLTKClassifier):
     
     print "Preparing to reformat from raw tweets..."
     if cfg['OutDir'] not in directory.lower():
-        directory += cfg['OutDir'] + cfg['Method'] + '/'
+        directory += 'studies/'+cfg['OutDir'] + cfg['Method'] + '/'
     if not os.path.exists(directory):
         os.makedirs(directory)
         fileList = []
@@ -834,7 +836,6 @@ def reformatOld(directory, lists, cfg, geoCache, NLTKClassifier):
         fileList = os.listdir(directory)
         oldFiltered = [i for i in fileList if i.lower().startswith('filteredtweets')]
         fileList = [i for i in fileList if i.lower().startswith('raw')]
-    
     
     if len(fileList) != 0:
         if lists == 'null':
@@ -851,8 +852,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLTKClassifier):
 
         for i in range(cores):
         #for i in range(1):
-            p = Process(target = getReformatted, args = (directory, lists, cfg, pickleMgmt, fileList[block*i:block*(i+1)], i, out_q, keepTypes, NLTKClassifier))
-            
+            p = Process(target = getReformatted, args = (directory, lists, cfg, pickleMgmt, fileList[block*i:block*(i+1)], i, out_q, keepTypes, NLPClassifier))
             processes.append(p)
             p.start() 
         merged = {}
@@ -870,7 +870,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLTKClassifier):
             
         print "Returning updated geoPickle"
         geoCache = dict(pickleMgmt.items())
-        updateGeoPickle(geoCache,cfg['Directory']+pickleName)
+        updateGeoPickle(geoCache,cfg['Directory']+'caches/'+pickleName)
        
 	outName = cfg['FileName']+"_CollectedTweets"
         
@@ -890,7 +890,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLTKClassifier):
             orderedKeys = sorted(collectedContent[0].keys())
             orderedKeys.insert(0,orderedKeys.pop(orderedKeys.index('text')))
             
-   	    if cfg['OnlyKeepNLTK'] != False:
+   	    if cfg['OnlyKeepNLP'] != False:
   		addKeys = []
             else:
   		addKeys = ["score","check3","check2","check1"]
@@ -906,8 +906,8 @@ def reformatOld(directory, lists, cfg, geoCache, NLTKClassifier):
                     else:
                         collectedContent[pos][key] = stripUnicode(collectedContent[pos][key])
         
-            if cfg['OnlyKeepNLTK'] != False and not cfg['KeepDiscardsNLTK']:
-  		collectedContent = [entry for entry in collectedContent if str(entry['nltkCat']) in cfg['OnlyKeepNLTK']]
+            if cfg['OnlyKeepNLP'] != False and not cfg['KeepDiscardsNLP']:
+  		collectedContent = [entry for entry in collectedContent if str(entry['NLPCat']) in cfg['OnlyKeepNLP']]
   		
             if cfg['Sanitize'] != False:
                 collectedContent = [sanitizeTweet(tweet) for tweet in collectedContent]
@@ -1018,13 +1018,14 @@ def getConfig(directory):
                 'Logins':'NoLoginsFound','UseGDI':False,
                 'UseStacking':False,'KeepUnlocated':False,
                 'PickleInterval':500,'PatientGeocoding':True,
-                'OnlyKeepNLTK':False,'MultiLogin':False,
+                'OnlyKeepNLP':False,'MultiLogin':False,
                 'KeepRetweets':False,'StrictGeoFilter':False,
                 'StrictWordFilter':False,'Sanitize':False,
-                'KeepDiscardsNLTK':False,'DiscardSampleNLTK':0,
+                'KeepDiscardsNLP':False,'DiscardSampleNLP':0,
                 'MakeFilteredJson':False,'SendEvery':1,
                 'TrackHashTags':False,'TrackHashDays':10,
-                'TrackHashCount':5,'DaysBack':'all'}
+                'TrackHashCount':5,'DaysBack':'all',
+                'NLPnGrams':[1,2,3,4],'NLPMode':'naive bayes'}
     
     if type(directory) is str:
         if directory == "null":
@@ -1047,7 +1048,7 @@ def getConfig(directory):
         useGDI = True
     
     content = [line for line in content if str(line[0]) not in hidden]
-
+    print [line for line in content if 'nl' in line[0].lower()]
     for line in content:
         if len(str(line[0])) != 0 and len(str(line[1])) != 0 and not str(line[0]).startswith('#'):
             try:
@@ -1060,22 +1061,39 @@ def getConfig(directory):
                         line[1] = True
                     elif line[1].lower() == 'false':
                         line[1] = False
-            
             params[line[0]] = line[1]
     print "\nLoaded params:"
+    
+    for key in params.keys():
+        if 'nltk' in key.lower():
+            newKey = key.replace('NLTK','nltk')
+            params[newKey.replace('nltk','NLP')] = params.pop(key)
     
     params['Logins'] = textToList(params['Logins'])    
     try:
         params['TweetData'] = textToList(params['TweetData'])
     except:
         None
+        
     try:
         params['UserData'] = textToList(params['UserData'])
     except:
         None
         
     try:
-        params['KeepDiscardsNLTK'] = 0 < float(params['DiscardSampleNLTK']) <= 1
+        params['KeepDiscardsNLP'] = 0 < float(params['DiscardSampleNLP']) <= 1
+    except:
+        None
+        
+    try:
+        if '_' in params['OnlyKeepNLP']:
+            params['OnlyKeepNLP'] = params['OnlyKeepNLP'].replace('_',' ')
+        params['OnlyKeepNLP'] = textToList(params['OnlyKeepNLP'])
+    except:
+        None
+    
+    try:
+        params['NLPnGrams'] = [int(degree) for degree in textToList(params['NLPnGrams'])] 
     except:
         None
         
