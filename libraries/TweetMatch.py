@@ -12,7 +12,8 @@ from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.corpus import stopwords
 from os.path import isfile
 from random import shuffle
-from statistics import mean
+from numpy import mean, std
+from copy import deepcopy
 
 #Analys Methods from: 
 #http://www.slideshare.net/ogrisel/nltk-scikit-learnpyconfr2010ogrisel#btnPrevious
@@ -172,16 +173,19 @@ def getClassifier(tweetfile,cfg):
     degreesToUse = cfg['NLPnGrams']
     classMode = cfg['NLPMode']
     shortClass = classMode.replace(' ','').lower()
-    
+    loadNeeded = True 
+
     if 'NLPTEST' not in cfg.keys():
-        pickleFile = 'nlpTrainers/'+tweetfile.replace('.csv','.'+shortClass+'.pickle')  
-        if isfile(pickleFile):
-            print "Loading pickled", shortClass, "classifier"
-            fileIn = open(pickleFile)
-            classifier = cPickle.load(fileIn)
-            fileIn.close()
+	degreeString = '-'.join([str(degree) for degree in degreesToUse])
+        pickleFile = 'nlpTrainers/'+tweetfile.replace('.csv','.'+shortClass+degreeString+'.pickle')  
+	if isfile(pickleFile):
+		print "Loading pickled", shortClass, "classifier"
+		fileIn = open(pickleFile)
+		classifier = cPickle.load(fileIn)
+		fileIn.close()
+		loadNeeded = False
     
-    else:
+    if loadNeeded:
         if 'NLPTEST'in cfg.keys():
             content = prepText(tweetfile)
             categorized = prepClassifications(content)
@@ -198,7 +202,7 @@ def getClassifier(tweetfile,cfg):
         for category in NGrammized.keys():
             readyToSend += NGrammized[category]
             
-        print "Attempting Classification by mode", classMode
+        print "Attempting Classification by mode", classMode, degreesToUse
         if classMode == 'naive bayes':
             from nltk.classify import NaiveBayesClassifier
             classifier = NaiveBayesClassifier.train(readyToSend)
@@ -207,7 +211,10 @@ def getClassifier(tweetfile,cfg):
             classifier = MaxentClassifier.train(readyToSend)
         elif classMode == 'decision tree':
             from nltk.classify import decisiontree
-            classifier = decisiontree.train(readyToSend) 
+            classifier = decisiontree.train(readyToSend)
+	else:
+	    from nltk.classify import NaiveBayesClassifier
+            classifier = NaiveBayesClassifier.train(readyToSend)
         
         if 'NLPTEST' not in cfg.keys():
             print "Pickling Classifier"
@@ -240,7 +247,7 @@ def main(tweetfile):
             classifySingle(query, classifier)
             
             
-def evalAccuracy(tweetFile,mode,degrees):
+def evalAccuracy(tweetFile,mode,degrees,percent):
     outPut = []
     pieces = []
     remainders = []
@@ -259,31 +266,28 @@ def evalAccuracy(tweetFile,mode,degrees):
 
     scored = len(outPut)
     index = range(scored)
-    chunkSize = scored/segments
+    percentLength = int(scored*percent+.5)
+    chunkSize = percentLength/segments
     reducedSize = chunkSize*segments
     shuffle(index)
     index = index[:reducedSize]
     pieces = zip(*[iter(index)]*chunkSize)
-    
+    print "Reducing set of size %s to percent %s to size %s with %s total pieces of size %s each" % (scored,percent*100,reducedSize,segments,chunkSize)	
+    scores = []
     for pos in range(segments):
         entry = pieces[pos]
         remainder = list(set(index)-set(entry))
-        toTrain = [outPut[item] for item in remainder]
-        toScore = [outPut[item] for item in entry]
+        toTrain = [deepcopy(outPut[item]) for item in remainder]
+        toScore = [deepcopy(outPut[item]) for item in entry]
         points = 100
         subtractor =  100./chunkSize
-        scores = []
         cfg = {'NLPnGrams':degrees,'NLPMode':mode,'NLPTEST':True}
         classifier = getClassifier(toTrain,cfg)
         for item in toScore:
-            print "DEBOOOO", item
-            if item['category'] != classifySingle(item['text'],classifier,degrees):
-                print "MISMATCH",item['category'],classifySingle(item['text'],classifier,degrees)
+            if str(item['category']) != str(classifySingle(item['text'],classifier,degrees)):
                 points -= subtractor
-            else:
-                print "MATCH",item['category'],classifySingle(item['text'],classifier,degrees)
         scores.append(points)
-    return mean(scores)
+    return mean(scores),std(scores)
         
             
     
