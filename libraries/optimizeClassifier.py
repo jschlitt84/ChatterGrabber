@@ -12,7 +12,7 @@ if len(sys.argv) > 1:
 	if sys.argv[1] == '-s':
 		sweep = True
 		sys.argv = sys.argv[1:]
-		sweepRange = [value/float(stops) for value in range(1,stops+1)]
+		sweepRange = [value/float(stops) for value in range(1,stops)]
 		print "SweepRange:", sweepRange
 	files = sys.argv[1:]
 	print "Running files:", files
@@ -46,7 +46,7 @@ for inFile in files:
                     sweepOut = open(sweepFile,'a+b')
                     summary = "Trainer: %s    Percent: %s    Mode: %s    Degrees: %s    Accuracy: %s    StdDev: %s" % (inFile,truePercent,mode,degree,str(accuracy)[0:5], str(std)[0:3])
                     print '\033[1m\n'+'\033[91m'+summary+'\033[0m'
-                    sweepOut.write("%s,%s,%s,\n" % (truePercent,count,accuracy,std))
+                    sweepOut.write("%s,%s,%s,%s,\n" % (truePercent,count,accuracy,std))
                     sweepOut.close()
             else:
                 accuracy,std,truePercent,count = evalAccuracy(directory+inFile,mode,degree,1)

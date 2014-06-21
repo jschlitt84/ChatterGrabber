@@ -251,7 +251,7 @@ def evalAccuracy(tweetFile,mode,degrees,percent):
     outPut = []
     pieces = []
     remainders = []
-    segments = 10
+    n = 10
     accuracy = []
     
     if tweetFile == "null":
@@ -263,8 +263,30 @@ def evalAccuracy(tweetFile,mode,degrees,percent):
     
     for pos in loaded.index:
         outPut.append({'text': loaded[textColumn][pos], 'category': loaded[categoryColumn][pos]})
-
+    
     scored = len(outPut)
+    index = range(scored)
+    percentLength = int(scored*percent+.5)
+    remainder = scored - percentLength
+    print "\033[1mReducing scoring set of size %s to %s%% random training set with %s entries with %s iterations and %s scored posts\033[0m\n" % (scored,percent*100,percentLength,n,remainder)	
+    scores = []
+    for pos in range(n):
+        shuffle(index)
+        points = 100
+        trainingSet = deepcopy(index)[0:percentLength]
+        scoringSet = list(set(index)-set(trainingSet))
+        toTrain = [deepcopy(outPut[item]) for item in trainingSet]
+        toScore = [deepcopy(outPut[item]) for item in scoringSet]
+        subtractor =  100./len(toScore)
+        cfg = {'NLPnGrams':degrees,'NLPMode':mode,'NLPTEST':True}
+        classifier = getClassifier(toTrain,cfg)
+        for item in toScore:
+            if str(item['category']) != str(classifySingle(item['text'],classifier,degrees)):
+                points -= subtractor
+        scores.append(points)
+    return mean(scores),std(scores),percent,len(toTrain)
+        
+    """scored = len(outPut)
     index = range(scored)
     percentLength = int(scored*percent+.5)
     chunkSize = percentLength/segments
@@ -296,7 +318,7 @@ def evalAccuracy(tweetFile,mode,degrees,percent):
             if str(item['category']) != str(classifySingle(item['text'],classifier,degrees)):
                 points -= subtractor
         scores.append(points)
-    return mean(scores),std(scores),truePercent,len(toTrain)
+    return mean(scores),std(scores),truePercent,len(toTrain)"""
         
             
     
