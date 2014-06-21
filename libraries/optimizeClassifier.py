@@ -36,7 +36,7 @@ for inFile in files:
         for degree in degreesTemp:
             if sweep:
                 textMode = mode + '.' + str(degree)
-                sweepFile = inFile.replace('.csv','.'textMode+'.csv')
+                sweepFile = inFile.replace('.csv','.'+textMode+'.csv')
                 sweepOut = open(sweepFile,'w')
                 sweepOut.write("percent,accuracy,stdDev,\n")
                 sweepOut.close()
