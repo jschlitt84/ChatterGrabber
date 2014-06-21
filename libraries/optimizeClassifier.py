@@ -1,6 +1,8 @@
 from TweetMatch import *
 import sys
 
+stops = 50
+
 directory = '/Users/jamesschlitt/ChatterGrabber/nlpTrainers/'
 #directory = '/home/jschlitt/Dropbox/ChatterGrabberPortable/nlpTrainers/'
 
@@ -10,7 +12,7 @@ if len(sys.argv) > 1:
 	if sys.argv[1] == '-s':
 		sweep = True
 		sys.argv = sys.argv[1:]
-		sweepRange = [value/50. for value in range(1,50)]
+		sweepRange = [value/float(stops) for value in range(1,stops+1)]
 	files = sys.argv[1:]
 	print "Running files:", files
 else:
@@ -23,6 +25,8 @@ degrees = [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[1,2],[1,3],[1,4],[2,3],[2,4
 #modes = ['naive bayes','max ent']
 modes = ['naive bayes','max ent']
 
+print "SweepRange:", sweepRange
+
 for inFile in files:
     for mode in modes:
         if mode ==  "max ent":
@@ -32,19 +36,19 @@ for inFile in files:
         for degree in degreesTemp:
             if sweep:
                 textMode = mode + '.' + str(degree)
-                sweepFile = inFile.replace('.csv',textMode+'.csv')
+                sweepFile = inFile.replace('.csv','.'textMode+'.csv')
                 sweepOut = open(sweepFile,'w')
                 sweepOut.write("percent,accuracy,stdDev,\n")
                 sweepOut.close()
                 for x in sweepRange:
-                    accuracy,std = evalAccuracy(directory+inFile,mode,degree,x)
+                    accuracy,std,truePercent = evalAccuracy(directory+inFile,mode,degree,x)
                     sweepOut = open(sweepFile,'a+b')
-                    summary = "Trainer: %s    Percent: %s    Mode: %s    Degrees: %s    Accuracy: %s    StdDev: %s" % (inFile,x,mode,degree,str(accuracy)[0:5], str(std)[0:3])
+                    summary = "Trainer: %s    Percent: %s    Mode: %s    Degrees: %s    Accuracy: %s    StdDev: %s" % (inFile,truePercent,mode,degree,str(accuracy)[0:5], str(std)[0:3])
                     print '\033[1m\n'+'\033[91m'+summary+'\033[0m'
-                    sweepOut.write("%s,%s,%s,\n" % (x,accuracy,std))
+                    sweepOut.write("%s,%s,%s,\n" % (truePercent,accuracy,std))
                     sweepOut.close()
             else:
-                accuracy,std = evalAccuracy(directory+inFile,mode,degree,1)
+                accuracy,std,truePercent = evalAccuracy(directory+inFile,mode,degree,1)
                 summary = "Trainer: %s    Mode: %s    Degrees: %s    Accuracy: %s    StdDev: %s" % (inFile,mode,degree,str(accuracy)[0:5], str(std)[0:3])
                 print '\033[1m\n'+'\033[91m'+summary+'\033[0m'
                 records = open('OptimizeScores.txt','a+b')

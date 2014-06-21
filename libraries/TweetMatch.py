@@ -274,7 +274,8 @@ def evalAccuracy(tweetFile,mode,degrees,percent):
     index = index[:reducedSize]
     pieces = zip(*[iter(index)]*chunkSize)
     remainder = scored - chunkSize
-    print "\033[1mReducing scoring set of size %s to %s%% and %s entries with %s total chunks of size %s each\033[0m\n" % (scored,percent*100,reducedSize,segments,remainder)	
+    truePercent = percent*(1-1.0/segments)
+    print "\033[1mReducing scoring set of size %s to %s%% and %s entries with %s total chunks of size %s each\033[0m\n" % (scored,truePercent*100,reducedSize,segments,remainder)	
     scores = []
     for pos in range(segments):
         entry = pieces[pos]
@@ -282,6 +283,11 @@ def evalAccuracy(tweetFile,mode,degrees,percent):
         unscored = list(set(indexOrig)-set(remainder))
         toTrain = [deepcopy(outPut[item]) for item in remainder]
         toScore = [deepcopy(outPut[item]) for item in unscored]
+        #print "DEBOO", scored,len(remainder),len(unscored)
+        #print "DEBOO1", len(set(indexOrig)),len(set(remainder)),len(set(unscored))
+        #print "DEBOO2", len(set(indexOrig)-set(remainder))
+        #print "DEBOO3", len(set(indexOrig)-set(unscored))
+        #print "DEBOO4", percent*(1-1.0/segments)
         points = 100
         subtractor =  100./len(unscored)
         cfg = {'NLPnGrams':degrees,'NLPMode':mode,'NLPTEST':True}
@@ -290,7 +296,7 @@ def evalAccuracy(tweetFile,mode,degrees,percent):
             if str(item['category']) != str(classifySingle(item['text'],classifier,degrees)):
                 points -= subtractor
         scores.append(points)
-    return mean(scores),std(scores)
+    return mean(scores),std(scores),truePercent
         
             
     
