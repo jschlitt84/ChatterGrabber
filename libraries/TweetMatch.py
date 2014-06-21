@@ -296,7 +296,7 @@ def evalAccuracy(tweetFile,mode,degrees,percent):
             if str(item['category']) != str(classifySingle(item['text'],classifier,degrees)):
                 points -= subtractor
         scores.append(points)
-    return mean(scores),std(scores),truePercent
+    return mean(scores),std(scores),truePercent,len(toTrain)
         
             
     

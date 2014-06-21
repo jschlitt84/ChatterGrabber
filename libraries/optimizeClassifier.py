@@ -39,17 +39,17 @@ for inFile in files:
                 textMode = mode + '.' + str(degree)
                 sweepFile = inFile.replace('.csv','.'+textMode+'.csv')
                 sweepOut = open(sweepFile,'w')
-                sweepOut.write("percent,accuracy,stdDev,\n")
+                sweepOut.write("percent,count,accuracy,stdDev,\n")
                 sweepOut.close()
                 for x in sweepRange:
-                    accuracy,std,truePercent = evalAccuracy(directory+inFile,mode,degree,x)
+                    accuracy,std,truePercent,count = evalAccuracy(directory+inFile,mode,degree,x)
                     sweepOut = open(sweepFile,'a+b')
                     summary = "Trainer: %s    Percent: %s    Mode: %s    Degrees: %s    Accuracy: %s    StdDev: %s" % (inFile,truePercent,mode,degree,str(accuracy)[0:5], str(std)[0:3])
                     print '\033[1m\n'+'\033[91m'+summary+'\033[0m'
-                    sweepOut.write("%s,%s,%s,\n" % (truePercent,accuracy,std))
+                    sweepOut.write("%s,%s,%s,\n" % (truePercent,count,accuracy,std))
                     sweepOut.close()
             else:
-                accuracy,std,truePercent = evalAccuracy(directory+inFile,mode,degree,1)
+                accuracy,std,truePercent,count = evalAccuracy(directory+inFile,mode,degree,1)
                 summary = "Trainer: %s    Mode: %s    Degrees: %s    Accuracy: %s    StdDev: %s" % (inFile,mode,degree,str(accuracy)[0:5], str(std)[0:3])
                 print '\033[1m\n'+'\033[91m'+summary+'\033[0m'
                 records = open('OptimizeScores.txt','a+b')
