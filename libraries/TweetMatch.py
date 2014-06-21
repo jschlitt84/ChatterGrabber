@@ -270,17 +270,20 @@ def evalAccuracy(tweetFile,mode,degrees,percent):
     chunkSize = percentLength/segments
     reducedSize = chunkSize*segments
     shuffle(index)
+    indexOrig = deepcopy(index)
     index = index[:reducedSize]
     pieces = zip(*[iter(index)]*chunkSize)
-    print "Reducing set of size %s to percent %s to size %s with %s total pieces of size %s each" % (scored,percent*100,reducedSize,segments,chunkSize)	
+    remainder = scored - chunkSize
+    print "\033[1mReducing scoring set of size %s to %s%% and %s entries with %s total chunks of size %s each\033[0m\n" % (scored,percent*100,reducedSize,segments,remainder)	
     scores = []
     for pos in range(segments):
         entry = pieces[pos]
         remainder = list(set(index)-set(entry))
+        unscored = list(set(indexOrig)-set(remainder))
         toTrain = [deepcopy(outPut[item]) for item in remainder]
-        toScore = [deepcopy(outPut[item]) for item in entry]
+        toScore = [deepcopy(outPut[item]) for item in unscored]
         points = 100
-        subtractor =  100./chunkSize
+        subtractor =  100./len(unscored)
         cfg = {'NLPnGrams':degrees,'NLPMode':mode,'NLPTEST':True}
         classifier = getClassifier(toTrain,cfg)
         for item in toScore:

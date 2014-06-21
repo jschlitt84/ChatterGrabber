@@ -8,3 +8,5 @@ nlpTrainers/*.pickle
 *.swp
 *.pyc
 *GeoPickle
+
+*.csv
