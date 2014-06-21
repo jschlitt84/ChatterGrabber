@@ -12,6 +12,7 @@ from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.corpus import stopwords
 from os.path import isfile
 from random import shuffle
+from statistics import mean
 
 #Analys Methods from: 
 #http://www.slideshare.net/ogrisel/nltk-scikit-learnpyconfr2010ogrisel#btnPrevious
@@ -171,22 +172,28 @@ def getClassifier(tweetfile,cfg):
     degreesToUse = cfg['NLPnGrams']
     classMode = cfg['NLPMode']
     shortClass = classMode.replace(' ','').lower()
-    pickleFile = 'nlpTrainers/'+tweetfile.replace('.csv','.'+shortClass+'.pickle')
     
-    if isfile(pickleFile):
-        print "Loading pickled", shortClass, "classifier"
-        fileIn = open(pickleFile)
-        classifier = cPickle.load(fileIn)
-        fileIn.close()
+    if 'NLPTEST' not in cfg.keys():
+        pickleFile = 'nlpTrainers/'+tweetfile.replace('.csv','.'+shortClass+'.pickle')  
+        if isfile(pickleFile):
+            print "Loading pickled", shortClass, "classifier"
+            fileIn = open(pickleFile)
+            classifier = cPickle.load(fileIn)
+            fileIn.close()
     
     else:
-        print "Loading content & preparing text"
-        content = prepText(loadFile(tweetfile))
-        print "Categorizing contents"
-        categorized = prepClassifications(content)
-        print "Deriving NGrams of length(s)", degreesToUse
-        NGrammized = collectNGrams(categorized,degreesToUse)
-        print "Compiling Results"
+        if 'NLPTEST'in cfg.keys():
+            content = prepText(tweetfile)
+            categorized = prepClassifications(content)
+            NGrammized = collectNGrams(categorized,degreesToUse)
+        else:
+            print "Loading content & preparing text"
+            content = prepText(loadFile(tweetfile))
+            print "Categorizing contents"
+            categorized = prepClassifications(content)
+            print "Deriving NGrams of length(s)", degreesToUse
+            NGrammized = collectNGrams(categorized,degreesToUse)
+            print "Compiling Results"
         readyToSend = []
         for category in NGrammized.keys():
             readyToSend += NGrammized[category]
@@ -202,13 +209,15 @@ def getClassifier(tweetfile,cfg):
             from nltk.classify import decisiontree
             classifier = decisiontree.train(readyToSend) 
         
-        print "Pickling Classifier"
-        fileOut = open(pickleFile, 'wb')
-        cPickle.dump(classifier, fileOut)
-        fileOut.close() 
+        if 'NLPTEST' not in cfg.keys():
+            print "Pickling Classifier"
+            fileOut = open(pickleFile, 'wb')
+            cPickle.dump(classifier, fileOut)
+            fileOut.close() 
               
-    print
-    classifier.show_most_informative_features(n=150)
+    if 'NLPTEST' not in cfg.keys():
+        
+        classifier.show_most_informative_features(n=150)
     
     return classifier
 
@@ -236,20 +245,49 @@ def evalAccuracy(tweetFile,mode,degrees):
     pieces = []
     remainders = []
     segments = 10
+    accuracy = []
     
     if tweetFile == "null":
         text = defaultFile
     else:
-        fileIn = open('nlpTrainers/'+tweetFile,'rU')
+        fileIn = open(tweetFile,'rU')
 
     loaded = pd.read_csv(fileIn)
     
     for pos in loaded.index:
         outPut.append({'text': loaded[textColumn][pos], 'category': loaded[categoryColumn][pos]})
 
-    outPut.shuffle()
+    scored = len(outPut)
+    index = range(scored)
+    chunkSize = scored/segments
+    reducedSize = chunkSize*segments
+    shuffle(index)
+    index = index[:reducedSize]
+    pieces = zip(*[iter(index)]*chunkSize)
     
-    print "Loaded",len(outPut),"entries"
+    for pos in range(segments):
+        entry = pieces[pos]
+        remainder = list(set(index)-set(entry))
+        toTrain = [outPut[item] for item in remainder]
+        toScore = [outPut[item] for item in entry]
+        points = 100
+        subtractor =  100./chunkSize
+        scores = []
+        cfg = {'NLPnGrams':degrees,'NLPMode':mode,'NLPTEST':True}
+        classifier = getClassifier(toTrain,cfg)
+        for item in toScore:
+            print "DEBOOOO", item
+            if item['category'] != classifySingle(item['text'],classifier,degrees):
+                print "MISMATCH",item['category'],classifySingle(item['text'],classifier,degrees)
+                points -= subtractor
+            else:
+                print "MATCH",item['category'],classifySingle(item['text'],classifier,degrees)
+        scores.append(points)
+    return mean(scores)
+        
+            
+    
+    print "Loaded & randomized %s entries, reduced to %s entries with %s chunks of size %s" % (scored,reducedSize,segments,chunkSize)
     return outPut
     
 
