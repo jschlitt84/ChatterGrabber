@@ -13,6 +13,7 @@ if len(sys.argv) > 1:
 		sweep = True
 		sys.argv = sys.argv[1:]
 		sweepRange = [value/float(stops) for value in range(1,stops+1)]
+		print "SweepRange:", sweepRange
 	files = sys.argv[1:]
 	print "Running files:", files
 else:
@@ -25,7 +26,7 @@ degrees = [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[1,2],[1,3],[1,4],[2,3],[2,4
 #modes = ['naive bayes','max ent']
 modes = ['naive bayes','max ent']
 
-print "SweepRange:", sweepRange
+
 
 for inFile in files:
     for mode in modes:
