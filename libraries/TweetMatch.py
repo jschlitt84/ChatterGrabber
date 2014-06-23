@@ -27,8 +27,6 @@ defaultFile = 'nlpTrainers/NLTK_Ready_Tweets.csv'
 cutoff = .75
 resultKey = {1:"Category 1",2:"Category 2",3:"Category 3"}
 
-
-
 def stripUnicode(text):
     """Strips unicode special characters for text storage (smileys, etc)"""
     if text == None:
@@ -247,83 +245,80 @@ def main(tweetfile):
             classifySingle(query, classifier)
             
             
-def evalAccuracy(tweetFile,mode,degrees,percent):
-    outPut = []
-    pieces = []
-    remainders = []
-    n = 10
-    accuracy = []
+def evalAccuracy(mode,degrees,percent,classifications,outPut):
+    n = 5
+    sens = dict()
+    spec = dict()
+    sensDelta = dict()
+    specDelta = dict()
+    sensScores = dict()
+    specScores = dict()
+    scores = []
     
-    if tweetFile == "null":
-        text = defaultFile
-    else:
-        fileIn = open(tweetFile,'rU')
-
-    loaded = pd.read_csv(fileIn)
-    
-    for pos in loaded.index:
-        outPut.append({'text': loaded[textColumn][pos], 'category': loaded[categoryColumn][pos]})
+    for category in classifications:
+        sensScores[category] = []
+        specScores[category] = []
     
     scored = len(outPut)
     index = range(scored)
     percentLength = int(scored*percent+.5)
     remainder = scored - percentLength
+    
     print "\033[1mReducing scoring set of size %s to %s%% random training set with %s entries with %s iterations and %s scored posts\033[0m\n" % (scored,percent*100,percentLength,n,remainder)	
-    scores = []
+    
+
+        
     for pos in range(n):
         shuffle(index)
         points = 100
+        
         trainingSet = deepcopy(index)[0:percentLength]
         scoringSet = list(set(index)-set(trainingSet))
         toTrain = [deepcopy(outPut[item]) for item in trainingSet]
         toScore = [deepcopy(outPut[item]) for item in scoringSet]
-        subtractor =  100./len(toScore)
-        cfg = {'NLPnGrams':degrees,'NLPMode':mode,'NLPTEST':True}
-        classifier = getClassifier(toTrain,cfg)
-        for item in toScore:
-            if str(item['category']) != str(classifySingle(item['text'],classifier,degrees)):
-                points -= subtractor
-        scores.append(points)
-    return mean(scores),std(scores),percent,len(toTrain)
         
-    """scored = len(outPut)
-    index = range(scored)
-    percentLength = int(scored*percent+.5)
-    chunkSize = percentLength/segments
-    reducedSize = chunkSize*segments
-    shuffle(index)
-    indexOrig = deepcopy(index)
-    index = index[:reducedSize]
-    pieces = zip(*[iter(index)]*chunkSize)
-    remainder = scored - chunkSize
-    truePercent = percent*(1-1.0/segments)
-    print "\033[1mReducing scoring set of size %s to %s%% and %s entries with %s total chunks of size %s each\033[0m\n" % (scored,truePercent*100,reducedSize,segments,remainder)	
-    scores = []
-    for pos in range(segments):
-        entry = pieces[pos]
-        remainder = list(set(index)-set(entry))
-        unscored = list(set(indexOrig)-set(remainder))
-        toTrain = [deepcopy(outPut[item]) for item in remainder]
-        toScore = [deepcopy(outPut[item]) for item in unscored]
-        #print "DEBOO", scored,len(remainder),len(unscored)
-        #print "DEBOO1", len(set(indexOrig)),len(set(remainder)),len(set(unscored))
-        #print "DEBOO2", len(set(indexOrig)-set(remainder))
-        #print "DEBOO3", len(set(indexOrig)-set(unscored))
-        #print "DEBOO4", percent*(1-1.0/segments)
-        points = 100
-        subtractor =  100./len(unscored)
-        cfg = {'NLPnGrams':degrees,'NLPMode':mode,'NLPTEST':True}
-        classifier = getClassifier(toTrain,cfg)
-        for item in toScore:
-            if str(item['category']) != str(classifySingle(item['text'],classifier,degrees)):
-                points -= subtractor
-        scores.append(points)
-    return mean(scores),std(scores),truePercent,len(toTrain)"""
+        classifications = set()
+        totals = dict()
         
+        for entry in toScore:
+            category = str(entry['category'])
+            classifications.add(category)
+            if category not in totals.keys():
+                totals[category] = 1
+            totals[category] += 1
             
+        allCount = sum(totals.values())
+        
+        for category in classifications:
+            sens[category] = 100.
+            spec[category] = 100.           
+            sensDelta[category] = 100./totals[category]
+            specDelta[category] = 100./(allCount-totals[category])
+          
+        subtractor =  100./allCount
+        cfg = {'NLPnGrams':degrees,'NLPMode':mode,'NLPTEST':True}
+        classifier = getClassifier(toTrain,cfg)
+        for item in toScore:
+            realCat = str(item['category'])
+            scoreCat = str(classifySingle(item['text'],classifier,degrees))
+            if realCat != scoreCat:
+                points -= subtractor
+                sens[realCat] -= sensDelta[realCat]
+                spec[scoreCat] -= specDelta[scoreCat]
+        
+        scores.append(points)
+        
+        for category in classifications:
+            sensScores[category].append(sens[category])
+            specScores[category].append(spec[category])
     
-    print "Loaded & randomized %s entries, reduced to %s entries with %s chunks of size %s" % (scored,reducedSize,segments,chunkSize)
-    return outPut
+    for category in classifications:
+        sensScores[category] = mean(sensScores[category])
+        specScores[category] = mean(specScores[category])
+        
+        
+    return mean(scores),std(scores),percent,len(toTrain),classifications,sensScores,specScores
+
     
 
 
