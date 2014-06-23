@@ -226,6 +226,7 @@ def getClassifier(tweetfile,cfg):
     
     return classifier
 
+
 def main(tweetfile):
     testMode = False
     try:
@@ -255,7 +256,9 @@ def evalAccuracy(mode,degrees,percent,classifications,outPut):
     specScores = dict()
     scores = []
     
-    for category in classifications:
+    allCats = deepcopy(classifications)
+    
+    for category in allCats:
         sensScores[category] = []
         specScores[category] = []
     
@@ -265,8 +268,6 @@ def evalAccuracy(mode,degrees,percent,classifications,outPut):
     remainder = scored - percentLength
     
     print "\033[1mReducing scoring set of size %s to %s%% random training set with %s entries with %s iterations and %s scored posts\033[0m\n" % (scored,percent*100,percentLength,n,remainder)	
-    
-
         
     for pos in range(n):
         shuffle(index)
@@ -312,7 +313,7 @@ def evalAccuracy(mode,degrees,percent,classifications,outPut):
             sensScores[category].append(sens[category])
             specScores[category].append(spec[category])
     
-    for category in classifications:
+    for category in allCats:
         sensScores[category] = mean(sensScores[category])
         specScores[category] = mean(specScores[category])
         
