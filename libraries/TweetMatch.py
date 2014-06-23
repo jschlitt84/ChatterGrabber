@@ -299,7 +299,7 @@ def evalAccuracy(mode,degrees,percent,classifications,outPut):
             if totals[category] != 0:          
                 sensDelta[category] = 100./totals[category]
             else:
-                sensDelta[category] = 'kazoo'
+                sensDelta[category] = 'no one will ever see this...'
             specDelta[category] = 100./(allCount-totals[category])
           
         subtractor =  100./allCount
