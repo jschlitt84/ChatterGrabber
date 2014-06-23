@@ -255,6 +255,7 @@ def evalAccuracy(mode,degrees,percent,classifications,outPut):
     sensScores = dict()
     specScores = dict()
     scores = []
+    totals = dict()
     
     allCats = deepcopy(classifications)
     
@@ -279,7 +280,9 @@ def evalAccuracy(mode,degrees,percent,classifications,outPut):
         toScore = [deepcopy(outPut[item]) for item in scoringSet]
         
         classifications = set()
-        totals = dict()
+        
+        for category in allCats:
+            totals[category] = 0
         
         for entry in toScore:
             category = str(entry['category'])
@@ -292,8 +295,11 @@ def evalAccuracy(mode,degrees,percent,classifications,outPut):
         
         for category in allCats:
             sens[category] = 100.
-            spec[category] = 100.           
-            sensDelta[category] = 100./totals[category]
+            spec[category] = 100.
+            if totals[category] != 0:          
+                sensDelta[category] = 100./totals[category]
+            else:
+                sensDelta[category] = 'kazoo'
             specDelta[category] = 100./(allCount-totals[category])
           
         subtractor =  100./allCount
@@ -310,12 +316,6 @@ def evalAccuracy(mode,degrees,percent,classifications,outPut):
         scores.append(points)
         
         for category in classifications:
-            """print "DEBOOO",category
-            print sensScores.keys()
-            print specScores.keys()
-            print sens.keys()
-            print spec.keys()
-            print"""
             sensScores[category].append(sens[category])
             specScores[category].append(spec[category])
     
