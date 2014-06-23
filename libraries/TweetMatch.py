@@ -290,7 +290,7 @@ def evalAccuracy(mode,degrees,percent,classifications,outPut):
             
         allCount = sum(totals.values())
         
-        for category in classifications:
+        for category in allCats:
             sens[category] = 100.
             spec[category] = 100.           
             sensDelta[category] = 100./totals[category]
@@ -310,6 +310,12 @@ def evalAccuracy(mode,degrees,percent,classifications,outPut):
         scores.append(points)
         
         for category in classifications:
+            """print "DEBOOO",category
+            print sensScores.keys()
+            print specScores.keys()
+            print sens.keys()
+            print spec.keys()
+            print"""
             sensScores[category].append(sens[category])
             specScores[category].append(spec[category])
     
@@ -318,7 +324,7 @@ def evalAccuracy(mode,degrees,percent,classifications,outPut):
         specScores[category] = mean(specScores[category])
         
         
-    return mean(scores),std(scores),percent,len(toTrain),classifications,sensScores,specScores
+    return mean(scores),std(scores),percent,len(toTrain),sensScores,specScores
 
     
 

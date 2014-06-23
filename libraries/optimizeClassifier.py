@@ -36,8 +36,8 @@ degrees = [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10]]
 modes = ['naive bayes','max ent']
 
 files = [inDir+'/'+inFile for inFile in files]
-print files
-print outDir
+
+#sweepRange = [0.05]
 
 for inFile in files:
     outPut = []
@@ -67,7 +67,7 @@ for inFile in files:
                 sweepOut.write("percent,count,accuracy,stdDev,"+catCols+"\n")
                 sweepOut.close()
                 for x in sweepRange:
-                    accuracy,std,truePercent,count,classifications,sensScores,specScores = evalAccuracy(mode,degree,x,deepcopy(classifications),outPut)
+                    accuracy,std,truePercent,count,sensScores,specScores = evalAccuracy(mode,degree,x,deepcopy(classifications),outPut)
                     sweepOut = open(sweepFile,'a+b')
                     summary = "Trainer: %s    Percent: %s    Mode: %s    Degrees: %s    Accuracy: %s    StdDev: %s" % (inFile,truePercent,mode,degree,str(accuracy)[0:5], str(std)[0:3])
                     print '\033[1m\n'+'\033[91m'+summary+'\033[0m'
@@ -78,7 +78,7 @@ for inFile in files:
                     sweepOut.write('\n')
                     sweepOut.close()
             else:
-                accuracy,std,truePercent,count,classifications,sensScores,specScores = evalAccuracy(mode,degree,1,deepcopy(classifications),outPut)
+                accuracy,std,truePercent,count,sensScores,specScores = evalAccuracy(mode,degree,1,deepcopy(classifications),outPut)
                 summary = "Trainer: %s    Mode: %s    Degrees: %s    Accuracy: %s    StdDev: %s" % (inFile,mode,degree,str(accuracy)[0:5], str(std)[0:3])
                 print '\033[1m\n'+'\033[91m'+summary+'\033[0m'
                 records = open('OptimizeScores.txt','a+b')
