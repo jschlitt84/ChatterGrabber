@@ -268,7 +268,7 @@ def evalAccuracy(mode,degrees,percent,classifications,outPut):
     percentLength = int(scored*percent+.5)
     remainder = scored - percentLength
     
-    print "\033[1mReducing scoring set of size %s to %s%% random training set with %s entries with %s iterations and %s scored posts\033[0m\n" % (scored,percent*100,percentLength,n,remainder)	
+    print "\033[1mReducing scoring set of size %s to %s%% random training set with %s entries for %s iterations and %s scored posts\033[0m\n" % (scored,percent*100,percentLength,n,remainder)	
         
     for pos in range(n):
         shuffle(index)

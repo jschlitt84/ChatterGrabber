@@ -32,7 +32,7 @@ else:
 	records.close()
 
 #degrees = [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[1,2],[1,3],[1,4],[2,3],[2,4],[3,4],[2,3,4],[1,3,4],[1,2,3],[1,2,3,4]]
-degrees = [[1,2,3,4],[2],[3],[4],[5],[1]]
+degrees = [[1],[2],[3],[4],[5]]
 modes = ['naive bayes','max ent']
 
 files = [inDir+'/'+inFile for inFile in files]
