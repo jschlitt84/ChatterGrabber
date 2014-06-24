@@ -54,10 +54,11 @@ for inFile in files:
         catCols += category+'-sens,'+category+'-spec,'
         
     for mode in modes:
-        if mode ==  "max ent":
+        """if mode ==  "max ent":
             degreesTemp = [[1],[2]]
         else:
-            degreesTemp = degrees
+            degreesTemp = degrees"""
+        degreesTemp = degrees
         for degree in degreesTemp:
             
             if sweep:
