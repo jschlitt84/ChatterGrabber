@@ -3,7 +3,14 @@ from TweetMatch import *
 from os import getcwd, mkdir, path
 from copy import deepcopy
 
-stops = 20
+
+def getArgs(flag,listed):
+    searchText = '-'+flag+'='
+    for pos in range(len(listed)):
+        if listed[pos].startswith(searchText):
+            return listed.pop(pos).replace(searchText,'')
+    return 'null'
+
 
 inDir = getcwd().replace('libraries','nlpTrainers')
 outDir = getcwd().replace('libraries','optimizeScores')
@@ -12,32 +19,65 @@ if 'nlpTrainers' not in inDir:
 if 'optimizeScores' not in outDir:
     outDir += '/optimizeScores'
     
+    
 if not path.exists(outDir):
     mkdir(outDir)
 
-sweep = False
 
-if len(sys.argv) > 1:
-	if sys.argv[1] == '-s':
-		sweep = True
-		sys.argv = sys.argv[1:]
-		sweepRange = [value/float(stops) for value in range(1,stops)]
-		print "SweepRange:", sweepRange
-	files = sys.argv[1:]
-	print "Running files:", files
-else:
-	files = ["lymeScores.csv","EmergNLTKScoring.csv","GunTrackerNLTK.csv"]
-	records = open('OptimizeScores.txt','w')
-	records.write('\n\nNEW OPTIMIZATION RUN\n\n')
-	records.close()
-
-#degrees = [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[1,2],[1,3],[1,4],[2,3],[2,4],[3,4],[2,3,4],[1,3,4],[1,2,3],[1,2,3,4]]
+stops = 20
+iterations = 5
+getSweep = False
+sweepRange = [.90]
 degrees = [[1],[2],[3],[4],[5]]
+call = 'default'
+prefix = ''
 modes = ['naive bayes','max ent']
 
-files = [inDir+'/'+inFile for inFile in files]
 
-#sweepRange = [0.05]
+args = list(set(sys.argv[1:]))
+
+
+iterArg = getArgs('i',args)
+if iterArg != 'null':
+    iterations = int(iterArg) 
+
+callArg = getArgs('c',args)
+if callArg != 'null':
+    call = callArg
+    
+prefixArg = getArgs('p',args)
+if prefixArg != 'null':
+    prefix = prefixArg
+    
+    
+stopArg = getArgs('s',args)
+if stopArg != 'null':
+    if not stopArg.startswith('['):
+        stops = int(stopArg)
+        sweepRange = [value/float(stops) for value in range(1,stops)]
+    else:
+        sweepRange = eval(stopArg)  
+    
+degreeArg = getArgs('d',args)
+if degreeArg != 'null':
+    if not degreeArg.startswith('['):
+        degrees = [int(degreeArg)]
+    else:
+        degrees = eval(degreeArg)
+    
+modeArg = getArgs('m',args)
+if modeArg != 'null':
+    if not modeArg.startswith('['):
+        modes = [modeArg]
+    else:
+        modes = eval(modeArg)
+
+
+print "\nRunning files", args, "with degrees", degrees, "and modes", modes, "over sweep range", sweepRange, "for", iterations, "iterations.\n"
+
+				
+files = [inDir+'/'+inFile for inFile in args]
+
 
 for inFile in files:
     outPut = []
@@ -54,34 +94,20 @@ for inFile in files:
         catCols += category+'-sens,'+category+'-spec,'
         
     for mode in modes:
-        """if mode ==  "max ent":
-            degreesTemp = [[1],[2]]
-        else:
-            degreesTemp = degrees"""
-        degreesTemp = degrees
-        for degree in degreesTemp:
-            
-            if sweep:
-                textMode = mode + '.' + str(degree)
-                sweepFile = inFile.replace('.csv','.'+textMode+'.csv').replace('nlpTrainers','optimizeScores')
-                sweepOut = open(sweepFile,'w')
-                sweepOut.write("percent,count,accuracy,stdDev,"+catCols+"\n")
-                sweepOut.close()
-                for x in sweepRange:
-                    accuracy,std,truePercent,count,sensScores,specScores = evalAccuracy(mode,degree,x,deepcopy(classifications),outPut)
-                    sweepOut = open(sweepFile,'a+b')
-                    summary = "Trainer: %s    Percent: %s    Mode: %s    Degrees: %s    Accuracy: %s    StdDev: %s" % (inFile,truePercent,mode,degree,str(accuracy)[0:5], str(std)[0:3])
-                    print '\033[1m\n'+'\033[91m'+summary+'\033[0m'
-                    sweepOut.write("%s,%s,%s,%s," % (truePercent,count,accuracy,std))
-                    for category in colHeads:
-                        sweepOut.write(str(sensScores[category])+', ')
-                        sweepOut.write(str(specScores[category])+', ')
-                    sweepOut.write('\n')
-                    sweepOut.close()
-            else:
-                accuracy,std,truePercent,count,sensScores,specScores = evalAccuracy(mode,degree,1,deepcopy(classifications),outPut)
-                summary = "Trainer: %s    Mode: %s    Degrees: %s    Accuracy: %s    StdDev: %s" % (inFile,mode,degree,str(accuracy)[0:5], str(std)[0:3])
+        for degree in degrees:
+            textMode = mode + '.' + str(degree)
+            sweepFile = inFile.replace('.csv','.'+textMode+'.csv').replace('nlpTrainers','optimizeScores')
+            sweepOut = open(sweepFile,'w')
+            sweepOut.write("percent,count,accuracy,stdDev,"+catCols+"\n")
+            sweepOut.close()
+            for x in sweepRange:
+                accuracy,std,truePercent,count,sensScores,specScores = evalAccuracy(mode,degree,iterations,x,deepcopy(classifications),outPut)
+                sweepOut = open(sweepFile,'a+b')
+                summary = "Trainer: %s    Percent: %s    Mode: %s    Degrees: %s    Accuracy: %s    StdDev: %s" % (inFile,truePercent,mode,degree,str(accuracy)[0:5], str(std)[0:3])
                 print '\033[1m\n'+'\033[91m'+summary+'\033[0m'
-                records = open('OptimizeScores.txt','a+b')
-                records.write('\t'+summary+'\n')
-                records.close()
+                sweepOut.write("%s,%s,%s,%s," % (truePercent,count,accuracy,std))
+                for category in colHeads:
+                    sweepOut.write(str(sensScores[category])+', ')
+                    sweepOut.write(str(specScores[category])+', ')
+                sweepOut.write('\n')
+                sweepOut.close()

@@ -204,12 +204,18 @@ def getClassifier(tweetfile,cfg):
         if classMode == 'naive bayes':
             from nltk.classify import NaiveBayesClassifier
             classifier = NaiveBayesClassifier.train(readyToSend)
+        elif classMode == 'positive naive bayes':
+            from nltk.classify import PositiveNaiveBayesClassifier
+            classifier = PositiveNaiveBayesClassifier.train(readyToSend)
         elif classMode == 'max ent':
             from nltk.classify import MaxentClassifier
             classifier = MaxentClassifier.train(readyToSend)
         elif classMode == 'decision tree':
-            from nltk.classify import decisiontree
-            classifier = decisiontree.train(readyToSend)
+            from nltk.classify import DecisionTreeClassifier
+            classifier = DecisionTreeClassifier.train(readyToSend)
+        elif classMode == 'svm':
+            from nltk.classify import SvmClassifier
+            classifier = SvmClassifier.train(readyToSend)
 	else:
 	    from nltk.classify import NaiveBayesClassifier
             classifier = NaiveBayesClassifier.train(readyToSend)
@@ -246,7 +252,7 @@ def main(tweetfile):
             classifySingle(query, classifier)
             
             
-def evalAccuracy(mode,degrees,percent,classifications,outPut):
+def evalAccuracy(mode,degrees,n,percent,classifications,outPut):
     n = 5
     sens = dict()
     spec = dict()
