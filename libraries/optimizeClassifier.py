@@ -109,11 +109,12 @@ def main(args,user):
             if type(cfgTemp) is dict:
                 cfg = cfgTemp
     
-    
-    print "\nRunning files", args, "with degrees", degrees, "and modes", modes, "over sweep range", sweepRange, "for", iterations, "iterations.\n"
-    
-    				
-    files = [inDir+'/'+inFile for inFile in args]
+    if call == 'mendel':
+        print "\nRunning files", files, "with degrees", degrees, "and modes", modes, "over sweep range", sweepRange, "for", iterations, "iterations.\n"
+        files = [inDir+'/'+inFile for inFile in files]
+    else:
+        print "\nRunning files", args, "with degrees", degrees, "and modes", modes, "over sweep range", sweepRange, "for", iterations, "iterations.\n"
+        files = [inDir+'/'+inFile for inFile in args]
     
     
     for inFile in files:
