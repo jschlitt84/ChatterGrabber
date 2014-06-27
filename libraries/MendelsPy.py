@@ -13,7 +13,7 @@ def getNumProc(name):
         if name in process:
             count += 1
     print count, "processes running"
-    return count
+    return count - 1
 
 def adjustError(diversity):
     return ((1-diversity)*4+1)
