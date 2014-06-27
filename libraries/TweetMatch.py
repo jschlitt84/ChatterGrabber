@@ -3,7 +3,9 @@ import sys
 import unicodedata
 import cPickle
 
+import sklearn
 import nltk.classify.util
+
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.corpus import stopwords
 from os.path import isfile
@@ -14,7 +16,7 @@ from pandas import read_csv
 from multiprocessing import Process, Queue, cpu_count
 from math import ceil
 
-#Analys Methods from: 
+#Analysis methods from: 
 #http://www.slideshare.net/ogrisel/nltk-scikit-learnpyconfr2010ogrisel#btnPrevious
 #http://streamhacker.com/2010/05/10/text-classification-sentiment-analysis-naive-bayes-classifier/
 #n-gram generation
@@ -123,7 +125,7 @@ def prepClassifications(content):
     prepped = dict()
     
     for entry in content:
-        category = entry['category']
+        category = str(entry['category'])
         classifications.add(category)
         if category not in totals.keys():
             totals[category] = 0
@@ -134,7 +136,7 @@ def prepClassifications(content):
         
     prepped = dict()
     for classification in classifications:
-        prepped[classification] = [entry for entry in content if entry['category'] == classification]
+        prepped[classification] = [entry for entry in content if str(entry['category']) == classification]
     return prepped
     
     
@@ -154,9 +156,48 @@ def collectNGrams(categorized, degreesUsed):
  
 def classifySingle(text, classifier,degreesToUse):
     temp = getNGrams(prepTweet(text),degreesToUse)
-    result = classifier['class'].classify(temp)
-    return str(result)
-     
+    if classifier['mode'] != 'svm':
+        result = classifier['class'].classify(temp)
+        return str(result)
+    else:
+        for category in classifier['priority']:
+            if classifier['class'][category].classify(temp):
+                return str(category)
+        return classifier['priority'][-1]
+
+
+def prepSVMClass(data, category, mode, value):
+    posData = [entry for entry in deepcopy(data) if str(entry[-1]) == str(category)]
+    negData = [entry for entry in deepcopy(data) if str(entry[-1]) != str(category)]
+    shuffle(negData)
+    if mode == 'number':
+        negData = negData[:value]
+    elif mode == 'ratio':
+        negData = negData[:int(len(posData)*value)]   
+    posData = [entry[:-1] + (True,) for entry in posData]
+    negData = [entry[:-1] + (False,) for entry in negData]
+    strData = ','.join(str(item) for item in (posData+negData))
+    return {'pos':posData,'neg':negData,'strData':strData}
+
+
+def prepSVMAll(readyToSend,priority,allCats,cfg):
+    import nltk.classify
+    from sklearn.svm import LinearSVC
+    from nltk.classify import SklearnClassifier
+    trainingSets = dict()
+    classifiers = dict()
+    mode = cfg['SVMMode']
+    value = cfg['SVMNumber']
+    print "Pulling data for SVM categories"
+    for category in allCats:
+        temp = prepSVMClass(readyToSend, category, mode, value)
+        trainingSets[category] = temp['pos'] + temp['neg']
+    print "Training SVM classifiers"
+    for category in allCats:
+        classifiers[category] = SklearnClassifier(LinearSVC()).train(trainingSets[category])
+    return classifiers
+             
+                         
 def getClassifier(tweetfile,cfg):
     degreesToUse = cfg['NLPnGrams']
     classMode = cfg['NLPMode']
@@ -187,31 +228,33 @@ def getClassifier(tweetfile,cfg):
             NGrammized = collectNGrams(categorized,degreesToUse)
             print "Compiling Results"
         readyToSend = []
-        for category in NGrammized.keys():
+        allCats = [str(key) for key in NGrammized.keys()]
+        for category in allCats:
             readyToSend += NGrammized[category]
             
         print "Attempting Classification by mode", classMode, degreesToUse
         if classMode == 'naive bayes':
             from nltk.classify import NaiveBayesClassifier
-            classifier = {'class':NaiveBayesClassifier.train(readyToSend),'type':'nb'}
+            classifier = {'class':NaiveBayesClassifier.train(readyToSend),'mode':'nb'}
         elif classMode == 'positive naive bayes':
             from nltk.classify import PositiveNaiveBayesClassifier
-            classifier = {'class':PositiveNaiveBayesClassifier.train(readyToSend),'type':'pnb'}
+            classifier = {'class':PositiveNaiveBayesClassifier.train(readyToSend,algorithm='iis'),'mode':'pnb'}
         elif classMode == 'max ent':
             from nltk.classify import MaxentClassifier
-            classifier = {'class':MaxentClassifier.train(readyToSend),'type':'me'}
+            classifier = {'class':MaxentClassifier.train(readyToSend),'mode':'me'}
         elif classMode == 'decision tree':
             from nltk.classify import DecisionTreeClassifier
-            classifier = {'class':DecisionTreeClassifier.train(readyToSend),'type':'dt'}
+            classifier = {'class':DecisionTreeClassifier.train(readyToSend),'mode':'dt'}
         elif classMode == 'svm':
-            from nltk.classify import SvmClassifier
             if "SVMOrder" in cfg.keys():
-                temp =  cfg['SVMOrder']
+                priority =  cfg['SVMOrder']
             else:
-                temp =  "ABCDEFGHIJKLMNOPQRSTUVWXYZ9876543210"
-            if type(temp) is str:
-                temp = temp.split()
-            classifier = {'class':SvmClassifier.train(readyToSend),'type':'svm','priority':temp}
+                priority =  "ABCDEFGHIJKLMNOPQRSTUVWXYZ9876543210"
+            if type(priority) is str:
+                priority = list(priority)
+            priority = [entry for entry in priority if entry in allCats]
+            preppedSVM = prepSVMAll(readyToSend,priority,allCats,cfg)
+            classifier = {'class':preppedSVM,'mode':'svm','priority':priority}
 	else:
 	    from nltk.classify import NaiveBayesClassifier
             classifier = {'class':NaiveBayesClassifier.train(readyToSend),'type':'nb'}
@@ -285,7 +328,12 @@ def getAccuracy(toRun,mode,degrees,n,percent,classifications,outPut,cfg,core,out
             specDelta[category] = 100./(allCount-totals[category])
           
         subtractor =  100./allCount
-        cfg = {'NLPnGrams':degrees,'NLPMode':mode,'NLPTEST':True}
+        if type(cfg) != dict:
+            cfg = dict()
+        cfg['NLPnGrams'] = degrees
+        cfg['NLPMode'] = mode
+        cfg['NLPTEST'] = True
+        
         classifier = getClassifier(toTrain,cfg)
         for item in toScore:
             realCat = str(item['category'])
@@ -299,8 +347,8 @@ def getAccuracy(toRun,mode,degrees,n,percent,classifications,outPut,cfg,core,out
         outDict['toTrain'+str(iteration)] =len(trainingSet)
         
         for category in classifications:
-            outDict['sensScores'+category+str(iteration)]  = sens[category]
-            outDict['specScores'+category+str(iteration)]  = spec[category]
+            outDict['sensScores'+'_'+category+'_'+str(iteration)]  = sens[category]
+            outDict['specScores'+'_'+category+'_'+str(iteration)]  = spec[category]
     
        
     out_q.put(outDict)
@@ -342,11 +390,11 @@ def evalAccuracy(mode,degrees,n,percent,cores,classifications,outPut,cfg):
         sensScores[category] = []
         specScores[category] = []
     
-    for i in coreSweep:
+    for i in range(n):
         scores.append(merged['scores'+str(i)])
         for category in allCats:
-            sensScores[category].append(merged['sensScores'+category+str(i)])
-            specScores[category].append(merged['specScores'+category+str(i)])
+            sensScores[category].append(merged['sensScores'+'_'+category+'_'+str(i)])
+            specScores[category].append(merged['specScores'+'_'+category+'_'+str(i)])
     
     for category in allCats:
         sensScores[category] = mean(sensScores[category])
@@ -355,66 +403,6 @@ def evalAccuracy(mode,degrees,n,percent,cores,classifications,outPut,cfg):
     return mean(scores),std(scores),percent,merged['toTrain0'],sensScores,specScores
 
 
-
-"""for category in allCats:
-        sensScores[category] = []
-        specScores[category] = []
-    
-    scored = len(outPut)
-    index = range(scored)
-    percentLength = int(scored*percent+.5)
-    remainder = scored - percentLength
-    
-    print "\033[1mReducing scoring set of size %s to %s%% random training set with %s entries for %s iterations and %s scored posts\033[0m\n" % (scored,percent*100,percentLength,n,remainder)	
-        
-    for pos in range(n):
-        shuffle(index)
-        points = 100
-        
-        trainingSet = deepcopy(index)[0:percentLength]
-        scoringSet = list(set(index)-set(trainingSet))
-        toTrain = [deepcopy(outPut[item]) for item in trainingSet]
-        toScore = [deepcopy(outPut[item]) for item in scoringSet]
-        
-        classifications = set()
-        
-        for category in allCats:
-            totals[category] = 0
-        
-        for entry in toScore:
-            category = str(entry['category'])
-            classifications.add(category)
-            if category not in totals.keys():
-                totals[category] = 1
-            totals[category] += 1
-            
-        allCount = sum(totals.values())
-        
-        for category in allCats:
-            sens[category] = 100.
-            spec[category] = 100.
-            if totals[category] != 0:          
-                sensDelta[category] = 100./totals[category]
-            else:
-                sensDelta[category] = 'no one will ever see this...'
-            specDelta[category] = 100./(allCount-totals[category])
-          
-        subtractor =  100./allCount
-        cfg = {'NLPnGrams':degrees,'NLPMode':mode,'NLPTEST':True}
-        classifier = getClassifier(toTrain,cfg)
-        for item in toScore:
-            realCat = str(item['category'])
-            scoreCat = str(classifySingle(item['text'],classifier,degrees))
-            if realCat != scoreCat:
-                points -= subtractor
-                sens[realCat] -= sensDelta[realCat]
-                spec[scoreCat] -= specDelta[scoreCat]
-        
-        scores.append(points)
-        
-        for category in classifications:
-            sensScores[category].append(sens[category])
-            specScores[category].append(spec[category])"""
 
 def main(tweetfile):
     testMode = False
