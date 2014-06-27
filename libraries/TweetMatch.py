@@ -238,10 +238,14 @@ def getClassifier(tweetfile,cfg):
             classifier = {'class':NaiveBayesClassifier.train(readyToSend),'mode':'nb'}
         elif classMode == 'positive naive bayes':
             from nltk.classify import PositiveNaiveBayesClassifier
-            classifier = {'class':PositiveNaiveBayesClassifier.train(readyToSend,algorithm='iis'),'mode':'pnb'}
+            classifier = {'class':PositiveNaiveBayesClassifier.train(readyToSend),'mode':'pnb'}
         elif classMode == 'max ent':
+            #import nltk.classify
+            #from sklearn.linear_model import LogisticRegression
+            #from nltk.classify import SklearnClassifier
+            #classifier = {'class':LogisticRegression.train(readyToSend),'mode':'me'}
             from nltk.classify import MaxentClassifier
-            classifier = {'class':MaxentClassifier.train(readyToSend),'mode':'me'}
+            classifier = {'class':MaxentClassifier.train(readyToSend,algorithm='iis'),'mode':'me'}
         elif classMode == 'decision tree':
             from nltk.classify import DecisionTreeClassifier
             classifier = {'class':DecisionTreeClassifier.train(readyToSend),'mode':'dt'}
