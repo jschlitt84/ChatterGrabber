@@ -139,9 +139,7 @@ def main(args,user):
                 sweepOut.write("percent,count,accuracy,stdDev,"+catCols+"\n")
                 sweepOut.close()
                 for x in sweepRange:
-                    print "DEBOO"
                     accuracy,std,truePercent,count,sensScores,specScores = evalAccuracy(mode,degree,iterations,x,cores,deepcopy(classifications),outPut,cfg)
-                    print "DEBOO"
                     if call != 'mendel':
                         sweepOut = open(sweepFile,'a+b')
                         summary = "Trainer: %s    Percent: %s    Mode: %s    Degrees: %s    Accuracy: %s    StdDev: %s" % (inFile,truePercent,mode,degree,str(accuracy)[0:5], str(std)[0:3])
