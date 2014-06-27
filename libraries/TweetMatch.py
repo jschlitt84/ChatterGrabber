@@ -171,7 +171,7 @@ def prepSVMClass(data, category, mode, value):
     negData = [entry for entry in deepcopy(data) if str(entry[-1]) != str(category)]
     shuffle(negData)
     if mode == 'number':
-        negData = negData[:value]
+        negData = negData[:int(value)]
     elif mode == 'ratio':
         negData = negData[:int(len(posData)*value)]   
     posData = [entry[:-1] + (True,) for entry in posData]
