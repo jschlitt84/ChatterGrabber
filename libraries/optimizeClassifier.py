@@ -34,7 +34,7 @@ def main(args,user):
         degrees = args['degrees']
         call = 'mendel'
         prefix = args['prefix']
-        mode = args['mode']
+        modes = args['mode']
         cfg = args['cfg']
   
     else:
