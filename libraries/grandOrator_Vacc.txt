@@ -1,4 +1,4 @@
-Name = ShakespeareShuffle
+Name = ShakespeareShuffleVacc
 Number of seeds = 50
 Max running = 1
 Lines per seed = 20
