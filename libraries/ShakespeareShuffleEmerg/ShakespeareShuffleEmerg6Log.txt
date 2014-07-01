@@ -1,0 +1,2 @@
+New script bred on generation 4 from scripts ShakespeareShuffleEmerg/ShakespeareShuffleEmerg23.py and ShakespeareShuffleEmerg/ShakespeareShuffleEmerg20.py
+Generation: 5 Score: 35.0

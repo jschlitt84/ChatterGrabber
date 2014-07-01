@@ -12,33 +12,50 @@ Point mutations = 0.20
 New = 1
 Lines per out = 10
 Score per out = 1
-
+Terminate after = 5000
 
 Header start
 from sys import path
 from os import getcwd
+
 parent = '/'.join(getcwd().split('/')[:])
-print parent
-#parent = '..'
+
 if parent not in path:
 	path.insert(0, parent)
 import optimizeClassifier
 
 files = ['vaccAutNLPScores.csv']
-cores = 2
-iterations = 3
+cores = 1
+iterations = 1
 sweepRange = [0.9]
 degrees =  []
 SVMMode = 'number'
 SVMNumber = 1000
+NLPFreqLimit = []
 stops = 0
 prefix = ''
+
+
+
+
 Header end
 
 
 Footer start
+if degrees == []:
+	print "No degrees found, quitting"
+	outFile.write('0')
+	outFile.close()
+	quit()
+
+if mode == "decision tree":
+	NLPFreqLimit = [max(2,entry) for entry in NLPFreqLimit]
+	degrees = list(set(degrees))[:1]
+
 cfg = {'SVMMode':SVMMode,
-	'SVMNumber':SVMNumber}
+	'SVMNumber':SVMNumber,
+	'NLPFreqLimit':NLPFreqLimit}
+	
 args = {'cores':cores,
 	'iterations':iterations,
 	'sweepRange':sweepRange,
@@ -48,6 +65,7 @@ args = {'cores':cores,
 	'stops':stops,
 	'prefix':prefix,
 	'files':files}
+
 try:
 	score = int(optimizeClassifier.main(args,'mendel'))
 	outFile.write(str(score))
@@ -55,6 +73,9 @@ except:
 	outFile.write('0')
 
 outFile.close()
+
+
+
 
 Footer end
 
@@ -82,8 +103,12 @@ Words3 = "max ent"
 Words4 = 'all'
 Words4 = 'number'
 Words4 = 'ratio'
+Words5 = 1
+Words5 = 2
+Words5 = 3
+Words5 = 4
 Code = degrees.append(@1)
 Code = mode = [@3]
 Code = SVMMode = @4
 Code = SVMNumber = int(3000*@1*@2*@2)
-Code = None
+Code = NLPFreqLimit.append(@5)

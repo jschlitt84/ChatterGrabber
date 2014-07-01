@@ -73,48 +73,61 @@ def prepTweet(word):
     original = text = str(word)
     
     text = text.replace("&amp",'') #cleanup conversion bug
-    
-    punctuations = ".,\"-_%!?=+\n\t:;()*&$"
-    
-    """for char in punctuations:
-        text = text.replace(char,' ')
-    while '  ' in text:
-        text = text.replace('  ',' ')
-    while text.startswith(' '):
-        text = text[1:]
-    while text.endswith(' '):
-        text = text[:-1]"""
+    toAdd = set()
+
+    if '?' in text:
+	toAdd.add('$?')
+    if '!' in text:
+	toAdd.add('$!')
+    if '...' in text:
+	toAdd.add('$...')
+
+    punctuations = ".,\"-_%!?=+\n\t:;()*&$/"
     
     #Remove accentuated characters
     text = unicode(text)
     text = ''.join(char for char in unicodedata.normalize('NFD', text) if unicodedata.category(char) != 'Mn')
         
     #End of string operations, continuing with list ops.    
-    listed = text.lower().split(' ')
     
-    for pos in range(len(listed)):
-        if not listed[pos].startswith('http'):
-            for char in punctuations:
-                text = listed[pos].replace(char,' ')
-                while '  ' in text:
-                    text = text.replace('  ',' ')
-                while text.startswith(' '):
-                    text = text[1:]
-                while text.endswith(' '):
-                    text = text[:-1]
-            listed[pos] = text
-        
-    if "@" in original: #track presence of conversations but remove screen names
-        listed = [word for word in listed if '@' not in word]
-        listed.append('@user')
-        
-    if "http" in original: #track presence of conversations but remove screen names
-        listed = [word for word in listed if not word.startswith('http')]
-        listed.append('$link')
+
+    while 'http' in text:
+	toAdd.add('$link')
+	temp = text.index('http')
+	text = text[:temp] + text[text.find(' ',temp):]
+    while 'RT @' in text:
+	toAdd.add('$RT')
+	temp = text.index('RT @')
+	text = text[:temp] + text[text.find(' ',temp):]
+    while '@' in text:
+	toAdd.add('@user')
+	temp = text.index('@')
+	text = text[:temp] + text[text.find(' ',temp):]
+    for char in punctuations:
+	text = text.replace(char,' ')
+    while '  ' in text:
+        text = text.replace('  ',' ')
+    while text.startswith(' '):
+        text = text[1:]
+    while text.endswith(' '):
+        text = text[:-1]
+    listed = text.lower().split(' ')  
         
     lemList(listed) #Lemmatize list to common stem words
     
-    listed = [word for word in listed if word not in stopWords]  
+    toDel = set()
+    for word in listed:
+	try:
+	     temp = float(word)
+	     toDel.add(word)
+	     if int(temp) == temp:
+		toAdd.add("$int")
+	     else:
+		toAdd.add("$float")
+	except:
+	     None
+
+    listed = [word for word in [word for word in listed if word not in stopWords] if word not in toDel] + list(toAdd) 
     
     return listed
     
@@ -145,12 +158,69 @@ def getNGrams(listed, degreesUsed):
     for degree in degreesUsed:
         NGrams.update(dict([(ngram, True) for ngram in zip(*[listed[i:] for i in range(degree)])]))
     return NGrams
+
+def cleanNGrams(nGrams, degreesUsed, minFreq):
+    if type(minFreq) is int:
+        tempFreq = [minFreq]* len(degreesUsed)
+    else:
+        tempFreq = degreesUsed
+        
+    for pos in min(len(degreesUsed,tempFreq)):
+        current = tempFreq[pos]
+        found = dict()
+        for entry in nGrams:
+            print entry
+            quit() 
     
-    
-def collectNGrams(categorized, degreesUsed):
+def collectNGrams(categorized, degreesUsed, cfg):
     collected = dict()
+    if "NLPFreqLimit" in cfg.keys():
+	lengths = deepcopy(cfg['NLPFreqLimit'])
+	if lengths == []:
+	     lengths = [1] * len(degreesUsed)
+	elif type(lengths) is int:
+	     lengths = [lengths] * len(degreesUsed)
+    else:
+	lengths = [1]*len(degreesUsed)
     for key in categorized.keys():
         collected[key] = [(getNGrams(entry['text'], degreesUsed),entry['category']) for entry in categorized[key]]
+
+    if sum(lengths) == len(lengths):
+	return collected
+    
+
+    toTrim = [entry for entry in lengths[:min(len(lengths),len(degreesUsed))]]+max(len(degreesUsed)-len(lengths),0)*[1]    
+    trimLevels = dict()
+    for pos in range(len(toTrim)):
+	trimLevels[degreesUsed[pos]] = toTrim[pos]
+
+    counted = dict()
+    gramCount = dict()    
+
+    allRows = [item for catList in collected.values() for item in catList]
+    allTuples = [item.keys() for tupleList in allRows for item in tupleList[:-1]]
+    allKeys = [item for keyList in allTuples for item in keyList]
+    print "Filtering nGrams by prevalence limits", trimLevels
+    for pos in range(len(degreesUsed)):
+	gramCount[degreesUsed[pos]] = []
+	counted[degreesUsed[pos]] = dict()
+    for key in allKeys:
+	gramCount[len(key)].append(key)
+    print "Counting nGram occurences"
+    for key in list(set(allKeys)):
+	counted[len(key)][key] = gramCount[len(key)].count(key)
+    print "Selecting relevant nGrams"
+    for key in counted.keys():
+	counted[key] = [key2 for key2,item in counted[key].iteritems() if item >= trimLevels[len(key2)]]
+    print "Reducing scoring set"
+    
+    #print "deboo", len(collected['4'])
+    for key in collected.keys():
+	collected[key] = [(dict.fromkeys([key2 for key2 in entry[0].keys() if key2 in counted[len(key2)]],True),entry[1]) for entry in collected[key]]
+	collected[key] = [item for item in collected[key] if len(item[0].keys()) != 0]
+    #collected = [item for item in collected if len(item) >0]
+    #print "deboo", len(collected['4'])
+    #print collected['4']
     return collected
                                              
  
@@ -218,14 +288,14 @@ def getClassifier(tweetfile,cfg):
         if 'NLPTEST'in cfg.keys():
             content = prepText(tweetfile)
             categorized = prepClassifications(content)
-            NGrammized = collectNGrams(categorized,degreesToUse)
+            NGrammized = collectNGrams(categorized,degreesToUse,cfg)
         else:
             print "Loading content & preparing text"
             content = prepText(loadFile(tweetfile))
             print "Categorizing contents"
             categorized = prepClassifications(content)
             print "Deriving NGrams of length(s)", degreesToUse
-            NGrammized = collectNGrams(categorized,degreesToUse)
+            NGrammized = collectNGrams(categorized,degreesToUse,cfg)
             print "Compiling Results"
         readyToSend = []
         allCats = [str(key) for key in NGrammized.keys()]
@@ -277,85 +347,90 @@ def getClassifier(tweetfile,cfg):
 
             
 def getAccuracy(toRun,mode,degrees,n,percent,classifications,outPut,cfg,core,out_q):
-    sens = dict()
-    spec = dict()
-    outDict = dict()
-    sensDelta = dict()
-    specDelta = dict()
-    sensScores = dict()
-    specScores = dict()
-    totals = dict()
-    
-    allCats = deepcopy(classifications)
-    
-    for category in allCats:
-        sensScores[category] = []
-        specScores[category] = []
-    
-    scored = len(outPut)
-    index = range(scored)
-    percentLength = int(scored*percent+.5)
-    remainder = scored - percentLength
-    
-    print "\033[1mReducing scoring set of size %s to %s%% random training set with %s entries for %s iterations and %s scored posts\033[0m\n" % (scored,percent*100,percentLength,n,remainder)	
-        
-    for iteration in toRun:
-        shuffle(index)
-        points = 100
-        
-        trainingSet = deepcopy(index)[0:percentLength]
-        scoringSet = list(set(index)-set(trainingSet))
-        toTrain = [deepcopy(outPut[item]) for item in trainingSet]
-        toScore = [deepcopy(outPut[item]) for item in scoringSet]
-        
-        classifications = set()
-        
-        for category in allCats:
-            totals[category] = 0
-        
-        for entry in toScore:
-            category = str(entry['category'])
-            classifications.add(category)
-            if category not in totals.keys():
-                totals[category] = 1
-            totals[category] += 1
-            
-        allCount = sum(totals.values())
-        
-        for category in allCats:
-            sens[category] = 100.
-            spec[category] = 100.
-            if totals[category] != 0:          
-                sensDelta[category] = 100./totals[category]
-            else:
-                sensDelta[category] = 'no one will ever see this...'
-            specDelta[category] = 100./(allCount-totals[category])
-          
-        subtractor =  100./allCount
-        if type(cfg) != dict:
-            cfg = dict()
-        cfg['NLPnGrams'] = degrees
-        cfg['NLPMode'] = mode
-        cfg['NLPTEST'] = True
-        
-        classifier = getClassifier(toTrain,cfg)
-        for item in toScore:
-            realCat = str(item['category'])
-            scoreCat = str(classifySingle(item['text'],classifier,degrees))
-            if realCat != scoreCat:
-                points -= subtractor
-                sens[realCat] -= sensDelta[realCat]
-                spec[scoreCat] -= specDelta[scoreCat]
-        
-        outDict['scores'+str(iteration)] = points
-        outDict['toTrain'+str(iteration)] =len(trainingSet)
-        
-        for category in classifications:
-            outDict['sensScores'+'_'+category+'_'+str(iteration)]  = sens[category]
-            outDict['specScores'+'_'+category+'_'+str(iteration)]  = spec[category]
-    
-       
-    out_q.put(outDict)
+	try:
+	    sens = dict()
+	    spec = dict()
+	    outDict = dict()
+	    sensDelta = dict()
+	    specDelta = dict()
+	    sensScores = dict()
+	    specScores = dict()
+	    totals = dict()
+	    
+	    allCats = deepcopy(classifications)
+	    
+	    for category in allCats:
+		sensScores[category] = []
+		specScores[category] = []
+	    
+	    scored = len(outPut)
+	    index = range(scored)
+	    percentLength = int(scored*percent+.5)
+	    remainder = scored - percentLength
+	    
+	    print "\033[1mReducing scoring set of size %s to %s%% random training set with %s entries for %s iterations and %s scored posts\033[0m\n" % (scored,percent*100,percentLength,n,remainder)	
+		
+	    for iteration in toRun:
+		shuffle(index)
+		points = 100
+		
+		trainingSet = deepcopy(index)[0:percentLength]
+		scoringSet = list(set(index)-set(trainingSet))
+		toTrain = [deepcopy(outPut[item]) for item in trainingSet]
+		toScore = [deepcopy(outPut[item]) for item in scoringSet]
+		
+		classifications = set()
+		
+		for category in allCats:
+		    totals[category] = 0
+		
+		for entry in toScore:
+		    category = str(entry['category'])
+		    classifications.add(category)
+		    if category not in totals.keys():
+		        totals[category] = 1
+		    totals[category] += 1
+		    
+		allCount = sum(totals.values())
+		
+		for category in allCats:
+		    sens[category] = 100.
+		    spec[category] = 100.
+		    if totals[category] != 0:          
+		        sensDelta[category] = 100./totals[category]
+		    else:
+		        sensDelta[category] = 'no one will ever see this...'
+		    specDelta[category] = 100./(allCount-totals[category])
+		  
+		subtractor =  100./allCount
+		if type(cfg) != dict:
+		    cfg = dict()
+		cfg['NLPnGrams'] = degrees
+		cfg['NLPMode'] = mode
+		cfg['NLPTEST'] = True
+		
+		classifier = getClassifier(toTrain,cfg)
+		for item in toScore:
+		    realCat = str(item['category'])
+		    scoreCat = str(classifySingle(item['text'],classifier,degrees))
+		    if realCat != scoreCat:
+		        points -= subtractor
+		        sens[realCat] -= sensDelta[realCat]
+		        spec[scoreCat] -= specDelta[scoreCat]
+		
+		outDict['scores'+str(iteration)] = points
+		outDict['toTrain'+str(iteration)] =len(trainingSet)
+		
+		for category in classifications:
+		    outDict['sensScores'+'_'+category+'_'+str(iteration)]  = sens[category]
+		    outDict['specScores'+'_'+category+'_'+str(iteration)]  = spec[category]
+	    
+	       
+	    out_q.put(outDict)
+	except:
+		print "Subprocesses failed, returning error"
+		outDict['failed'] = True
+		out_q.put(outDict)
     
                                                 
             
@@ -389,6 +464,9 @@ def evalAccuracy(mode,degrees,n,percent,cores,classifications,outPut,cfg):
         merged.update(out_q.get())
     for p in processes:
         p.join()
+
+    if 'failed' in merged.keys():
+	return 'failed'
         
     for category in allCats:
         sensScores[category] = []
@@ -397,8 +475,9 @@ def evalAccuracy(mode,degrees,n,percent,cores,classifications,outPut,cfg):
     for i in range(n):
         scores.append(merged['scores'+str(i)])
         for category in allCats:
-            sensScores[category].append(merged['sensScores'+'_'+category+'_'+str(i)])
-            specScores[category].append(merged['specScores'+'_'+category+'_'+str(i)])
+	    if ('sensScores'+'_'+category+'_'+str(i)) in merged.keys():
+        	sensScores[category].append(merged['sensScores'+'_'+category+'_'+str(i)])
+        	specScores[category].append(merged['specScores'+'_'+category+'_'+str(i)])
     
     for category in allCats:
         sensScores[category] = mean(sensScores[category])

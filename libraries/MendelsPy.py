@@ -12,7 +12,7 @@ def getNumProc(name):
     for process in processes:
         if name in process:
             count += 1
-    print count, "processes running"
+    #print count, "processes running"
     return count - 1
 
 def adjustError(diversity):
@@ -178,7 +178,7 @@ def main():
                 inputDelay = int(line.replace('Query delay = ',''))   
             elif line.startswith("Point mutation = "): 
                 pointMute = int(line.replace('Point mutation = ',''))
-            elif line.startswith("Kill"):
+            elif line.startswith("Kill = "):
                 kill = int(line.replace('Kill = ','').replace('\n',''))
             elif line.startswith("New"):
                 new = int(line.replace('New = ','').replace('\n',''))
@@ -269,7 +269,10 @@ def main():
     else:
         getGen = open(name + '/GenLog.txt')
         temp = getGen.readlines()
-        generation = int(temp[-1].split(' ')[1])+1
+	try:
+        	generation = int(temp[-1].split(' ')[1])+1
+	except:
+		generation = 1	
 	getGen.close()
 
             
@@ -287,7 +290,7 @@ def main():
                 scoreFile.close()
                 if maxRunning != False:
                     while getNumProc(name) >= maxRunning:
-                        time.sleep(5)
+                        time.sleep(20)
                 try:
                     print "Running seed:", fileName(name,pos), "Generation:", generation
                     subprocess.Popen([sys.executable,fileName(name,pos)])
@@ -297,6 +300,7 @@ def main():
                         ran = 0
                 except:
                     print "Could not run seed", fileName(name,pos)
+                time.sleep(20)
                     
         print "Waiting until processes complete"
         while getNumProc(name) >= 0:

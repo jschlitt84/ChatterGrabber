@@ -1,0 +1,9 @@
+Starting at generation 0, Sat Jun 28 11:29:04 2014
+Gen: 0 Best: 45.00 Seed: 8 Running: 49 Time: Sun Jun 29 01:33:38 2014
+Gen: 1 Best: 45.00 Seed: 9 Running: 50 Time: Sun Jun 29 07:30:14 2014
+Gen: 2 Best: 45.00 Seed: 17 Running: 50 Time: Sun Jun 29 11:49:14 2014
+Gen: 3 Best: 45.00 Seed: 4 Running: 50 Time: Sun Jun 29 13:41:13 2014
+Gen: 4 Best: 45.00 Seed: 44 Running: 50 Time: Sun Jun 29 13:56:29 2014
+Gen: 5 Best: 45.00 Seed: 19 Running: 50 Time: Sun Jun 29 13:59:32 2014
+Gen: 6 Best: 45.00 Seed: 10 Running: 50 Time: Sun Jun 29 14:54:46 2014
+Gen: 7 Best: 45.00 Seed: 6 Running: 50 Time: Sun Jun 29 21:24:57 2014
