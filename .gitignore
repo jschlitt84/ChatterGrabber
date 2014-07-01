@@ -10,3 +10,4 @@ nlpTrainers/*.pickle
 *GeoPickle
 *ShakeSpeare*
 *.csv
+optimizeScores/*
