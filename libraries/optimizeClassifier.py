@@ -15,7 +15,6 @@ def getArgs(flag,listed):
 
 def main(args,user):
     if user == 'mendel':
-        cluster = args['cluster']
         if 'cluster' in args.keys():
             workingDir = args['workingDir']
             inDir = cluster.replace('libraries','nlpTrainers')
