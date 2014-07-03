@@ -326,7 +326,7 @@ def main():
                     except:
                         print "Could not run seed", fileName(name,pos)
                     quit()
-                    time.sleep(45)
+                    time.sleep(20)
                 else:
                     if maxRunning != False:
                         while getNumProc(name,cluster) >= maxRunning:

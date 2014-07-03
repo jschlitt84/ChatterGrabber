@@ -67,7 +67,8 @@ args = {'cores':cores,
 	'cfg':cfg,
 	'stops':stops,
 	'prefix':prefix,
-	'files':files}
+	'files':files,
+	'workingDir':workingDir}
 
 try:
 	score = int(optimizeClassifier.main(args,'mendel'))

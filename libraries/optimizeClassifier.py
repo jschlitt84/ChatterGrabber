@@ -15,7 +15,7 @@ def getArgs(flag,listed):
 
 def main(args,user):
     if user == 'mendel':
-        workingDir = getcwd().split('/')
+        workingDir = args['explicitDir']
         inDir = '/'.join(workingDir[0:workingDir.index('ChatterGrabber')+1])+'/nlpTrainers'
         outDir = '/'.join(workingDir[0:workingDir.index('ChatterGrabber')+1])+'/optimizeScores'
         if 'nlpTrainers' not in inDir:
