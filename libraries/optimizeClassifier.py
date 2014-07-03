@@ -21,7 +21,7 @@ def main(args,user):
             outDir = cluster.replace('libraries','optimizeScores')
              
         else:
-            workingDir = getcwd()
+            workingDir = getcwd().split('/')
             inDir = '/'.join(workingDir[0:workingDir.index('ChatterGrabber')+1])+'/nlpTrainers'
             outDir = '/'.join(workingDir[0:workingDir.index('ChatterGrabber')+1])+'/optimizeScores'
         
