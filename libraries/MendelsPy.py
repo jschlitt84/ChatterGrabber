@@ -5,21 +5,20 @@ import time
 import select
 from math import sqrt
 
-def getNumProc(name):
-    ps = subprocess.Popen(['ps', 'aux'], stdout=subprocess.PIPE).communicate()[0]
-    processes = ps.split('\n')
-    count = 0
-    for process in processes:
-        if name in process:
-            count += 1
-    #print count, "processes running"
-    return count - 1
+def getNumProc(name, cluster):
+    if cluster:
+        return len(os.popen("qstat | grep "+name).read().split('\n'))
+    else:
+        return len(os.popen("ps aux | grep "+name).read().split('\n')) - 1
 
 def adjustError(diversity):
     return ((1-diversity)*4+1)
 
 def fileName(name, number):
     return name + '/' + name + str(number) + '.py'
+    
+def qsubName(name, number, directory):
+    return directory + name + '/' + str(number) + '.qsub'
 
 def scoreName(name, number):
     return name + '/' + name + str(number) + 'Score.txt'
@@ -32,7 +31,17 @@ def countHidden(fileName):
     script = scriptIn.read()
     scriptIn.close()
     return script.count('#')
-      
+
+def makeQsubs(name,pos,qsub):
+    directory = os.getcwd() + '/'
+    expName = name
+    changed = lambda x: x.replace('$EXPDIRECTORY',directory).replace('$EXPNAME',expName).replace('$EXPPOS',str(pos)).replace('\n','')
+    qsub = '\n'.join([changed(line) for line in qsub]) + '\n'
+    fileOut = open(qsubName(name,pos,directory),'w')
+    fileOut.write(qsub)
+    fileOut.close()
+    
+                  
 def makeFile(header, code, footer, name, lines, linesOut, scoreOut, number, isOffspring, generation):
     headTemp = header[:]
     headTemp.insert(-1,'fileName = "' + scoreName(name,number) + '"')
@@ -102,6 +111,7 @@ def mutateBest(file1,start,end,pointMute,word1,word2,word3,word4,word5,code):
                 script1.insert(pos,makeCode(word1,word2,word3,word4,word5,code))
         script1[pos] = script1[pos].replace('\n','')
     return script1
+    
 
 def main():
         
@@ -139,7 +149,9 @@ def main():
     gotCode = False
     countOff = False
     replaceWeak = True
+    cluster = False
     toKeep = []
+    qsub = 'pecos.qsub'
     
     code = []
     word1 = []
@@ -200,6 +212,10 @@ def main():
                 rescore = bool(line.replace('Rescore = ','').replace('\n',''))
             elif line.startswith("Max running = "):
                 maxRunning = int(line.replace('Max running = ','').replace('\n',''))
+            elif line.startswith("Cluster = "):
+                cluster = bool(line.replace('Cluster = ','').replace('\n',''))
+            elif line.startswith("Qsub = "):
+                qsub = line.replace('Qsub = ','').replace('\n','')
             elif line.startswith("Words1 = "):
                 word1.append(line.replace('Words1 = ','').replace('\n',''))
             elif line.startswith("Words2 = "):
@@ -236,6 +252,11 @@ def main():
     diversity = errorMult = 1        
     fileScore = [0]*seeds
     done = False
+    
+    if cluster:
+        if maxRunning == False:
+            maxRunning = 5
+        qsubLoaded = open(qsub).readlines()
 
     headLen = len(header) + 4
     footLen = len(footer) + 2        
@@ -263,6 +284,8 @@ def main():
             logFile = open(logName(name,pos),'w')
             logFile.write('New seed generated at startup\n')
             logFile.close()
+            if cluster:
+                makeQsubs(name,pos,qsubLoaded)
         mainLog = open(name + '/GenLog.txt','w')
         mainLog.write("Starting at generation 0, " + str(time.asctime( time.localtime(time.time()) )) + '\n')
         mainLog.close()
@@ -275,6 +298,7 @@ def main():
 		generation = 1	
 	getGen.close()
 
+    workingDir =  os.getcwd() + '/'
             
     while not done:
                 
@@ -288,19 +312,30 @@ def main():
                 scoreFile = open(scoreName(name,pos),'w')
                 scoreFile.write(str(noLoadScore))
                 scoreFile.close()
-                if maxRunning != False:
-                    while getNumProc(name) >= maxRunning:
-                        time.sleep(20)
-                try:
-                    print "Running seed:", fileName(name,pos), "Generation:", generation
-                    subprocess.Popen([sys.executable,fileName(name,pos)])
-                    ran += 1
-                    if ran == 5:
-                        time.sleep(0.03)
-                        ran = 0
-                except:
-                    print "Could not run seed", fileName(name,pos)
-                time.sleep(20)
+                if cluster:
+                    while getNumProc(name,cluster) >= maxRunning:
+                        time.sleep(60)
+                    try:
+                        print "Running seed:", fileName(name,pos), "Generation:", generation
+                        subprocess.Popen([sys.executable,qsubName(name,pos,workingDir)])
+                    except:
+                        print "Could not run seed", fileName(name,pos)
+                    quit()
+                    time.sleep(45)
+                else:
+                    if maxRunning != False:
+                        while getNumProc(name,cluster) >= maxRunning:
+                            time.sleep(20)
+                    try:
+                        print "Running seed:", fileName(name,pos), "Generation:", generation
+                        subprocess.Popen([sys.executable,fileName(name,pos)])
+                        ran += 1
+                        if ran == 5:
+                            time.sleep(0.03)
+                            ran = 0
+                    except:
+                        print "Could not run seed", fileName(name,pos)
+                    time.sleep(20)
                     
         print "Waiting until processes complete"
         while getNumProc(name) >= 0:
