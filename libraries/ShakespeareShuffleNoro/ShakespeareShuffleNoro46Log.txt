@@ -1,3 +1,0 @@
-New script spawned on generation 6Generation: 7 Score: 85.0
-Generation: 8 Score: 81.0
-Generation: 12 Score: 85.0

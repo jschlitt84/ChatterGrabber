@@ -1,2 +1,0 @@
-New script bred on generation 72 from scripts ShakespeareShuffleNoro/ShakespeareShuffleNoro17.py and ShakespeareShuffleNoro/ShakespeareShuffleNoro43.py
-Generation: 73 Score: 78.0
