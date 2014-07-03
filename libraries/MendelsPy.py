@@ -18,7 +18,7 @@ def fileName(name, number):
     return name + '/' + name + str(number) + '.py'
     
 def qsubName(name, number, directory):
-    return directory + name + '/' + name + '/' + str(number) + '.qsub'
+    return directory + name + '/' + name + str(number) + '.qsub'
 
 def scoreName(name, number):
     return name + '/' + name + str(number) + 'Score.txt'
