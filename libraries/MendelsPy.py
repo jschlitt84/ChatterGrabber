@@ -7,7 +7,9 @@ from math import sqrt
 
 def getNumProc(name, cluster):
     if cluster:
-        return len([item for item in (os.popen("qstat | grep "+name).read().split('\n')) if ' C ' not in item and name in item])
+        temp = len([item for item in (os.popen("qstat | grep "+name).read().split('\n')) if ' C ' not in item and name in item])
+        print "Running", temp, "items on cluster"
+        return temp
     else:
         return len(os.popen("ps aux | grep "+name).read().split('\n')) - 1
 
