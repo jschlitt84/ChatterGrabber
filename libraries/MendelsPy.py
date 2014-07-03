@@ -42,9 +42,12 @@ def makeQsubs(name,pos,qsub):
     fileOut.close()
     
                   
-def makeFile(header, code, footer, name, lines, linesOut, scoreOut, number, isOffspring, generation):
+def makeFile(header, code, footer, name, lines, linesOut, scoreOut, number, isOffspring, generation, cluster, workingDir):
     headTemp = header[:]
-    headTemp.insert(-1,'fileName = "' + scoreName(name,number) + '"')
+    insert = ''
+    if cluster:
+        insert = workingDir
+    headTemp.insert(-1,'fileName = "' + insert + scoreName(name,number) + '"')
     headTemp.insert(-1,'index = ' + str(number))
     headTemp.insert(-1,'gen = ' + str(generation))
     footTemp = footer[:]
@@ -269,7 +272,8 @@ def main():
     print "Words5:", word5
     print "Header", header
     print "Footer", footer
-        
+    workingDir =  os.getcwd() + '/'     
+    
     randList = []
     for pos in range(seeds):
         randList.append(pos)
@@ -280,7 +284,7 @@ def main():
         generation = 0
         for pos in range(seeds):
             newCode = makeLines(word1,word2,word3,word4,word5,code,lines) 
-            makeFile(header, newCode, footer, name, lines, linesOut, scoreOut, pos,False, generation)
+            makeFile(header, newCode, footer, name, lines, linesOut, scoreOut, pos,False, generation,cluster,workingDir)
             logFile = open(logName(name,pos),'w')
             logFile.write('New seed generated at startup\n')
             logFile.close()
@@ -298,7 +302,7 @@ def main():
 		generation = 1	
 	getGen.close()
 
-    workingDir =  os.getcwd() + '/'
+
             
     while not done:
                 
@@ -436,7 +440,7 @@ def main():
            scoreFile = open(scoreName(name,killOne),'w')
            scoreFile.write(str(noLoadScore))
            scoreFile.close()
-           makeFile(header, newCode, footer, name, lines, linesOut, scoreOut, killOne,True, generation)
+           makeFile(header, newCode, footer, name, lines, linesOut, scoreOut, killOne,True, generation,cluster,workingDir)
            logFile = open(logName(name,killOne),'w')
            logFile.write('New script bred on generation %s from scripts %s and %s\n' % (str(generation),index1,index2))
            logFile.close()
@@ -450,7 +454,7 @@ def main():
            scoreFile = open(scoreName(name,muteOne),'w')
            scoreFile.write(str(noLoadScore))
            scoreFile.close()
-           makeFile(header, newCode, footer, name, lines, linesOut, scoreOut, muteOne, True, generation)
+           makeFile(header, newCode, footer, name, lines, linesOut, scoreOut, muteOne, True, generation, cluster, workingDir)
            logFile = open(logName(name,muteOne),'w')
            logFile.write('New script mutated on generation %s from scripts %s\n' % (str(generation),ID))
            logFile.close()
