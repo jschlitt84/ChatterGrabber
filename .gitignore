@@ -11,3 +11,4 @@ nlpTrainers/*.pickle
 *ShakeSpeare*
 *.csv
 optimizeScores/*
+libraries/*/*
