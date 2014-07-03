@@ -322,7 +322,7 @@ def main():
                         time.sleep(60)
                     try:
                         print "Running seed:", fileName(name,pos), "Generation:", generation
-                        subprocess.Popen([sys.executable,qsubName(name,pos,workingDir)])
+                        subprocess.call(["qsub",qsubName(name,pos,workingDir)])
                     except:
                         print "Could not run seed", fileName(name,pos)
                     quit()
