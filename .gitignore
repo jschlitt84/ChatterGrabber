@@ -4,11 +4,9 @@ daemonScripts/gdi*
 logins/*
 lists/*
 nlpTrainers/*.csv
-nlpTrainers/*.pickle
 *.swp
 *.pyc
 *GeoPickle
 *ShakeSpeare*
-*.csv
 optimizeScores/*
 libraries/*/*
