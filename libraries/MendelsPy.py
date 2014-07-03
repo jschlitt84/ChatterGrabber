@@ -319,7 +319,7 @@ def main():
                 scoreFile.close()
                 if cluster:
                     while getNumProc(name,cluster) >= maxRunning:
-                        time.sleep(60)
+                        time.sleep(20)
                     try:
                         print "Running seed:", fileName(name,pos), "Generation:", generation
                         subprocess.call(["qsub",qsubName(name,pos,workingDir)])

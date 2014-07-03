@@ -1,15 +1,15 @@
 Name = ShakesNoro
-Number of seeds = 50
-Max running = 3
+Number of seeds = 250
+Max running = 20
 Lines per seed = 20
 Score to win = 96
 Runs per query = 5
 Query delay = 10
-Kill = 4
+Kill = 40
 Mutate best = 0
 Mate error = 0.10
 Point mutations = 0.20
-New = 1
+New = 10
 Lines per out = 10
 Score per out = 1
 Terminate after = 5000
@@ -20,8 +20,6 @@ from sys import path
 from os import getcwd
 
 parent = clusterDir
-
-print "DEBOOO", parent
 
 if parent not in path:
 	path.insert(0, parent)
