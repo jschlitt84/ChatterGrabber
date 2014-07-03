@@ -17,8 +17,8 @@ def main(args,user):
     if user == 'mendel':
         if 'cluster' in args.keys():
             workingDir = args['workingDir']
-            inDir = cluster.replace('libraries','nlpTrainers')
-            outDir = cluster.replace('libraries','optimizeScores')
+            inDir = workingDir.replace('libraries','nlpTrainers')
+            outDir = workingDir.replace('libraries','optimizeScores')
              
         else:
             workingDir = getcwd().split('/')
