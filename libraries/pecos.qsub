@@ -1,0 +1,13 @@
+#!/bin/bash
+#PBS -lwalltime=02:00:00
+#PBS -lnodes=1:ppn=8
+#PBS -W group_list=pecos
+#PBS -q pecos_q@pecosq
+#PBS -A pecos
+#PBS -N $EXPNAME$EXPPOS
+#PBS -o $EXPDIRECTORY$EXPNAME/$EXPNAME$EXPPOS.qlog
+#PBS -j oe
+NUM_PROCS=`/bin/cat $PBS_NODEFILE | /usr/bin/wc -l | /bin/sed "s/  //g"`
+cd $PBS_O_WORKDIR
+MPIRUN="mpiexec_mpt -n $NUM_PROCS"
+$MPIRUN python $EXPDIRECTORY$EXPNAME/$EXPNAME$EXPPOS.py

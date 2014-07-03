@@ -9,4 +9,4 @@ nlpTrainers/*.csv
 *GeoPickle
 *ShakeSpeare*
 optimizeScores/*
-libraries/*/*
+libraries/Shake*/*
