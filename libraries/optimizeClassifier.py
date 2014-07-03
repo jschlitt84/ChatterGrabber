@@ -15,9 +15,17 @@ def getArgs(flag,listed):
 
 def main(args,user):
     if user == 'mendel':
-        workingDir = args['workingDir']
-        inDir = '/'.join(workingDir[0:workingDir.index('ChatterGrabber')+1])+'/nlpTrainers'
-        outDir = '/'.join(workingDir[0:workingDir.index('ChatterGrabber')+1])+'/optimizeScores'
+        cluster = args['cluster']
+        if 'cluster' in args.keys():
+            workingDir = args['workingDir']
+            inDir = cluster.replace('libraries','nlpTrainers')
+            outDir = cluster.replace('libraries','optimizeScores')
+             
+        else:
+            workingDir = os.getcwd()
+            inDir = '/'.join(workingDir[0:workingDir.index('ChatterGrabber')+1])+'/nlpTrainers'
+            outDir = '/'.join(workingDir[0:workingDir.index('ChatterGrabber')+1])+'/optimizeScores'
+        
         if 'nlpTrainers' not in inDir:
             inDir += '/nlpTrainers'
         if 'optimizeScores' not in outDir:
