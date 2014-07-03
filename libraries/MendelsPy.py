@@ -47,6 +47,7 @@ def makeFile(header, code, footer, name, lines, linesOut, scoreOut, number, isOf
     insert = ''
     if cluster:
         insert = workingDir
+        headTemp.insert(0,'clusterDir = '+ workingDir)
     headTemp.insert(-1,'fileName = "' + insert + scoreName(name,number) + '"')
     headTemp.insert(-1,'index = ' + str(number))
     headTemp.insert(-1,'gen = ' + str(generation))
@@ -261,7 +262,7 @@ def main():
             maxRunning = 5
         qsubLoaded = open(qsub).readlines()
 
-    headLen = len(header) + 4
+    headLen = len(header) + 4 + int(cluster)
     footLen = len(footer) + 2        
                         
     print "Code:", code

@@ -19,7 +19,7 @@ Header start
 from sys import path
 from os import getcwd
 
-parent = '/'.join(getcwd().split('/')[:-1])
+parent = clusterDir
 
 print "DEBOOO", parent
 
