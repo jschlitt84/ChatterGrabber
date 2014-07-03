@@ -325,6 +325,7 @@ def main():
                         subprocess.call(["qsub",qsubName(name,pos,workingDir)])
                     except:
                         print "Could not run seed", fileName(name,pos)
+                    time.sleep(20)
                 else:
                     if maxRunning != False:
                         while getNumProc(name,cluster) >= maxRunning:
