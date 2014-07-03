@@ -1,1 +1,1 @@
-New seed generated at startup
+New script bred on generation 73 from scripts ShakespeareShuffleNoro/ShakespeareShuffleNoro17.py and ShakespeareShuffleNoro/ShakespeareShuffleNoro5.py

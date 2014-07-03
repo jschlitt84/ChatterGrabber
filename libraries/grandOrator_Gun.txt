@@ -48,7 +48,7 @@ if degrees == []:
 	outFile.close()
 	quit()
 
-if mode == "decision tree":
+if "decision tree" in mode:
 	NLPFreqLimit = [max(2,entry) for entry in NLPFreqLimit]
 	degrees = list(set(degrees))[:1]
 

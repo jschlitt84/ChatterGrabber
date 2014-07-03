@@ -1,8 +1,8 @@
 Name = ShakespeareShuffleNoro
 Number of seeds = 50
-Max running = 1
+Max running = 3
 Lines per seed = 20
-Score to win = 90
+Score to win = 96
 Runs per query = 5
 Query delay = 10
 Kill = 4
@@ -48,14 +48,14 @@ if degrees == []:
 	outFile.close()
 	quit()
 
-if mode == "decision tree":
+if ["decision tree"] == mode:
 	NLPFreqLimit = [max(2,entry) for entry in NLPFreqLimit]
-	degrees = list(set(degrees))[:1]
+	degrees = list(set(degrees))[:2]
 
 cfg = {'SVMMode':SVMMode,
 	'SVMNumber':SVMNumber,
 	'NLPFreqLimit':NLPFreqLimit}
-	
+
 args = {'cores':cores,
 	'iterations':iterations,
 	'sweepRange':sweepRange,

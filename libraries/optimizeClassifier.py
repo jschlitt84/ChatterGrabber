@@ -36,6 +36,9 @@ def main(args,user):
         prefix = args['prefix']
         modes = args['mode']
         cfg = args['cfg']
+
+	if modes == ['svm']:
+		iterations = max(3,iterations)
   
     else:
         inDir = getcwd().replace('libraries','nlpTrainers')

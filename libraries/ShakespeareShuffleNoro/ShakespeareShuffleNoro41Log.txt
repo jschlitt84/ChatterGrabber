@@ -1,1 +1,1 @@
-New seed generated at startup
+New script spawned on generation 25Generation: 26 Score: 85.0

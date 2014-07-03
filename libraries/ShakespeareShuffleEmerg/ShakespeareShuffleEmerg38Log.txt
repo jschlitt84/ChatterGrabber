@@ -1,2 +1,1 @@
 New seed generated at startup
-Generation: 0 Score: 23.0

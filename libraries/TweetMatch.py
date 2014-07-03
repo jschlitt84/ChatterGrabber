@@ -177,11 +177,11 @@ def collectNGrams(categorized, degreesUsed, cfg):
     if "NLPFreqLimit" in cfg.keys():
 	lengths = deepcopy(cfg['NLPFreqLimit'])
 	if lengths == []:
-	     lengths = [1] * len(degreesUsed)
+	     lengths = [2] * len(degreesUsed)
 	elif type(lengths) is int:
 	     lengths = [lengths] * len(degreesUsed)
     else:
-	lengths = [1]*len(degreesUsed)
+	lengths = [2]*len(degreesUsed)
     for key in categorized.keys():
         collected[key] = [(getNGrams(entry['text'], degreesUsed),entry['category']) for entry in categorized[key]]
 
@@ -189,7 +189,7 @@ def collectNGrams(categorized, degreesUsed, cfg):
 	return collected
     
 
-    toTrim = [entry for entry in lengths[:min(len(lengths),len(degreesUsed))]]+max(len(degreesUsed)-len(lengths),0)*[1]    
+    toTrim = [entry for entry in lengths[:min(len(lengths),len(degreesUsed))]]+max(len(degreesUsed)-len(lengths),0)*[2]    
     trimLevels = dict()
     for pos in range(len(toTrim)):
 	trimLevels[degreesUsed[pos]] = toTrim[pos]
@@ -211,7 +211,7 @@ def collectNGrams(categorized, degreesUsed, cfg):
 	counted[len(key)][key] = gramCount[len(key)].count(key)
     print "Selecting relevant nGrams"
     for key in counted.keys():
-	counted[key] = [key2 for key2,item in counted[key].iteritems() if item >= trimLevels[len(key2)]]
+	counted[key] = set([key2 for key2,item in counted[key].iteritems() if item >= trimLevels[len(key2)]])
     print "Reducing scoring set"
     
     #print "deboo", len(collected['4'])

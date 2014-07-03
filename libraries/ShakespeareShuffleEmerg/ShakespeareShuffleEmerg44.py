@@ -1,8 +1,8 @@
 from sys import path
 from os import getcwd
+
 parent = '/'.join(getcwd().split('/')[:])
-print parent
-#parent = '..'
+
 if parent not in path:
 	path.insert(0, parent)
 import optimizeClassifier
@@ -14,36 +14,52 @@ sweepRange = [0.9]
 degrees =  []
 SVMMode = 'number'
 SVMNumber = 1000
+NLPFreqLimit = []
 stops = 0
+prefix = ''
+
+
+
 fileName = "ShakespeareShuffleEmerg/ShakespeareShuffleEmerg44Score.txt"
 index = 44
-gen = 7
-prefix = ''
+gen = 0
+
+degrees.append(1)
+NLPFreqLimit.append(2)
+mode = ["svm"]
 SVMMode = 'number'
-mode = ["svm"]
+NLPFreqLimit.append(3)
+mode = ["max ent"]
 mode = ["naive bayes"]
-mode = ["max ent"]
-degrees.append(1)
-mode = ["svm"]
-degrees.append(1)
-SVMNumber = int(5*5*0.4)
-SVMNumber = int(3000*7*0.9*0.9)
-SVMNumber = int(5*5*0.2)
-mode = ["svm"]
-SVMNumber = int(4*4*0.1)
-None
-mode = ["max ent"]
-SVMNumber = int(2*2*0.8)
-mode = ["max ent"]
-None
+SVMNumber = int(3000*6*0.5*0.5)
+SVMNumber = int(3000*5*0.8*0.8)
 degrees.append(4)
+degrees.append(3)
 degrees.append(5)
-SVMNumber = int(4*4*0.99)
+NLPFreqLimit.append(3)
+NLPFreqLimit.append(3)
+degrees.append(1)
+SVMMode = 'all'
+NLPFreqLimit.append(3)
+SVMMode = 'ratio'
+mode = ["max ent"]
+mode = ["naive bayes"]
 
 outFile = open(fileName,'w')
+if degrees == []:
+	print "No degrees found, quitting"
+	outFile.write('0')
+	outFile.close()
+	quit()
+
+if mode == "decision tree":
+	NLPFreqLimit = [max(2,entry) for entry in NLPFreqLimit]
+	degrees = list(set(degrees))[:1]
+
 cfg = {'SVMMode':SVMMode,
 	'SVMNumber':SVMNumber,
-	'SVMOrder':'GVTMACFSNN'}
+	'NLPFreqLimit':NLPFreqLimit}
+	
 args = {'cores':cores,
 	'iterations':iterations,
 	'sweepRange':sweepRange,
@@ -53,6 +69,7 @@ args = {'cores':cores,
 	'stops':stops,
 	'prefix':prefix,
 	'files':files}
+
 try:
 	score = int(optimizeClassifier.main(args,'mendel'))
 	outFile.write(str(score))
@@ -60,4 +77,7 @@ except:
 	outFile.write('0')
 
 outFile.close()
+
+
+
 

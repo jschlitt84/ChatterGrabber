@@ -1,2 +1,1 @@
-New script bred on generation 5 from scripts ShakespeareShuffleEmerg/ShakespeareShuffleEmerg30.py and ShakespeareShuffleEmerg/ShakespeareShuffleEmerg11.py
-Generation: 6 Score: 30.0
+New seed generated at startup

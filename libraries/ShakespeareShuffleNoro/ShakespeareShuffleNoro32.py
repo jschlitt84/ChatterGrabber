@@ -1,48 +1,65 @@
 from sys import path
 from os import getcwd
+
 parent = '/'.join(getcwd().split('/')[:])
-print parent
-#parent = '..'
+
 if parent not in path:
 	path.insert(0, parent)
 import optimizeClassifier
 
 files = ['NLTK_Ready_Tweets.csv']
-cores = 2
-iterations = 3
+cores = 1
+iterations = 1
 sweepRange = [0.9]
 degrees =  []
 SVMMode = 'number'
 SVMNumber = 1000
+NLPFreqLimit = []
 stops = 0
+prefix = ''
+
+
+
 fileName = "ShakespeareShuffleNoro/ShakespeareShuffleNoro32Score.txt"
 index = 32
-gen = 0
-prefix = ''
-SVMMode = 'number'
-None
-degrees.append(2)
-None
-SVMNumber = int(3000*6*0.9*0.9)
-degrees.append(4)
-degrees.append(5)
-degrees.append(5)
-SVMMode = 'all'
-None
-None
+gen = 73
+
+SVMNumber = int(3000*5*0.7*0.7)
+SVMNumber = int(3000*3*0.1*0.1)
 degrees.append(1)
-SVMNumber = int(3000*7*0.1*0.1)
-SVMNumber = int(3000*2*0.8*0.8)
+mode = ["decision tree"]
+SVMNumber = int(3000*7*0.6*0.6)
+mode = ["decision tree"]
+mode = ["naive bayes"]
+NLPFreqLimit.append(1)
+mode = ["naive bayes"]
+degrees.append(1)
+degrees.append(3)
+degrees.append(2)
+SVMNumber = int(3000*4*0.4*0.4)
+degrees.append(1)
+NLPFreqLimit.append(2)
+SVMNumber = int(3000*4*0.5*0.5)
+SVMMode = 'all'
+degrees.append(7)
 mode = ["svm"]
-mode = ["svm"]
-None
-None
-mode = ["svm"]
-SVMNumber = int(3000*4*0.7*0.7)
+NLPFreqLimit.append(1)
 
 outFile = open(fileName,'w')
+if degrees == []:
+	print "No degrees found, quitting"
+	outFile.write('0')
+	outFile.close()
+	quit()
+
+if ["decision tree"] == mode:
+	NLPFreqLimit = [max(2,entry) for entry in NLPFreqLimit]
+	degrees = list(set(degrees))[:2]
+
 cfg = {'SVMMode':SVMMode,
-	'SVMNumber':SVMNumber}
+	'SVMNumber':SVMNumber,
+	'NLPFreqLimit':NLPFreqLimit}
+
 args = {'cores':cores,
 	'iterations':iterations,
 	'sweepRange':sweepRange,
@@ -52,6 +69,7 @@ args = {'cores':cores,
 	'stops':stops,
 	'prefix':prefix,
 	'files':files}
+
 try:
 	score = int(optimizeClassifier.main(args,'mendel'))
 	outFile.write(str(score))
@@ -59,4 +77,7 @@ except:
 	outFile.write('0')
 
 outFile.close()
+
+
+
 

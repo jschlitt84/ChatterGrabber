@@ -1,1 +1,3 @@
-New seed generated at startup
+New script bred on generation 8 from scripts ShakespeareShuffleNoro/ShakespeareShuffleNoro30.py and ShakespeareShuffleNoro/ShakespeareShuffleNoro34.py
+Generation: 9 Score: 81.0
+Generation: 12 Score: 86.0
