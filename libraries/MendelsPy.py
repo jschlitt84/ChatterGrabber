@@ -7,9 +7,12 @@ from math import sqrt
 
 def getNumProc(name, cluster):
     if cluster:
-        temp = len([item for item in (os.popen("qstat | grep "+name).read().split('\n')) if ' C ' not in item and name in item])
-        print "Running", temp, "items on cluster"
-        return temp
+        temp = [item for item in (os.popen("qstat | grep "+name).read().split('\n')) if ' C ' not in item and name in item]
+	if temp != []:
+        	print "Running", temp, "items on cluster"
+        	return len(temp)
+	else:
+		return 0
     else:
         return len(os.popen("ps aux | grep "+name).read().split('\n')) - 1
 
@@ -344,8 +347,8 @@ def main():
                     time.sleep(20)
                     
         print "Waiting until processes complete"
-        while getNumProc(name,cluster) >= 0:
-                        None
+        while getNumProc(name,cluster) > 0:
+        	time.sleep(10)
 
         for pos in range(seeds):
             if pos not in toKeep or rescore:
@@ -467,7 +470,7 @@ def main():
         for replaceOne in toReplace:
             print "Replacing ID with novel seed: ", replaceOne
             newCode = makeLines(word1,word2,word3,word4,word5,code,lines)
-            makeFile(header, newCode, footer, name, lines, linesOut, scoreOut, replaceOne, False, generation)
+            makeFile(header, newCode, footer, name, lines, linesOut, scoreOut, replaceOne, False, generation, cluster, workingDir)
             scoreFile = open(scoreName(name,replaceOne),'w')
             scoreFile.write(str(noLoadScore))
             scoreFile.close()
