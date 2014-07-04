@@ -344,7 +344,7 @@ def main():
                     time.sleep(20)
                     
         print "Waiting until processes complete"
-        while getNumProc(name) >= 0:
+        while getNumProc(name,cluster) >= 0:
                         None
 
         for pos in range(seeds):
