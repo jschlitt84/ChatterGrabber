@@ -9,8 +9,9 @@ def getNumProc(name, cluster):
     if cluster:
         temp = [item for item in (os.popen("qstat | grep "+name).read().split('\n')) if ' C ' not in item and name in item]
 	if temp != []:
+		temp = len(temp)
         	print "Running", temp, "items on cluster"
-        	return len(temp)
+        	return temp
 	else:
 		return 0
     else:
@@ -161,6 +162,7 @@ def main():
     cluster = False
     toKeep = []
     qsub = 'pecos.qsub'
+    pool = 'null'
     
     code = []
     word1 = []
@@ -225,7 +227,9 @@ def main():
                 cluster = bool(line.replace('Cluster = ','').replace('\n',''))
             elif line.startswith("Qsub = "):
                 qsub = line.replace('Qsub = ','').replace('\n','')
-            elif line.startswith("Words1 = "):
+            elif line.startswith("Pool = "):
+		pool = line.replace('Pool = ','').replace('\n','')
+	    elif line.startswith("Words1 = "):
                 word1.append(line.replace('Words1 = ','').replace('\n',''))
             elif line.startswith("Words2 = "):
                 word2.append(line.replace('Words2 = ','').replace('\n',''))
@@ -313,28 +317,40 @@ def main():
     while not done:
                 
         print "Generation:", generation
-        
         canRun = seeds
         ran = 0
         time.sleep(0.1)
+	dontSleep = 0
         for pos in range(seeds):
             if pos not in toKeep or rescore:
                 scoreFile = open(scoreName(name,pos),'w')
                 scoreFile.write(str(noLoadScore))
                 scoreFile.close()
-                if cluster:
-                    while getNumProc(name,cluster) >= maxRunning:
-                        time.sleep(20)
+		if cluster:
+                    if maxRunning != False:
+                        if dontSleep == 0:
+                                nowRunning = 99999999
+                                while nowRunning >= maxRunning:
+                                        time.sleep(20)
+					if pool != 'null':
+						nowRunning = getNumProc(pool,cluster)
+					else:
+						nowRunning = getNumProc(name,cluster)
+                                dontSleep = maxRunning - nowRunning
+                        dontSleep = max(0,dontSleep-1)
                     try:
                         print "Running seed:", fileName(name,pos), "Generation:", generation
                         subprocess.call(["qsub",qsubName(name,pos,workingDir)])
                     except:
                         print "Could not run seed", fileName(name,pos)
-                    time.sleep(10)
+                    #time.sleep(10)
                 else:
-                    if maxRunning != False:
-                        while getNumProc(name,cluster) >= maxRunning:
-                            time.sleep(20)
+		    if pool != 'null':	
+                    	while getNumProc(pool,cluster) >= maxRunning:
+                        	time.sleep(20)
+		    else:
+			while getNumProc(name,cluster) >= maxRunning:
+				time.sleep(20)
                     try:
                         print "Running seed:", fileName(name,pos), "Generation:", generation
                         subprocess.Popen([sys.executable,fileName(name,pos)])
@@ -344,11 +360,11 @@ def main():
                             ran = 0
                     except:
                         print "Could not run seed", fileName(name,pos)
-                    time.sleep(20)
+                    #time.sleep(20)
                     
         print "Waiting until processes complete"
         while getNumProc(name,cluster) > 0:
-        	time.sleep(10)
+        	time.sleep(30)
 
         for pos in range(seeds):
             if pos not in toKeep or rescore:
