@@ -67,7 +67,7 @@ args = {'cores':cores,
 	'files':files}
 
 try:
-	score = int(optimizeClassifier.main(args,'mendel'))
+	score = float(optimizeClassifier.main(args,'mendel'))
 	outFile.write(str(score))
 except:
 	outFile.write('0')

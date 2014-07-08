@@ -1,5 +1,5 @@
 Name = ShakesEmerg
-Number of seeds = 250
+Number of seeds = 500
 Max running = 15
 Lines per seed = 20
 Score to win = 96
@@ -26,8 +26,8 @@ if parent not in path:
 import optimizeClassifier
 
 files = ['EmergNLTKScoring.csv']
-cores = 4
-iterations = 4
+cores = 5
+iterations = 5
 sweepRange = [0.9]
 degrees =  []
 SVMMode = 'number'
@@ -70,7 +70,7 @@ args = {'cores':cores,
 	'cluster':True}
 
 try:
-	score = int(optimizeClassifier.main(args,'mendel'))
+	score = float(optimizeClassifier.main(args,'mendel'))
 	outFile.write(str(score))
 except:
 	outFile.write('0')

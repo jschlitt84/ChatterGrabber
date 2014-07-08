@@ -1,4 +1,4 @@
-Name = ShakesLyme
+Name = ShakesGun
 Number of seeds = 500
 Max running = 20
 Lines per seed = 20
@@ -26,7 +26,7 @@ if parent not in path:
 	path.insert(0, parent)
 import optimizeClassifier
 
-files = ['lymeScores.csv']
+files = ['GunTrackerNLTK.csv']
 cores = 5
 iterations = 5
 sweepRange = [0.9]
