@@ -4,6 +4,7 @@ import subprocess
 import time
 import select
 from math import sqrt
+from shutil import copyfile
 
 def getNumProc(name, cluster):
     if cluster:
@@ -124,17 +125,28 @@ def mutateBest(file1,start,end,pointMute,word1,word2,word3,word4,word5,code):
     
 
 def main():
-        
     try:
         target =  sys.argv[1]
     except:
         target = 'config.txt'
+    if '-c' in sys.argv:
+		carryOn = True
+		reload = False
+		sys.argv = [item for item in sys.argv if not item == '-c']	
+    elif '-r' in sys.argv:
+		carryOn = True
+		reload = True
+		sys.argv = [item for item in sys.argv if not item == '-r']
+    elif '-n' in sys.argv:
+		carryOn = False
+		reload = False
+    else:
+		carryOn = True
+		reload = True
     try:
-        if sys.argv[2][0].lower() == 'c':
-            carryOn = True
+	target = sys.argv[1]
     except:
-        carryOn = False
-        
+	target = 'config.txt'
         
     configFile = open(target)
        
@@ -190,7 +202,7 @@ def main():
         line = script[pos]
         if not line.startswith('#'):
             if line.startswith("Name = "):
-                name = (line.replace('Name = ','').replace('\n','')).replace(' ','')
+                name = (line.replace('Name = ','').replace('\n','')).replace(' ','')[:12]
             elif line.startswith("Number of seeds = "):
                 seeds = int(line.replace('Number of seeds = ',''))
             elif line.startswith("Lines per seed = "):
@@ -291,19 +303,20 @@ def main():
     if not carryOn or not os.path.exists(name):
         if not os.path.exists(name):
             os.makedirs(name)    
-        generation = 0
-        for pos in range(seeds):
-            newCode = makeLines(word1,word2,word3,word4,word5,code,lines) 
-            makeFile(header, newCode, footer, name, lines, linesOut, scoreOut, pos,False, generation,cluster,workingDir)
-            logFile = open(logName(name,pos),'w')
-            logFile.write('New seed generated at startup\n')
-            logFile.close()
+    generation = 0
+    for pos in range(seeds):
+	    if not carryOn or not os.path.exists(name):
+	    	newCode = makeLines(word1,word2,word3,word4,word5,code,lines) 
+            	makeFile(header, newCode, footer, name, lines, linesOut, scoreOut, pos,False, generation,cluster,workingDir)
+            	logFile = open(logName(name,pos),'w')
+            	logFile.write('New seed generated at startup\n')
+            	logFile.close()
+		mainLog = open(name + '/GenLog.txt','w')
+		mainLog.write("Starting at generation 0, " + str(time.asctime( time.localtime(time.time()) )) + '\n')
+		mainLog.close()
             if cluster:
                 makeQsubs(name,pos,qsubLoaded)
-        mainLog = open(name + '/GenLog.txt','w')
-        mainLog.write("Starting at generation 0, " + str(time.asctime( time.localtime(time.time()) )) + '\n')
-        mainLog.close()
-    else:
+    if carryOn:
         getGen = open(name + '/GenLog.txt')
         temp = getGen.readlines()
 	try:
@@ -312,79 +325,88 @@ def main():
 		generation = 1	
 	getGen.close()
 
+    if not os.path.exists('MendelsBest'):
+            os.mkdir('MendelsBest')
 
-            
     while not done:
-                
-        print "Generation:", generation
-        canRun = seeds
-        ran = 0
-        time.sleep(0.1)
-	dontSleep = 0
-        for pos in range(seeds):
-            if pos not in toKeep or rescore:
-                scoreFile = open(scoreName(name,pos),'w')
-                scoreFile.write(str(noLoadScore))
-                scoreFile.close()
-		if cluster:
-                    if maxRunning != False:
-                        if dontSleep == 0:
-                                nowRunning = 99999999
-                                while nowRunning >= maxRunning:
-                                        time.sleep(20)
-					if pool != 'null':
-						nowRunning = getNumProc(pool,cluster)
-					else:
-						nowRunning = getNumProc(name,cluster)
-                                dontSleep = maxRunning - nowRunning
-                        dontSleep = max(0,dontSleep-1)
-                    try:
-                        print "Running seed:", fileName(name,pos), "Generation:", generation
-                        subprocess.call(["qsub",qsubName(name,pos,workingDir)])
-                    except:
-                        print "Could not run seed", fileName(name,pos)
-                    #time.sleep(10)
-                else:
-		    if pool != 'null':	
-                    	while getNumProc(pool,cluster) >= maxRunning:
-                        	time.sleep(20)
-		    else:
-			while getNumProc(name,cluster) >= maxRunning:
-				time.sleep(20)
-                    try:
-                        print "Running seed:", fileName(name,pos), "Generation:", generation
-                        subprocess.Popen([sys.executable,fileName(name,pos)])
-                        ran += 1
-                        if ran == 5:
-                            time.sleep(0.03)
-                            ran = 0
-                    except:
-                        print "Could not run seed", fileName(name,pos)
-                    #time.sleep(20)
-                    
+	canRun = seeds
+	if not reload:        
+        	print "Generation:", generation
+        	canRun = seeds
+        	ran = 0
+        	time.sleep(0.1)
+		dontSleep = 0
+        	for pos in range(seeds):
+        	    if pos not in toKeep or rescore:
+        	        scoreFile = open(scoreName(name,pos),'w')
+        	        scoreFile.write(str(noLoadScore))
+        	        scoreFile.close()
+			if cluster:
+        	            if maxRunning != False:
+        	                if dontSleep == 0:
+        	                        nowRunning = 99999999
+        	                        while nowRunning >= maxRunning:
+        	                                time.sleep(30)
+						if pool != 'null':
+							nowRunning = getNumProc(pool,cluster)
+						else:
+							nowRunning = getNumProc(name,cluster)
+        	                        dontSleep = maxRunning - nowRunning
+        	                dontSleep = max(0,dontSleep-1)
+        	            try:
+        	                print "Running seed:", fileName(name,pos), "Generation:", generation
+        	                subprocess.call(["qsub",qsubName(name,pos,workingDir)])
+        	            except:
+        	                print "Could not run seed", fileName(name,pos)
+        	            #time.sleep(10)
+        	        else:
+			    if pool != 'null':	
+        	            	while getNumProc(pool,cluster) >= maxRunning:
+        	                	time.sleep(30)
+			    else:
+				while getNumProc(name,cluster) >= maxRunning:
+					time.sleep(30)
+        	            try:
+        	                print "Running seed:", fileName(name,pos), "Generation:", generation
+        	                subprocess.Popen([sys.executable,fileName(name,pos)])
+        	                ran += 1
+        	                if ran == 5:
+        	                    time.sleep(0.03)
+        	                    ran = 0
+        	            except:
+        	                print "Could not run seed", fileName(name,pos)
+        	            #time.sleep(20)
+        	            
         print "Waiting until processes complete"
         while getNumProc(name,cluster) > 0:
         	time.sleep(30)
 
+	else:
+		reload = False
+
         for pos in range(seeds):
             if pos not in toKeep or rescore:
-                scoreFile = open(scoreName(name,pos))
-                line = scoreFile.read()
-                scoreFile.close()
-                multiplicator = 1
-                if '-' in line:
-                    line = line.replace('-','')
-                    multiplicator = -1   
                 try:
-                    tempScore =  multiplicator*float(line)
-                except:
-                    tempScore = noLoadScore
-                if tempScore == noLoadScore:
-                    canRun -= 1
-                
-                if tempScore != noLoadScore and countOff:
-                    tempScore += countHidden(fileName(name,pos))/(lines/5)
-    
+			scoreFile = open(scoreName(name,pos))
+                	line = scoreFile.read()
+                	scoreFile.close()
+                	multiplicator = 1
+                	if '-' in line:
+                	    line = line.replace('-','')
+                	    multiplicator = -1   
+                	try:
+                	    tempScore =  multiplicator*float(line)
+                	except:
+                	    tempScore = noLoadScore
+                	if tempScore == noLoadScore:
+                	    canRun -= 1
+                	
+                	if tempScore != noLoadScore and countOff:
+                	    tempScore += countHidden(fileName(name,pos))/(lines/5)
+		except:
+			tempScore = noLoadScore
+			canRun -= 1
+
                 fileScore[pos] = tempScore
                 logFile = open(logName(name,pos),'a+b')
                 logFile.write('Generation: %s Score: %s\n' % (str(generation), str(tempScore)))
@@ -439,12 +461,15 @@ def main():
 
         
         bestScore =  fileScore[randList[ID]]
+        copyfile(fileName(name,randList[ID]),'MendelsBest/'+name+'Best.py')
+	copyfile(logName(name,randList[ID]),'MendelsBest/'+name+'BestLog.txt')
+	copyfile(scoreName(name,randList[ID]),'MendelsBest/'+name+'BestScore.txt')
         
-        print "Maximum score: %s Mean: %s Median: %s" % (bestScore,meanScore,medianScore)
+	print "Maximum score: %s Mean: %s Median: %s" % (bestScore,meanScore,medianScore)
         print "Replace cutoff: %s Kill Cutoff: %s" % (replaceCutOff,killCutOff)
         
         mainLog = open(name + '/GenLog.txt','a+b')
-        mainLog.write("Gen: %s Best: %s Seed: %s Running: %s Time: %s\n" % (str(generation), '%.2f' % bestScore, ID, str(canRun), time.asctime( time.localtime(time.time()) )))
+        mainLog.write("Gen: %s Best: %s Seed: %s Running: %s Time: %s\n" % (str(generation), '%.2f' % bestScore, randList[ID], str(canRun), time.asctime( time.localtime(time.time()) )))
         mainLog.close()
         
         delay = 0.01
@@ -457,8 +482,11 @@ def main():
            index2 = fileName(name,str(random.choice(toKeep)))
            while index1 == index2:
                index2 = fileName(name,str(random.choice(toKeep)))          
-           newCode = breedScripts(index1,index2,headLen,footLen,mateError*errorMult,word1,word2,word3,word4,word5,code)
-           scoreFile = open(scoreName(name,killOne),'w')
+           try:
+		newCode = breedScripts(index1,index2,headLen,footLen,mateError*errorMult,word1,word2,word3,word4,word5,code)
+           except:
+		newCode = makeLines(word1,word2,word3,word4,word5,code,lines)
+	   scoreFile = open(scoreName(name,killOne),'w')
            scoreFile.write(str(noLoadScore))
            scoreFile.close()
            makeFile(header, newCode, footer, name, lines, linesOut, scoreOut, killOne,True, generation,cluster,workingDir)
@@ -497,7 +525,7 @@ def main():
             if delayCount % delayEvery == 0:
                time.sleep(delay)
             
-        if bestScore == scoreToWin:
+        if bestScore >= scoreToWin:
             print "Optimal result recieved at generation %s, please check script %s to verify!" % (str(generation),fileName(name,ID))
             mainLog = open(name + '/GenLog.txt','a+b')
             mainLog.write("Optimal result recieved at generation %s, please check script %s to verify!" % (str(generation),fileName(name,ID)))

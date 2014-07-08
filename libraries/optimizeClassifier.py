@@ -148,9 +148,10 @@ def main(args,user):
             for degree in degrees:
                 textMode = mode + '.' + str(degree)
                 sweepFile = inFile.replace('.csv','.'+textMode+'.csv').replace('nlpTrainers','optimizeScores')
-                sweepOut = open(sweepFile,'w')
-                sweepOut.write("percent,count,accuracy,stdDev,"+catCols+"\n")
-                sweepOut.close()
+                if call != 'mendel':
+			sweepOut = open(sweepFile,'w')
+                	sweepOut.write("percent,count,accuracy,stdDev,"+catCols+"\n")
+                	sweepOut.close()
                 for x in sweepRange:
                     #accuracy,std,truePercent,count,sensScores,specScores = evalAccuracy(mode,degree,iterations,x,cores,deepcopy(classifications),outPut,cfg)
 		    temp = evalAccuracy(mode,degree,iterations,x,cores,deepcopy(classifications),outPut,cfg)
