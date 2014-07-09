@@ -490,7 +490,7 @@ def main():
            scoreFile.write(str(noLoadScore))
            scoreFile.close()
            makeFile(header, newCode, footer, name, lines, linesOut, scoreOut, killOne,True, generation,cluster,workingDir)
-           logFile = open(logName(name,killOne),'w')
+           logFile = open(logName(name,killOne),'a+b')
            logFile.write('New script bred on generation %s from scripts %s and %s\n' % (str(generation),index1,index2))
            logFile.close()
            delayCount += 1
@@ -504,7 +504,7 @@ def main():
            scoreFile.write(str(noLoadScore))
            scoreFile.close()
            makeFile(header, newCode, footer, name, lines, linesOut, scoreOut, muteOne, True, generation, cluster, workingDir)
-           logFile = open(logName(name,muteOne),'w')
+           logFile = open(logName(name,muteOne),'a+b')
            logFile.write('New script mutated on generation %s from scripts %s\n' % (str(generation),ID))
            logFile.close()
            delayCount += 1
@@ -518,7 +518,7 @@ def main():
             scoreFile = open(scoreName(name,replaceOne),'w')
             scoreFile.write(str(noLoadScore))
             scoreFile.close()
-            logFile = open(logName(name,replaceOne),'w')
+            logFile = open(logName(name,replaceOne),'a+b')
             logFile.write('New script spawned on generation %s' % str(generation))
             logFile.close()
             delayCount += 1
