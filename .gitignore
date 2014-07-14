@@ -10,3 +10,7 @@ nlpTrainers/*.csv
 *ShakeSpeare*
 optimizeScores/*
 libraries/Shake*/*
+*.zip
+*test*
+*Collection*
+
