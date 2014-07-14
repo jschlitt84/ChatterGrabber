@@ -102,7 +102,10 @@ def prepTweet(word):
     while '@' in text:
 	toAdd.add('@user')
 	temp = text.index('@')
-	text = text[:temp] + text[text.find(' ',temp):]
+	if temp == len(text) - 1:
+		text = text[:-1]
+	else:
+		text = text[:temp] + text[text.find(' ',temp):]
     for char in punctuations:
 	text = text.replace(char,' ')
     while '  ' in text:
@@ -340,8 +343,13 @@ def getClassifier(tweetfile,cfg):
             fileOut.close() 
               
     if 'NLPTEST' not in cfg.keys():
-        
-        classifier.show_most_informative_features(n=150)
+        if classMode != 'svm': 
+        	classifier['class'].show_most_informative_features(n=150)
+	"""else:
+		for key in classifier['class'].keys():
+			print classifier		
+			print classifier.keys()
+			classifier['class'][key].show_most_informative_features(n=150/len(classifier['class'].keys()))"""    
     
     return classifier
 

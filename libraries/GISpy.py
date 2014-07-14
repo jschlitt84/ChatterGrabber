@@ -52,7 +52,7 @@ def updateGeoPickle(dictionary,fileRef):
         needsWrite = True
     
     length2 = len(dictionary.keys())
-    if needsWrite and loadedLength != 0 and (length2-length1) > 25:
+    if needsWrite and loadedLength != 0 or (length2-length1) > 25:
         print "Updating master geoPickle,", length2-length1,"new locations added with",length2,"total in cache"
         pickleOut = openWhenReady(fileRef,"wb")
         cPickle.dump(dictionary, pickleOut)
@@ -1025,7 +1025,8 @@ def getConfig(directory):
                 'MakeFilteredJson':False,'SendEvery':1,
                 'TrackHashTags':False,'TrackHashDays':10,
                 'TrackHashCount':5,'DaysBack':'all',
-                'NLPnGrams':[1,2,3,4],'NLPMode':'naive bayes'}
+                'NLPnGrams':[1,2,3,4],'NLPMode':'naive bayes',
+		'NLPFreqLimit':[2],'SVMNumber':1}
     
     if type(directory) is str:
         if directory == "null":
@@ -1086,14 +1087,17 @@ def getConfig(directory):
         None
         
     try:
-        if '_' in params['OnlyKeepNLP']:
-            params['OnlyKeepNLP'] = params['OnlyKeepNLP'].replace('_',' ')
         params['OnlyKeepNLP'] = textToList(params['OnlyKeepNLP'])
     except:
         None
     
     try:
         params['NLPnGrams'] = [int(degree) for degree in textToList(params['NLPnGrams'])] 
+    except:
+        None
+
+    try:
+        params['NLPFreqLimit'] = [int(degree) for degree in textToList(params['NLPFreqLimit'])]
     except:
         None
         
@@ -1113,7 +1117,7 @@ def getConfig(directory):
 
 def textToList(string):
     """Loads lists from text scripting"""
-    text = string.replace(',','')
+    text = string.replace(',','').replace('_',' ').replace('-',' ')
     while '  ' in text:
         text = text.replace('  ',' ')
     listed = text.split(' ')

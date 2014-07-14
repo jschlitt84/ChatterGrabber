@@ -128,7 +128,10 @@ def main():
     try:
         target =  sys.argv[1]
     except:
-        target = 'config.txt'
+	try:
+		target = 'MendelScripts/'+sys.argv[1]        
+	except:
+		target = 'config.txt'
     if '-c' in sys.argv:
 		carryOn = True
 		reload = False
