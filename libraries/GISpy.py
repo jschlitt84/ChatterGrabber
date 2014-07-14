@@ -1117,7 +1117,9 @@ def getConfig(directory):
 
 def textToList(string):
     """Loads lists from text scripting"""
-    text = string.replace(',','').replace('_',' ').replace('-',' ')
+    text = string.replace(',','')
+    if ' ' not in text:
+	text = text.replace('_',' ').replace('-',' ')
     while '  ' in text:
         text = text.replace('  ',' ')
     listed = text.split(' ')
