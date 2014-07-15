@@ -8,6 +8,7 @@ import tweepy
 import smtplib
 import cPickle
 import TweetMatch
+import zipfile
 
 import gDocsImport as gd
 
@@ -68,6 +69,19 @@ def getDelay(self,elapsed):
     if self.multiAPI:
 	secPerSearch = secPerSearch/len(self.api.keys())
     return secPerSearch
+
+
+def zipData(files, directory,timeStamp):
+    """Zips list of files from given directory, appends timestampif present"""
+    outName = directory + ' DailyCollection ' + timeStamp.replace(':','.') + '.zip'
+    print "Writing zip archive to to '"+outName + "'"
+    open(outName, 'w').close()
+    zipOut = zipfile.ZipFile(outName,'a')
+    for dataFile in files:
+        zipOut.write(dataFile)
+    zipOut.close()
+    for dataFile in files[1:]:
+        remove(dataFile)
 
 
 def fillBox(cfg,self):
@@ -134,9 +148,9 @@ def sendCSV(cfg, directory,extra):
     #Adapting method from http://kutuma.blogspot.com/2007/08/sending-emails-via-gmail-with-python.html
     """Emails results to GDI subscriber(s)"""
     outName = cfg['FileName']+"_CollectedTweets"
-    attachment = 'studies/'+cfg['OutDir']+outName+'.csv'
+    attachment = 'studies/'+cfg['OutDir']+outName+'.csv.zip'
 
-    print "Preparing to send CSV file:", attachment
+    print "Preparing to send zipped CSV file:", attachment
         
     msg = MIMEMultipart()
     
@@ -153,6 +167,8 @@ def sendCSV(cfg, directory,extra):
     directory += cfg['OutDir'] + cfg['Method'] + '/'
     outName = cfg['FileName']+"_CollectedTweets"
     attachment = directory+outName+'.csv'
+    zipData([attachment],'','')
+    attachment = attachment + '.zip'
     
     
     part = MIMEBase('application', 'octet-stream')

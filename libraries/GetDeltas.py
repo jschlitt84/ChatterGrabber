@@ -1,10 +1,9 @@
 import pandas as pd
-import zipfile
 import sys
 import datetime
 import csv
 
-from GISpy import sanitizeTweet, outTime
+from GISpy import sanitizeTweet, outTime, zipData
 from copy import deepcopy
 from os import remove
 
@@ -12,16 +11,6 @@ indexKeys = ['text','created_at']
 updateKeys = ['place','nltkCat','tweetType','geoType','lat','lon']
 
 
-def zipData(files, directory,timeStamp):
-    outName = directory + ' DailyCollection ' + timeStamp.replace(':','.') + '.zip'
-    print "Writing zip arachive to to '"+outName + "'"
-    zipOut = zipfile.ZipFile(outName,'a')
-    for dataFile in files:
-        zipOut.write(dataFile)
-    zipOut.close()
-    for dataFile in files[1:]:
-        remove(dataFile)
-        
 
 def makeKey(tweet,keyList):
     return ','.join([(entry+':'+str(tweet[entry])) for entry in keyList if entry in tweet.keys()])
