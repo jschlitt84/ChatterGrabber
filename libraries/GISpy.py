@@ -71,19 +71,6 @@ def getDelay(self,elapsed):
     return secPerSearch
 
 
-def zipData(files, directory,timeStamp):
-    """Zips list of files from given directory, appends timestampif present"""
-    outName = directory + ' DailyCollection ' + timeStamp.replace(':','.') + '.zip'
-    print "Writing zip archive to to '"+outName + "'"
-    open(outName, 'w').close()
-    zipOut = zipfile.ZipFile(outName,'a')
-    for dataFile in files:
-        zipOut.write(dataFile)
-    zipOut.close()
-    for dataFile in files[1:]:
-        remove(dataFile)
-
-
 def fillBox(cfg,self):
     #Adapting method from https://gist.github.com/flibbertigibbet/7956133
     """Fills large search area with stacked subsearches of 50km radius"""
@@ -142,7 +129,20 @@ def fillBox(cfg,self):
     return {"list":box,'radius':circumrMiles}
     
 
-
+def zipData(files, directory, name, timeStamp):
+    """Zips list of files from given directory, appends timestampif present"""
+    outName = directory + name + timeStamp.replace(':','.') + '.zip'
+        
+    open(outName, 'w').close()
+    zipOut = zipfile.ZipFile(outName,'a')
+    for dataFile in files:
+        zipOut.write(dataFile, arcname = dataFile.split('/')[-1])
+    zipOut.close()
+    for dataFile in files[1:]:
+        os.remove(dataFile)
+    return outName
+    
+    
 
 def sendCSV(cfg, directory,extra):
     #Adapting method from http://kutuma.blogspot.com/2007/08/sending-emails-via-gmail-with-python.html
@@ -162,13 +162,13 @@ def sendCSV(cfg, directory,extra):
     text = "Please find csv spreadsheet file attached for study: " + cfg['FileName']
     text += "\nParameters & configuration accessible at: " + cfg['GDI']['URL']
     text += "\n\nAll changed parameters are updated after midnight & will not influence collection & parsing until the following day"
+    text += extra
     msg.attach(MIMEText(text))
     
-    directory += cfg['OutDir'] + cfg['Method'] + '/'
+    directory += 'studies/' + cfg['OutDir'] + cfg['Method'] + '/'
     outName = cfg['FileName']+"_CollectedTweets"
     attachment = directory+outName+'.csv'
-    zipData([attachment],'','')
-    attachment = attachment + '.zip'
+    attachment = zipData([attachment],directory,'CollectedTweets','')
     
     
     part = MIMEBase('application', 'octet-stream')
