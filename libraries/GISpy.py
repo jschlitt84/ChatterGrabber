@@ -129,6 +129,7 @@ def fillBox(cfg,self):
     return {"list":box,'radius':circumrMiles}
     
 
+
 def zipData(files, directory, name, timeStamp):
     """Zips list of files from given directory, appends timestampif present"""
     outName = directory + name + timeStamp.replace(':','.') + '.zip'
@@ -143,6 +144,19 @@ def zipData(files, directory, name, timeStamp):
     return outName
     
     
+    
+    
+def reformatTags(tags,cfg):
+    outText = 'Top %s hashtags for the past %s days:\n' % (cfg['TrackHashCount'],cfg['TrackHashDays'])
+    if type(tags) is dict:
+        for cat in tags.keys():
+            outText += "\t%s: %s\n"  % (cat,tags[cat])
+    else:
+        outText += "%s\n" % (tags)
+    return outText
+        
+                    
+                                            
 
 def sendCSV(cfg, directory,extra):
     #Adapting method from http://kutuma.blogspot.com/2007/08/sending-emails-via-gmail-with-python.html
@@ -161,7 +175,7 @@ def sendCSV(cfg, directory,extra):
     
     text = "Please find csv spreadsheet file attached for study: " + cfg['FileName']
     text += "\nParameters & configuration accessible at: " + cfg['GDI']['URL']
-    text += "\n\nAll changed parameters are updated after midnight & will not influence collection & parsing until the following day"
+    text += "\n\nAll changed parameters are updated after midnight & will not influence collection & parsing until the following day.\n\n"
     text += extra
     msg.attach(MIMEText(text))
     
@@ -936,7 +950,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             csvOut.writerows(collectedContent)
 
             #DEBOO TAG TRACKING
-            getTags(cfg,collectedContent)
+            tags = getTags(cfg,collectedContent)
             
             
             """for row in collectedContent:
@@ -946,11 +960,14 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                 
             outFile.close()
             print "...complete"
-            return geoCache
+            return tags
+            #return geoCache
+            
              
     else:
         print "Directory empty, reformat skipped"
-        return geoCache
+        return 'null'
+        #return geoCache
 
 
 
@@ -961,8 +978,16 @@ def getTags(cfg,data):
     rightBound = max(dates)
     leftBound = rightBound - datetime.timedelta(days = cfg['TrackHashDays'])
     data = [entry for entry in data if leftBound < parser.parse(entry['created_at']) < rightBound]
-    tags = countHashTags(data,cfg['TrackHashCount'])
-    print "Top",cfg['TrackHashCount'], "hashtags for past", cfg['TrackHashDays'], "days:", tags
+    trackCats = 'NLPCat' in data[0].keys()
+    if trackCats:
+        cats = set([entry['NLPCat'] for entry in data])
+        tags =  dict()
+        for cat in cats:
+            tags[cat] = countHashTags([entry for entry in data if entry['NLPCat'] == cat],cfg['TrackHashCount'])
+            print "Top %s hashtags for past %s days in category %s: %s"  % (cfg['TrackHashCount'],cfg['TrackHashDays'],cat,tags[cat])
+    else:
+        tags = countHashTags(data,cfg['TrackHashCount'])
+        print "Top",cfg['TrackHashCount'], "hashtags for past", cfg['TrackHashDays'], "days:", tags
     return tags
     
     

@@ -156,7 +156,7 @@ class giSeeker():
                 self.cfg['_login_'] = login
                 
                 self.cfg['Directory'] = directory
-                reformatOld(directory, lists, self.cfg, self.geoCache,self.NLP)
+                self.extra = reformatTags(reformatOld(directory, lists, self.cfg, self.geoCache,self.NLP),self.cfg)
                 
                 tillSend =  datetime.datetime.now().day % int(self.cfg['SendEvery'])
                 if tillSend == 0:
