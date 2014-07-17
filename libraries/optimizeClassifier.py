@@ -172,7 +172,10 @@ def main(args,user):
 	if temp != 'failed':
 		print "Sensitivities:",sensScores.values()
 		print "Mean Sensitivity:", mean(sensScores.values())
-		return mean(sensScores.values())
+		print "Specificities:",specScores.values()
+		print "Mean Specificity:", mean(specScores.values())
+		mendelScores = [sens*spec*0.01 for sens,spec in zip(sensScores.values(),specScores.values())]
+		return mean(mendelScores)
 	else:
 		return 0
     

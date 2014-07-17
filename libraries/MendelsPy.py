@@ -6,6 +6,7 @@ import select
 from math import sqrt
 from shutil import copyfile
 
+
 def getNumProc(name, cluster):
     if cluster:
         temp = [item for item in (os.popen("qstat | grep "+name).read().split('\n')) if ' C ' not in item and name in item]
@@ -18,26 +19,33 @@ def getNumProc(name, cluster):
     else:
         return len(os.popen("ps aux | grep "+name).read().split('\n')) - 1
 
+
 def adjustError(diversity):
     return ((1-diversity)*4+1)
 
+
 def fileName(name, number):
     return name + '/' + name + str(number) + '.py'
+
     
 def qsubName(name, number, directory):
     return directory + name + '/' + name + str(number) + '.qsub'
 
+
 def scoreName(name, number):
     return name + '/' + name + str(number) + 'Score.txt'
+
     
 def logName(name, number):
     return name + '/' + name + str(number) + 'Log.txt'
+
 
 def countHidden(fileName):
     scriptIn = open(fileName)
     script = scriptIn.read()
     scriptIn.close()
     return script.count('#')
+
 
 def makeQsubs(name,pos,qsub):
     directory = os.getcwd() + '/'
@@ -66,6 +74,7 @@ def makeFile(header, code, footer, name, lines, linesOut, scoreOut, number, isOf
         outFile.write("%s\n" % item)
     outFile.close()    
 
+
 def makeCode(word1,word2,word3,word4,word5,code):
     line = random.choice(code)
     if len(word1) > 0:
@@ -80,11 +89,13 @@ def makeCode(word1,word2,word3,word4,word5,code):
         line = line.replace('@5',random.choice(word5))
     return line
 
+
 def makeLines(word1,word2,word3,word4,word5,code,lines):
     script = []
     for pos in range(lines):
         script.append(makeCode(word1,word2,word3,word4,word5,code))
     return script
+
 
 def breedScripts(file1,file2,start,end,mateError,word1,word2,word3,word4,word5,code):
     scriptIn = open(file1)
@@ -102,6 +113,7 @@ def breedScripts(file1,file2,start,end,mateError,word1,word2,word3,word4,word5,c
             script1[pos] = script2[pos]
         script1[pos] = script1[pos].replace('\n','')
     return script1
+
     
 def mutateBest(file1,start,end,pointMute,word1,word2,word3,word4,word5,code):
     scriptIn = open(file1)
@@ -123,6 +135,22 @@ def mutateBest(file1,start,end,pointMute,word1,word2,word3,word4,word5,code):
         script1[pos] = script1[pos].replace('\n','')
     return script1
     
+
+def patientLoad(file, mode, tries, delay):
+	tried = 0
+	success = False
+	while tried < tries and not success:
+		try:
+			fileStream = open(file,mode)
+			success = True
+		except:
+			tried += 1
+			time.sleep(delay)
+			print "Failed to load", file, "on  attempt", tried, "for total delay of", tried*delay, "seconds" 
+	if success:
+		return fileStream
+	return 'null'
+
 
 def main():
     try:
@@ -341,7 +369,7 @@ def main():
 		dontSleep = 0
         	for pos in range(seeds):
         	    if pos not in toKeep or rescore:
-        	        scoreFile = open(scoreName(name,pos),'w')
+			scoreFile = patientLoad(scoreName(name,pos),'w',5,5)
         	        scoreFile.write(str(noLoadScore))
         	        scoreFile.close()
 			if cluster:

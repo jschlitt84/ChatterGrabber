@@ -1,0 +1,5 @@
+New script bred on generation 9 from scripts ShakesEmerg/ShakesEmerg167.py and ShakesEmerg/ShakesEmerg115.py
+Generation: 10 Score: 61.0
+Generation: 11 Score: 61.0
+Generation: 17 Score: 61.0
+Generation: 19 Score: 61.0

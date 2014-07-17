@@ -1,0 +1,6 @@
+New script spawned on generation 51Generation: 52 Score: 86.8150261436
+Generation: 74 Score: 86.8150261436
+Generation: 86 Score: 86.8150261436
+Generation: 93 Score: 86.8150261436
+Generation: 94 Score: 86.8150261436
+Generation: 96 Score: 86.8150261436

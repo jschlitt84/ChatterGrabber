@@ -1,6 +1,6 @@
-Name = ShakesEmergC
+Name = ShakesVaccC
 Number of seeds = 1000
-Max running = 13
+Max running = 20
 Lines per seed = 20
 Score to win = 95
 Runs per query = 2
@@ -14,6 +14,7 @@ Lines per out = 10
 Score per out = 1
 Terminate after = 1000
 Cluster = True
+Pool = Shakes
 
 Header start
 from sys import path
@@ -28,7 +29,7 @@ from KwikECache import *
 
 
 prefix = ''
-files = ['EmergNLTKScoring2.csv']
+files = ['vaccAutNLPScores.csv']
 cores = 8
 iterations = 8
 sweepRange = [0.9]

@@ -1,0 +1,18 @@
+New seed generated at startup
+Generation: 0 Score: 75.7993470249
+Generation: 2 Score: 75.7993470249
+New script bred on generation 19 from scripts ShakesNoroC/ShakesNoroC334.py and ShakesNoroC/ShakesNoroC545.py
+Generation: 20 Score: 33.6412082651
+New script spawned on generation 20Generation: 21 Score: 38.0558019593
+New script spawned on generation 21Generation: 22 Score: 33.3333333333
+New script spawned on generation 22Generation: 23 Score: 34.3026409895
+New script spawned on generation 23Generation: 24 Score: 81.2113372289
+New script bred on generation 64 from scripts ShakesNoroC/ShakesNoroC391.py and ShakesNoroC/ShakesNoroC125.py
+Generation: 65 Score: 37.8995349331
+New script spawned on generation 65Generation: 66 Score: 14.4635527883
+New script spawned on generation 66Generation: 67 Score: 5.60055522738
+New script spawned on generation 67Generation: 68 Score: 70.6106846181
+New script bred on generation 79 from scripts ShakesNoroC/ShakesNoroC58.py and ShakesNoroC/ShakesNoroC122.py
+Generation: 80 Score: 68.58545812
+New script bred on generation 80 from scripts ShakesNoroC/ShakesNoroC277.py and ShakesNoroC/ShakesNoroC94.py
+Generation: 81 Score: 77.9935677041

@@ -1,0 +1,5 @@
+New script bred on generation 1 from scripts ShakesGun/ShakesGun234.py and ShakesGun/ShakesGun43.py
+Generation: 2 Score: 56.2651585892
+Generation: 5 Score: 56.2651585892
+Generation: 6 Score: 56.2651585892
+Generation: 7 Score: 56.2651585892

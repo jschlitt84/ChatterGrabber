@@ -1,0 +1,11 @@
+New seed generated at startup
+Generation: 0 Score: 40.5720827011
+Generation: 1 Score: 40.5720827011
+New script bred on generation 15 from scripts ShakesLymeC/ShakesLymeC875.py and ShakesLymeC/ShakesLymeC852.py
+Generation: 16 Score: 45.3662153438
+New script bred on generation 44 from scripts ShakesLymeC/ShakesLymeC186.py and ShakesLymeC/ShakesLymeC525.py
+Generation: 45 Score: 42.141128729
+New script bred on generation 45 from scripts ShakesLymeC/ShakesLymeC73.py and ShakesLymeC/ShakesLymeC453.py
+Generation: 46 Score: 40.983497792
+New script bred on generation 46 from scripts ShakesLymeC/ShakesLymeC681.py and ShakesLymeC/ShakesLymeC544.py
+Generation: 47 Score: 3910.81129708

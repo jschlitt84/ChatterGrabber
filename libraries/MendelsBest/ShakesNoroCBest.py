@@ -1,21 +1,4 @@
-Name = ShakesEmergC
-Number of seeds = 1000
-Max running = 13
-Lines per seed = 20
-Score to win = 95
-Runs per query = 2
-Query delay = 3
-Kill = 30
-Mutate best = 0
-Mate error = 0.10
-Point mutations = 0.20
-New = 20
-Lines per out = 10
-Score per out = 1
-Terminate after = 1000
-Cluster = True
-
-Header start
+clusterDir = "/home/NDSSL/study/ChatterGrabber/libraries/"
 from sys import path
 
 parent = clusterDir
@@ -28,7 +11,7 @@ from KwikECache import *
 
 
 prefix = ''
-files = ['EmergNLTKScoring2.csv']
+files = ['NLTK_Ready_Tweets.csv']
 cores = 8
 iterations = 8
 sweepRange = [0.9]
@@ -43,11 +26,32 @@ stops = 0
 
 
 
+fileName = "/home/NDSSL/study/ChatterGrabber/libraries/ShakesNoroC/ShakesNoroC166Score.txt"
+index = 166
+gen = 80
 
-Header end
+mode = ["svm"]
+mode = ["max ent"]
+NLPFreqLimit.append(1)
+degrees.append(1)
+SVMNumber = int(3000*3*0.2*0.2)
+degrees.append(7)
+SVMMode = 'all'
+SVMNumber = int(3000*3*0.5*0.5)
+SVMNumber = int(3000*2*0.7*0.7)
+degrees.append(6)
+NLPFreqLimit.append(4)
+SVMNumber = int(3000*5*0.2*0.2)
+NLPFreqLimit.append(4)
+NLPFreqLimit.append(3)
+NLPFreqLimit.append(4)
+mode = ["svm"]
+SVMNumber = int(3000*7*0.3*0.3)
+SVMMode = 'all'
+degrees.append(2)
+SVMNumber = int(3000*7*0.99*0.99)
 
-
-Footer start
+outFile = open(fileName,'w')
 
 
 NLPFreqLimit = NLPFreqLimit[:len(degrees)]
@@ -104,39 +108,3 @@ outFile.close()
 
 
 
-Footer end
-
-Words1 = 1
-Words1 = 2
-Words1 = 3
-Words1 = 4
-Words1 = 5
-Words1 = 6
-Words1 = 7
-Words2 = 0.1
-Words2 = 0.2
-Words2 = 0.3
-Words2 = 0.4
-Words2 = 0.5
-Words2 = 0.6
-Words2 = 0.7
-Words2 = 0.8
-Words2 = 0.9
-Words2 = 0.99
-Words3 = "naive bayes"
-Words3 = "svm"
-Words3 = "decision tree"
-Words3 = "max ent"
-Words4 = 'all'
-Words4 = 'number'
-Words4 = 'ratio'
-Words5 = 1
-Words5 = 2
-Words5 = 3
-Words5 = 4
-Words5 = 5
-Code = degrees.append(@1)
-Code = mode = [@3]
-Code = SVMMode = @4
-Code = SVMNumber = int(3000*@1*@2*@2)
-Code = NLPFreqLimit.append(@5)

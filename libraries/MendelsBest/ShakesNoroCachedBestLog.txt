@@ -1,0 +1,2 @@
+New seed generated at startup
+Generation: 1 Score: -99999999
