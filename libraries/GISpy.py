@@ -1073,7 +1073,7 @@ def getConfig(directory):
                 'KeepDiscardsNLP':False,'DiscardSampleNLP':0,
                 'MakeFilteredJson':False,'SendEvery':1,
                 'TrackHashTags':False,'TrackHashDays':10,
-                'TrackHashCount':5,'DaysBack':'all',
+                'TrackHashCount':5,'DaysBack':90,
                 'NLPnGrams':[1,2,3,4],'NLPMode':'naive bayes',
 		'NLPFreqLimit':[2],'SVMNumber':1,
 		'MakeDBFeed':False}
