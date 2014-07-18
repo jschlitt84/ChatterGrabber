@@ -2,14 +2,19 @@ import pandas as pd
 import sys
 import datetime
 import csv
+import GISpy
+import TweetMatch
+import datetime
+import json
 
-from GISpy import sanitizeTweet, outTime, zipData
+#from GISpy import sanitizeTweet, outTime, zipData
 from copy import deepcopy
-from os import remove
+#from os import remove
+from dateutil import parser
 
 indexKeys = ['text','created_at']
 updateKeys = ['place','nltkCat','tweetType','geoType','lat','lon']
-
+blockKeys = ['$!','$?','$...','#yesallwomen']
 
 
 def makeKey(tweet,keyList):
@@ -23,7 +28,7 @@ def loadTweets(fileRef,cfg):
     for pos in loaded.index:
         entry = dict(loaded.irow(pos))
         if cfg['Sanitize']:
-            entry = sanitizeTweet(entry)
+            entry = GISpy.sanitizeTweet(entry)
         indexed[makeKey(entry,indexKeys)] = entry
     return indexed
     
@@ -31,12 +36,67 @@ def loadTweets(fileRef,cfg):
 def addExtra(data,extraArgs):
     for key in data.keys():
         data[key].update(deepcopy(extraArgs))
+        
+        
+def getWordWeights(data,daysPast,directory, timeStamp):
+    dates = [entry['created_at'] for entry in data.values()]
+    rightBound = max(dates)
+    leftBound = rightBound - datetime.timedelta(days = daysPast)
+    data = [entry for entry in data.values() if leftBound < entry['created_at'] < rightBound]
+    
+    if  'nlpCat' in data[0].keys():
+        CatCol = 'nlpCat'
+    elif 'nltkCat' in data[0].keys():
+        CatCol = 'nltkCat'
+    else:
+        CatCol = 'tweetType'
+        
+    wordWeights = dict()
+    wordList = dict()
+    wordCloud = []
+    wordList['all'] = [TweetMatch.prepTweet(entry['text']) for entry in data] 
+
+    cats = set([entry[CatCol] for entry in data])
+    for cat in cats:
+        wordList[cat] = [TweetMatch.prepTweet(entry['text']) for entry in data if entry[CatCol] == cat] 
+
+    cats.add('all')
+    for cat in cats:
+        wordList[cat] = [[word.split("'")[0] for word in entry if word not in blockKeys] for entry in wordList[cat]]
+    
+    
+    for cat in cats:
+        wordWeights[cat] = dict()  
+        for tweet in wordList[cat]:
+            for word in tweet:
+                if word not in wordWeights[cat].keys():
+                    wordWeights[cat][word] = 1
+                else:
+                    wordWeights[cat][word] += 1
+
+    
+    for cat in cats:
+        listed = []
+        for key in wordWeights[cat].keys():
+            listed.append('{text: "%s", weight: %s}' % (str(key),wordWeights[cat][key]))
+        wordCloud.append('{%s: [%s]}' % (cat,', '.join(listed)))
+    
+    jsonOut = '{wordcloud: [%s]}' % ', '.join(wordCloud)
+    outName = "wordcloud.json"
+    print "Writing wordcloud to '"+outName + "'"
+    
+    outFile = open(directory+outName, "w")
+    outFile.write(jsonOut)
+    outFile.close()
+    return directory+outName
+
+            
 
 
 def writeCSV(data, directory,name,timeStamp):
     reindexed = data.values()
     orderedKeys = sorted(reindexed[0].keys())
-    outName = name + ' ' + timeStamp.replace(':','.') + '.csv'
+    outName = name + timeStamp.replace(':','.') + '.csv'
     print "Writing collected tweets to '"+outName + "'"
     
     outFile = open(directory+outName, "w") 
@@ -45,14 +105,37 @@ def writeCSV(data, directory,name,timeStamp):
     csvOut.writerows(reindexed)
     outFile.close()
     return directory + outName
+    
 
 
-def getDeltas(fileOld, fileNew, cfg):
+def getMeta(cfg,directory,timeStamp):
+    if '_login_' in cfg.keys():
+        if cfg['MultiLogin']:
+            login = str(cfg['_login_'].keys())
+        else:
+            login = cfg['_login_']['name']
+    else:
+        login = cfg['Logins']
+    print login
+    meta = "{\n\tdate_created: '%s',\n\ttwitter_accounts: '%s',\n\tanalytics: {" % (timeStamp,login)
+    meta += "\n\t\twordcloud: {\n\t\t\tstore: {\n\t\t\t\turl: 'wordcloud.json',\n\t\t\t\ttype: 'file'"
+    meta += "\n\t\t\t}\n\t\t}\n\t}\n}"
+    outFile = open(directory+"metadata.json", "w")
+    outFile.write(meta)
+    outFile.close()
+    return directory+"metadata.json"
+    
+    
+    
+
+
+def getDeltas(fileOld, fileNew, cfg, directory):
     loadedNew = loadTweets(fileNew,cfg)
     timeList = [entry['created_at'] for entry in loadedNew.values()]
     minTime = min(timeList)
     
     loadedOld = {key:item for key, item in loadTweets(fileOld,cfg).iteritems() if item['created_at'] >= minTime}
+    
     merged = deepcopy(loadedOld); merged.update(loadedNew)
     
     newKeys = set(loadedNew.keys())
@@ -63,24 +146,29 @@ def getDeltas(fileOld, fileNew, cfg):
     sameKeys = newKeys.intersection(oldKeys)
     updatedKeys = set([entry for entry in sameKeys if makeKey(loadedNew[entry],updateKeys) != makeKey(loadedOld[entry],updateKeys)])
     
-    timeStamp =  outTime(datetime.datetime.now())['full']
+    timeStamp =  GISpy.outTime(datetime.datetime.now())['db']
+    wordWeight = getWordWeights(loadedNew,5,'',timeStamp)
+    meta = getMeta(cfg,'',timeStamp)
+    fileLocs = [fileNew,wordWeight,meta]
     
     if len(addedKeys) >= 1:
         addedData = {key:value for key,value in merged.iteritems() if key in addedKeys}
         addExtra(addedData,{'operation':'add','operationTime':timeStamp})
+        fileLocs.append(writeCSV(addedData,'',"Added",''))
     if len(removedKeys) >= 1:
         removedData = {key:value for key,value in merged.iteritems() if key in removedKeys}
         addExtra(removedData,{'operation':'remove','operationTime':timeStamp})
+        fileLocs.append(writeCSV(removedData,'',"Removed",''))
     if len(updatedKeys) >= 1:
         updatedData = {key:value for key,value in merged.iteritems() if key in updatedKeys}
         addExtra(updatedData,{'operation':'updated','operationTime':timeStamp})
+        fileLocs.append(writeCSV(updatedData,'',"Updated",''))
     
-    fileLocs = [fileNew]
-    fileLocs.append(writeCSV(addedData,'',"Added",timeStamp))
-    fileLocs.append(writeCSV(removedData,'',"Removed",timeStamp))
-    fileLocs.append(writeCSV(updatedData,'',"Updated",timeStamp))
     
-    zipData(fileLocs,'',timeStamp)
+    GISpy.zipData(fileLocs,directory,'DBFeed ',timeStamp)
 
-cfg = {'Sanitize':False}
-getDeltas('testOld.csv','testNew.csv',cfg)
+if __name__ == '__main__':
+    cfg = {'Sanitize':False,'MultiLogin':False,'_login_':{'name':'deboo'}}
+    #getDeltas('testOld.csv','testNew.csv',cfg)
+    getDeltas('novaTrainer_CollectedTweetsOld.csv','novaTrainer_CollectedTweets.csv',cfg)
+   

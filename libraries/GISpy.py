@@ -25,8 +25,10 @@ from math import pi, cos, ceil
 from multiprocessing import Process, Queue, cpu_count, Manager
 from operator import itemgetter
 
-#timeArgs = "%A_%m-%d-%y_%H-%M-%S"
+from GetDeltas import getDeltas
+
 timeArgs = '%a %d %b %Y %H:%M:%S'
+dbTime = '%Y-%m-%d %H-%M-%S'
 
 gdiEmail = 'Subscriber Email,CC Email'
 gdiParams = 'Param Name,Param Key'
@@ -131,13 +133,15 @@ def fillBox(cfg,self):
 
 
 def zipData(files, directory, name, timeStamp):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
     """Zips list of files from given directory, appends timestampif present"""
     outName = directory + name + timeStamp.replace(':','.') + '.zip'
         
     open(outName, 'w').close()
     zipOut = zipfile.ZipFile(outName,'a')
     for dataFile in files:
-        zipOut.write(dataFile, arcname = dataFile.split('/')[-1])
+        zipOut.write(dataFile, arcname = name+'/'+timeStamp+'/'+dataFile.split('/')[-1])
     zipOut.close()
     for dataFile in files[1:]:
         os.remove(dataFile)
@@ -394,7 +398,8 @@ def stripUnicode(text):
 def outTime(dtobject):
     """quick, standardized time string out"""
     return {'full':dtobject.strftime(timeArgs),'day':dtobject.strftime('%A'),
-        'date':dtobject.strftime('%m-%d-%y'),'time':dtobject.strftime('%H:%S')}
+        'date':dtobject.strftime('%m-%d-%y'),'time':dtobject.strftime('%H:%S'),
+        'db':dtobject.strftime(dbTime)}
     
     
     
@@ -942,23 +947,26 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             if cfg['Sanitize'] != False:
                 collectedContent = [sanitizeTweet(tweet) for tweet in collectedContent]
             
+            fileName = directory+outName+'.csv'
             
+            if cfg['MakeDBFeed']:
+                fileNameOld = directory+outName+'Old.csv'
+                shutil.copyfile(fileName, fileNameOld)
+                
             print "Writing collected tweets to "+outName+".csv"   
             outFile = open(directory+outName+'.csv', "w") 
             csvOut = csv.DictWriter(outFile,orderedKeys)
             csvOut.writer.writerow(orderedKeys)
             csvOut.writerows(collectedContent)
+            outFile.close()
+            
+            if cfg['MakeDBFeed']:
+                time.sleep(0.2)
+                getDeltas(fileNameOld, fileName, cfg, 'dbFiles/')
 
-            #DEBOO TAG TRACKING
             tags = getTags(cfg,collectedContent)
             
             
-            """for row in collectedContent:
-                print row
-                csvOut.writerow(row)
-                print "complete"""
-                
-            outFile.close()
             print "...complete"
             return tags
             #return geoCache
@@ -1067,7 +1075,8 @@ def getConfig(directory):
                 'TrackHashTags':False,'TrackHashDays':10,
                 'TrackHashCount':5,'DaysBack':'all',
                 'NLPnGrams':[1,2,3,4],'NLPMode':'naive bayes',
-		'NLPFreqLimit':[2],'SVMNumber':1}
+		'NLPFreqLimit':[2],'SVMNumber':1,
+		'MakeDBFeed':False}
     
     if type(directory) is str:
         if directory == "null":
