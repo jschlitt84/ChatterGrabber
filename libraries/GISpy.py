@@ -1175,10 +1175,13 @@ def textToList(string):
     listed = text.split(' ')
     return listed
     
+    
+    
 def sanitizeTweet(tweet):
     words = tweet['text'].split(' ')
     words = [wordSwap(word) for word in words]
     tweet['text'] = ' '.join(words)
+    tweet['place'] = stripAddress(tweet['place'])
     if 'user_screen_name' in tweet.keys():
         tweet['user_screen_name'] = "ATweeter"
     if str(tweet['lat']).lower() != 'nan' and len(str(tweet['lat'])) > 6:
@@ -1187,6 +1190,37 @@ def sanitizeTweet(tweet):
         tweet['lon'] = float(str(tweet['lon'])[:-2])
     tweet['id'] = int(str(tweet['id'])[:-2]+'00')
     return tweet
+    
+    
+    
+def isNumber(number):
+    try:
+        float(number)
+        return True
+    except:
+        return False
+
+
+
+def stripAddress(address):
+    routeWords = {'route','highway'
+    if address == 'null':
+        return address
+    splitAddy = address.split(' ')
+    words = splitAddy[:-2]
+    ends = splitAddy[-2:]
+    isAddy = lambda x: sum([1 for item in x.split('-') if isNumber(item)]) == x.count('-') + 1
+    addyWords =  [word for word in words if isAddy(word)]
+    if len(addyWords) != 0:
+        print address
+        print address.replace(addyWords[0],"$address",1)
+        print
+        return address.replace(addyWords[0],"$address",1)
+    else:
+        return address
+    
+    
+    
     
 def wordSwap(word):
     if len(word) > 0:
