@@ -37,6 +37,7 @@ pickleName = "GeoPickle.txt"
 
 
 
+
 def updateGeoPickle(dictionary,fileRef):
     """Updates file & memory version of geoPickle"""
     loadedLength = length1 = len(dictionary.keys())
@@ -64,6 +65,7 @@ def updateGeoPickle(dictionary,fileRef):
     #print "DEBOOOOPCIKEL", len(dictionary.keys()),fileRef
     
     
+    
 
 def getDelay(self,elapsed):
     """Calculates optimum stacked search delay for API rate limits"""
@@ -71,6 +73,8 @@ def getDelay(self,elapsed):
     if self.multiAPI:
 	secPerSearch = secPerSearch/len(self.api.keys())
     return secPerSearch
+
+
 
 
 def fillBox(cfg,self):
@@ -82,7 +86,6 @@ def fillBox(cfg,self):
     minLon = min([cfg['Lon1'],cfg['Lon2']])
     maxLon = max([cfg['Lon1'],cfg['Lon2']])
     inr = 43301.3 # inradius
-    
 
     circumr = 50000.0 # circumradius (50km)
     circumrMiles = int((0.621371 * circumr)/1000+1)
@@ -132,25 +135,30 @@ def fillBox(cfg,self):
     
 
 
+
 def zipData(files, directory, name, timeStamp):
+    """Zips list of files from given directory, appends timestampif present"""
     if not os.path.exists(directory):
         os.makedirs(directory)
-    """Zips list of files from given directory, appends timestampif present"""
+
     outName = directory + name + timeStamp.replace(':','.') + '.zip'
         
     open(outName, 'w').close()
-    zipOut = zipfile.ZipFile(outName,'a')
+    zipOut = zipfile.ZipFile(outName,'a', zipfile.ZIP_DEFLATED)
     for dataFile in files:
         zipOut.write(dataFile, arcname = name+'/'+timeStamp+'/'+dataFile.split('/')[-1])
     zipOut.close()
     for dataFile in files[1:]:
         os.remove(dataFile)
+    print "DEBOOooooooO"
+    quit()
     return outName
     
     
     
     
 def reformatTags(tags,cfg):
+    """Printable hashtag summary"""
     outText = 'Top %s hashtags for the past %s days:\n' % (cfg['TrackHashCount'],cfg['TrackHashDays'])
     if type(tags) is dict:
         for cat in tags.keys():
@@ -705,6 +713,7 @@ def isInBox(cfg,geoCache,status):
 
 
 
+
 def getGeo(cfg):
     """Generates geo queries to cover lat/lon box"""
     lat1 = cfg['Lat1']
@@ -779,6 +788,7 @@ def jsonToDictFix(jsonIn):
             
             
             
+            
 def dictToJsonFix(jsonOut):
      """Error tolerant json converter"""
      for row in range(len(jsonOut)):
@@ -786,7 +796,9 @@ def dictToJsonFix(jsonOut):
             jsonOut[row] = json.dump(jsonOut[row])   
 
 
+
 def getReformatted(directory, lists, cfg, pickleMgmt, fileList, core, out_q, keepTypes, NLPClassifier):
+    """Reformats tweet content from raw tweets"""
     count = 0
     collectedContent = []
     collectedTypes = {}
@@ -852,6 +864,8 @@ def getReformatted(directory, lists, cfg, pickleMgmt, fileList, core, out_q, kee
     #out_q.put({'content'+str(core):collectedContent,'types'+str(core):collectedTypes})
     print "Core", core, "tasks complete!"
     out_q.put({'content'+str(core):collectedContent})        
+
+
 
 
 def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
@@ -1073,7 +1087,7 @@ def getConfig(directory):
                 'KeepDiscardsNLP':False,'DiscardSampleNLP':0,
                 'MakeFilteredJson':False,'SendEvery':1,
                 'TrackHashTags':False,'TrackHashDays':10,
-                'TrackHashCount':5,'DaysBack':'all',
+                'TrackHashCount':5,'DaysBack':90,
                 'NLPnGrams':[1,2,3,4],'NLPMode':'naive bayes',
 		'NLPFreqLimit':[2],'SVMNumber':1,
 		'MakeDBFeed':False}
@@ -1175,10 +1189,15 @@ def textToList(string):
     listed = text.split(' ')
     return listed
     
+    
+    
+    
 def sanitizeTweet(tweet):
+    """Strips tweet of personally identifying information"""
     words = tweet['text'].split(' ')
     words = [wordSwap(word) for word in words]
     tweet['text'] = ' '.join(words)
+    tweet['place'] = stripAddress(tweet['place'])
     if 'user_screen_name' in tweet.keys():
         tweet['user_screen_name'] = "ATweeter"
     if str(tweet['lat']).lower() != 'nan' and len(str(tweet['lat'])) > 6:
@@ -1188,8 +1207,43 @@ def sanitizeTweet(tweet):
     tweet['id'] = int(str(tweet['id'])[:-2]+'00')
     return tweet
     
+    
+    
+    
+def isNumber(number):
+    """Checks if value given is a number"""
+    try:
+        float(number.replace(',',''))
+        return True
+    except:
+        return False
+
+
+
+def stripAddress(address):
+    """Removes address number from text address"""
+    routeWords = {'route','highway','road','us','u.s.'}
+    if address == 'null':
+        return address
+    splitAddy = address.split(' ')
+    words = splitAddy[:-2]
+    ends = splitAddy[-2:]
+    protect = set()
+    pairs = [[words[i],words[i+1]] for i in range(len(words)-1)]
+    protect = set([pair[1] for pair in pairs if pair[0].lower() in routeWords])
+    isAddy = lambda x: sum([1 for item in x.split('-') if isNumber(item)]) == x.count('-') + 1 and x not in protect
+    addyWords =  [word for word in words if isAddy(word)]
+    if len(addyWords) != 0:
+        return address.replace(addyWords[0],"$address"+' ,'*(',' in addyWords[0]),1)
+    else:
+        return address
+    
+    
+    
+    
 def wordSwap(word):
+    """Replaces user names with tag"""
     if len(word) > 0:
-        if word[0] == '@':
+        if '@' in word[0]:
             return "@ATweeter"
     return word
