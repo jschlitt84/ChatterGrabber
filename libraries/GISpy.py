@@ -150,8 +150,6 @@ def zipData(files, directory, name, timeStamp):
     zipOut.close()
     for dataFile in files[1:]:
         os.remove(dataFile)
-    print "DEBOOooooooO"
-    quit()
     return outName
     
     
@@ -959,12 +957,12 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
   		collectedContent = [entry for entry in collectedContent if str(entry['NLPCat']) in cfg['OnlyKeepNLP']]
   		
             if cfg['Sanitize'] != False:
-                collectedContent = [sanitizeTweet(tweet) for tweet in collectedContent]
+                collectedContent = [sanitizeTweet(tweet,cfg) for tweet in collectedContent]
             
             fileName = directory+outName+'.csv'
+            fileNameOld = directory+outName+'Old.csv'
             
             if cfg['MakeDBFeed']:
-                fileNameOld = directory+outName+'Old.csv'
                 shutil.copyfile(fileName, fileNameOld)
                 
             print "Writing collected tweets to "+outName+".csv"   
@@ -974,7 +972,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             csvOut.writerows(collectedContent)
             outFile.close()
             
-            if cfg['MakeDBFeed']:
+            if cfg['MakeDBFeed'] or cfg['OneTimeDump']:
                 time.sleep(0.2)
                 getDeltas(fileNameOld, fileName, cfg, 'dbFiles/')
 
@@ -1090,7 +1088,7 @@ def getConfig(directory):
                 'TrackHashCount':5,'DaysBack':90,
                 'NLPnGrams':[1,2,3,4],'NLPMode':'naive bayes',
 		'NLPFreqLimit':[2],'SVMNumber':1,
-		'MakeDBFeed':False}
+		'MakeDBFeed':False,'OneTimeDump':False}
     
     if type(directory) is str:
         if directory == "null":
@@ -1191,7 +1189,8 @@ def textToList(string):
     
     
     
-def sanitizeTweet(tweet):
+    
+def sanitizeTweet(tweet,cfg):
     """Strips tweet of personally identifying information"""
     words = tweet['text'].split(' ')
     words = [wordSwap(word) for word in words]
@@ -1203,14 +1202,17 @@ def sanitizeTweet(tweet):
         tweet['lat'] = float(str(tweet['lat'])[:-2])
     if str(tweet['lon']).lower() != 'nan' and len(str(tweet['lon'])) > 6:
         tweet['lon'] = float(str(tweet['lon'])[:-2])
-    tweet['id'] = int(str(tweet['id'])[:-2]+'00')
+    if not cfg['MakeDBFeed']:
+        tweet['id'] = int(str(tweet['id'])[:-2]+'00')
     return tweet
     
     
     
+    
 def isNumber(number):
+    """Checks if value given is a number"""
     try:
-        float(number)
+        float(number.replace(',',''))
         return True
     except:
         return False
@@ -1218,19 +1220,20 @@ def isNumber(number):
 
 
 def stripAddress(address):
-    routeWords = {'route','highway'
+    """Removes address number from text address"""
+    routeWords = {'route','highway','road','us','u.s.'}
     if address == 'null':
         return address
     splitAddy = address.split(' ')
     words = splitAddy[:-2]
     ends = splitAddy[-2:]
-    isAddy = lambda x: sum([1 for item in x.split('-') if isNumber(item)]) == x.count('-') + 1
+    protect = set()
+    pairs = [[words[i],words[i+1]] for i in range(len(words)-1)]
+    protect = set([pair[1] for pair in pairs if pair[0].lower() in routeWords])
+    isAddy = lambda x: sum([1 for item in x.split('-') if isNumber(item)]) == x.count('-') + 1 and x not in protect
     addyWords =  [word for word in words if isAddy(word)]
     if len(addyWords) != 0:
-        print address
-        print address.replace(addyWords[0],"$address",1)
-        print
-        return address.replace(addyWords[0],"$address",1)
+        return address.replace(addyWords[0],"$address"+' ,'*(',' in addyWords[0]),1)
     else:
         return address
     

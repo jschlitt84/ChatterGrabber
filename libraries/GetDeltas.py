@@ -28,7 +28,7 @@ def loadTweets(fileRef,cfg):
     for pos in loaded.index:
         entry = dict(loaded.irow(pos))
         if cfg['Sanitize']:
-            entry = GISpy.sanitizeTweet(entry)
+            entry = GISpy.sanitizeTweet(entry,cfg)
         indexed[makeKey(entry,indexKeys)] = entry
     return indexed
     
@@ -134,7 +134,10 @@ def getDeltas(fileOld, fileNew, cfg, directory):
     timeList = [entry['created_at'] for entry in loadedNew.values()]
     minTime = min(timeList)
     
-    loadedOld = {key:item for key, item in loadTweets(fileOld,cfg).iteritems() if item['created_at'] >= minTime}
+    if not cfg['OneTimeDump']:
+        loadedOld = {key:item for key, item in loadTweets(fileOld,cfg).iteritems() if item['created_at'] >= minTime}
+    else:
+        loadedOld = dict()
     
     merged = deepcopy(loadedOld); merged.update(loadedNew)
     
@@ -152,9 +155,15 @@ def getDeltas(fileOld, fileNew, cfg, directory):
     fileLocs = [fileNew,wordWeight,meta]
     
     if len(addedKeys) >= 1:
+        if cfg['OneTimeDump']:
+            descriptor = 'Dumped'
+            operation = 'dump'
+        else:
+            descriptor = 'Added'
+            operation = 'add'
         addedData = {key:value for key,value in merged.iteritems() if key in addedKeys}
-        addExtra(addedData,{'operation':'add','operationTime':timeStamp})
-        fileLocs.append(writeCSV(addedData,'',"Added",''))
+        addExtra(addedData,{'operation':operation,'operationTime':timeStamp})
+        fileLocs.append(writeCSV(addedData,'',descriptor,''))
     if len(removedKeys) >= 1:
         removedData = {key:value for key,value in merged.iteritems() if key in removedKeys}
         addExtra(removedData,{'operation':'remove','operationTime':timeStamp})

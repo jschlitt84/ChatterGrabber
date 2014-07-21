@@ -102,6 +102,7 @@ def main():
     
     skipReformat = '-s' in sys.argv
     quickReformat = '-r' in sys.argv and not skipReformat
+    oneTimeDump = '-o' in sys.argv and not skipReformat
     
     try: 
         userLogin = sys.argv[2]
@@ -150,10 +151,14 @@ def main():
             cfg['OnlyKeepNLP'] = [str(key) for key in cfg['OnlyKeepNLP']]
             NLPClassifier = TweetMatch.getClassifier(cfg['NLPFile'],cfg)
         
+        cfg['OneTimeDump'] = oneTimeDump
+        if oneTimeDump:
+                cfg['DaysBack'] = 'all'
+        
         if not skipReformat:
 	    reformatOld(directory,lists,cfg,geoCache,NLPClassifier)
 	    updateGeoPickle(geoCache,directory+'caches/'+pickleName)
-            if quickReformat:
+            if quickReformat or oneTimeDump:
                 quit()        	
         
     else: 
