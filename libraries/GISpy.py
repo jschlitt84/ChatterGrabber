@@ -1191,7 +1191,6 @@ def textToList(string):
     
     
     
-    
 def sanitizeTweet(tweet):
     """Strips tweet of personally identifying information"""
     words = tweet['text'].split(' ')
@@ -1209,11 +1208,9 @@ def sanitizeTweet(tweet):
     
     
     
-    
 def isNumber(number):
-    """Checks if value given is a number"""
     try:
-        float(number.replace(',',''))
+        float(number)
         return True
     except:
         return False
@@ -1221,20 +1218,19 @@ def isNumber(number):
 
 
 def stripAddress(address):
-    """Removes address number from text address"""
-    routeWords = {'route','highway','road','us','u.s.'}
+    routeWords = {'route','highway'
     if address == 'null':
         return address
     splitAddy = address.split(' ')
     words = splitAddy[:-2]
     ends = splitAddy[-2:]
-    protect = set()
-    pairs = [[words[i],words[i+1]] for i in range(len(words)-1)]
-    protect = set([pair[1] for pair in pairs if pair[0].lower() in routeWords])
-    isAddy = lambda x: sum([1 for item in x.split('-') if isNumber(item)]) == x.count('-') + 1 and x not in protect
+    isAddy = lambda x: sum([1 for item in x.split('-') if isNumber(item)]) == x.count('-') + 1
     addyWords =  [word for word in words if isAddy(word)]
     if len(addyWords) != 0:
-        return address.replace(addyWords[0],"$address"+' ,'*(',' in addyWords[0]),1)
+        print address
+        print address.replace(addyWords[0],"$address",1)
+        print
+        return address.replace(addyWords[0],"$address",1)
     else:
         return address
     
