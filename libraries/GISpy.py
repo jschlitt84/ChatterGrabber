@@ -168,53 +168,6 @@ def reformatTags(tags,cfg):
         
            
                  
-def sendCSVTest(cfg, directory,extra):
-    #Adapting method from http://kutuma.blogspot.com/2007/08/sending-emails-via-gmail-with-python.html
-    """Emails results to GDI subscriber(s)"""
-    outName = cfg['FileName']+"_CollectedTweets"
-    attachment = 'studies/'+cfg['OutDir']+outName+'.csv.zip'
-
-    print "Preparing to send zipped CSV file:", attachment
-        
-    msg = MIMEMultipart()
-    
-    msg['From'] = cfg['GDI']['UserName']
-    msg['To'] = cfg['GDI']['Email']
-    msg['Cc'] = cfg['GDI']['CC']
-    msg['Subject'] = cfg['FileName'] + ' collected tweets for ' + datetime.datetime.now().strftime("%A %d")
-    
-    text = "Please find csv spreadsheet file attached for study: " + cfg['FileName']
-    text += "\nParameters & configuration accessible at: " + cfg['GDI']['URL']
-    text += "\n\nAll changed parameters are updated after midnight & will not influence collection & parsing until the following day.\n\n"
-    text += extra
-    msg.attach(MIMEText(text))
-    
-    directory += 'studies/' + cfg['OutDir'] + cfg['Method'] + '/'
-    outName = cfg['FileName']+"_CollectedTweets"
-    attachment = directory+outName+'.csv'
-    attachment = zipData([attachment],directory,'CollectedTweets','')
-    
-    fp = open(attachment,'rb')
-    part = MIMEBase('application', 'octet-stream')
-    part.set_payload(encodebytes(fp.read()).decode())
-    fp.close()
-    #Encoders.encode_base64(part)
-    
-    part.add_header('Content-Transfer-Encoding', 'base64')
-    part.add_header('Content-Disposition',
-            'attachment; filename="%s"' % os.path.basename(attachment))
-    msg.attach(part)
-    
-    mailServer = smtplib.SMTP("smtp.gmail.com", 587)
-    mailServer.ehlo()
-    mailServer.starttls()
-    mailServer.ehlo()
-    mailServer.login(cfg['GDI']['UserName'], cfg['GDI']['Password'])
-    mailServer.sendmail(cfg['GDI']['UserName'],[msg['To'],msg['Cc']], msg.as_string())
-    mailServer.close()
-    print "File sent succesfully!"                 
-                                            
-
 def sendCSV(cfg, directory,extra):
     #Adapting method from http://kutuma.blogspot.com/2007/08/sending-emails-via-gmail-with-python.html
     """Emails results to GDI subscriber(s)"""
@@ -226,15 +179,16 @@ def sendCSV(cfg, directory,extra):
     msg = MIMEMultipart()
     
     msg['From'] = cfg['GDI']['UserName']
-    msg['To'] = ', '.join(cfg['GDI']['Email'])
-    msg['Cc'] = ', '.join(cfg['GDI']['CC'])
+    msg['To'] = ','.join(cfg['GDI']['Email'])
+    msg['Cc'] = ','.join(cfg['GDI']['CC'])
+    recipients = cfg['GDI']['Email']+cfg['GDI']['CC']
     msg['Subject'] = cfg['FileName'] + ' collected tweets for ' + datetime.datetime.now().strftime("%A %d")
     
-    text = "Please find csv spreadsheet file attached for study: " + cfg['FileName']
-    text += "\nParameters & configuration accessible at: " + cfg['GDI']['URL']
-    text += "\n\nAll changed parameters are updated after midnight & will not influence collection & parsing until the following day.\n\n"
-    text += extra
-    msg.attach(MIMEText(text))
+    body = "Please find csv spreadsheet file attached for study: " + cfg['FileName']
+    body += "\nParameters & configuration accessible at: " + cfg['GDI']['URL']
+    body += "\n\nAll changed parameters are updated after midnight & will not influence collection & parsing until the following day.\n\n"
+    body += extra
+    msg.attach(MIMEText(body))
     
     dirPrefix = 'studies/' + cfg['OutDir'] + cfg['Method'] + '/'
     if dirPrefix not in directory:
@@ -243,10 +197,7 @@ def sendCSV(cfg, directory,extra):
     attachment = directory+outName+'.csv'
     attachment = zipData([attachment],directory,'CollectedTweets','')
     
-    #msg['To'] = msg['To']
-    #msg['Cc'] = msg['Cc']
-    print "DEOOOO TOOO", msg['To']
-    print "DEBOOO CC", msg['Cc']
+    print '/n',msg.as_string()
     
     part = MIMEBase('application', 'octet-stream')
     part.set_payload(open(attachment, 'rb').read())
@@ -261,11 +212,13 @@ def sendCSV(cfg, directory,extra):
     mailServer.starttls()
     mailServer.ehlo()
     mailServer.login(cfg['GDI']['UserName'], cfg['GDI']['Password'])
-    mailServer.sendmail(cfg['GDI']['UserName'],[msg['To'],msg['Cc']], msg.as_string())
+    mailServer.sendmail(cfg['GDI']['UserName'],recipients, msg.as_string())
+ 
     mailServer.close()
     print "File sent succesfully!" 
 
 
+    
     
 def loadGDIAccount(gDocURL,directory):
     """Pulls subscriber info & settings from local config file"""
@@ -368,13 +321,13 @@ def giSpyGDILoad(gDocURL,directory):
         emails = gd.getLine('null', 'null', gDocURL, gdiEmail, False, [])
     
     try:
-        gdi['Email'] = [item for item in emails[0].split(' ') if item != '']
+        gdi['Email'] = [item for item in emails[0].split(' ') if '@' in item]
     except:
-        gdi['Email'] = ""
+        gdi['Email'] = [""]
     try:
-        gdi['CC'] = [item for item in emails[1].split(' ') if item != '']
+        gdi['CC'] = [item for item in emails[1].split(' ') if '@' in item]
     except:
-        gdi['CC'] = ""
+        gdi['CC'] = [""]
         
     gdi['URL'] = gDocURL
     gdi['UserName'] = account['userName']
