@@ -136,7 +136,7 @@ def fillBox(cfg,self):
 
 
 
-def zipData(files, directory, name, timeStamp):
+def zipData(files, directory, name, timeStamp,cfg):
     """Zips list of files from given directory, appends timestampif present"""
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -146,10 +146,12 @@ def zipData(files, directory, name, timeStamp):
     open(outName, 'w').close()
     zipOut = zipfile.ZipFile(outName,'a', zipfile.ZIP_DEFLATED)
     for dataFile in files:
-        zipOut.write(dataFile, arcname = name+'/'+timeStamp+'/'+dataFile.split('/')[-1])
+        zipOut.write(dataFile, arcname = timeStamp+'/'+dataFile.split('/')[-1])
     zipOut.close()
+    print "DEBOOO", files, directory
     for dataFile in files[1:]:
-        os.remove(dataFile)
+        if not (cfg['MakeDBFeed'] and 'wordcloud.json' in dataFile):
+            os.remove(dataFile)
     return outName
     
     
@@ -195,9 +197,9 @@ def sendCSV(cfg, directory,extra):
         directory += dirPrefix
     outName = cfg['FileName']+"_CollectedTweets"
     attachment = directory+outName+'.csv'
-    attachment = zipData([attachment],directory,'CollectedTweets','')
+    attachment = zipData([attachment],directory,'CollectedTweets','',cfg)
     
-    print '/n',msg.as_string()
+    print '\n',msg.as_string()
     
     part = MIMEBase('application', 'octet-stream')
     part.set_payload(open(attachment, 'rb').read())
@@ -970,9 +972,11 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             
             if cfg['MakeDBFeed']:
                 shutil.copyfile(fileName, fileNameOld)
+             
+            csvFile = directory+outName+'.csv' 
                 
             print "Writing collected tweets to "+outName+".csv"   
-            outFile = open(directory+outName+'.csv', "w") 
+            outFile = open(csvFile, "w") 
             csvOut = csv.DictWriter(outFile,orderedKeys)
             csvOut.writer.writerow(orderedKeys)
             csvOut.writerows(collectedContent)
@@ -980,7 +984,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             
             if cfg['MakeDBFeed'] or cfg['OneTimeDump'] or cfg['QuickSend']:
                 time.sleep(0.2)
-                getDeltas(fileNameOld, fileName, cfg, 'dbFiles/')
+                getDeltas(fileNameOld, fileName, cfg, cfg['OutDir'])
 
             tags = getTags(cfg,collectedContent)
             
@@ -988,6 +992,18 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                 print "Quick sending email"
                 sendCSV(cfg,directory,reformatTags(tags,cfg))
             
+            if cfg['Dashboard']:
+                print "Attempting to update database with wordcloud & csv"
+                print "CSV file reference:",csvFile
+                command = "rake epidash:import_raw_tweets[%s]" % csvFile
+                status = os.system(command)
+                if status == 0:
+                    print "Update posted!"
+                else:
+                    print "Update failed, returning status", status
+                    
+                    
+                    
             
             print "...complete"
             return tags
@@ -1099,7 +1115,7 @@ def getConfig(directory):
                 'NLPnGrams':[1,2,3,4],'NLPMode':'naive bayes',
 		'NLPFreqLimit':[2],'SVMNumber':1,
 		'MakeDBFeed':False,'OneTimeDump':False,
-		'QuickSend':False}
+		'QuickSend':False,'DashBoard':False}
     
     if type(directory) is str:
         if directory == "null":

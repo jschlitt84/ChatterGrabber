@@ -17,8 +17,12 @@ updateKeys = ['place','nltkCat','tweetType','geoType','lat','lon']
 blockKeys = ['$!','$?','$...','#yesallwomen']
 
 
+
+
 def makeKey(tweet,keyList):
     return ','.join([(entry+':'+str(tweet[entry])) for entry in keyList if entry in tweet.keys()])
+    
+    
     
     
 def loadTweets(fileRef,cfg):
@@ -33,12 +37,17 @@ def loadTweets(fileRef,cfg):
     return indexed
     
     
+    
+    
 def addExtra(data,extraArgs):
     for key in data.keys():
         data[key].update(deepcopy(extraArgs))
         
         
+        
+        
 def getWordWeights(data,daysPast,directory, timeStamp):
+    print "DEBOO WC DIR", directory
     dates = [entry['created_at'] for entry in data.values()]
     rightBound = max(dates)
     leftBound = rightBound - datetime.timedelta(days = daysPast)
@@ -73,8 +82,7 @@ def getWordWeights(data,daysPast,directory, timeStamp):
                     wordWeights[cat][word] = 1
                 else:
                     wordWeights[cat][word] += 1
-
-    
+                    
     for cat in cats:
         listed = []
         for key in wordWeights[cat].keys():
@@ -94,6 +102,7 @@ def getWordWeights(data,daysPast,directory, timeStamp):
 
 
 def writeCSV(data, directory,name,timeStamp):
+    print "DEBOO CSV DIR", directory
     reindexed = data.values()
     orderedKeys = sorted(reindexed[0].keys())
     outName = name + timeStamp.replace(':','.') + '.csv'
@@ -106,6 +115,7 @@ def writeCSV(data, directory,name,timeStamp):
     outFile.close()
     return directory + outName
     
+
 
 
 def getMeta(cfg,directory,timeStamp):
@@ -124,7 +134,6 @@ def getMeta(cfg,directory,timeStamp):
     outFile.write(meta)
     outFile.close()
     return directory+"metadata.json"
-    
     
     
 
@@ -148,11 +157,16 @@ def getDeltas(fileOld, fileNew, cfg, directory):
     removedKeys = oldKeys.difference(newKeys)
     sameKeys = newKeys.intersection(oldKeys)
     updatedKeys = set([entry for entry in sameKeys if makeKey(loadedNew[entry],updateKeys) != makeKey(loadedOld[entry],updateKeys)])
+    expDir = 'studies/'+ cfg['OutDir'] + cfg['Method'] + '/'
     
     timeStamp =  GISpy.outTime(datetime.datetime.now())['db']
-    wordWeight = getWordWeights(loadedNew,5,'',timeStamp)
-    meta = getMeta(cfg,'',timeStamp)
+    wordWeight = getWordWeights(loadedNew,5,expDir,timeStamp)
+    meta = getMeta(cfg,expDir,timeStamp)
     fileLocs = [fileNew,wordWeight,meta]
+    
+    addedLoc = removedLoc = updatedLoc = 'null'
+    
+    
     
     if len(addedKeys) >= 1:
         if cfg['OneTimeDump']:
@@ -163,21 +177,25 @@ def getDeltas(fileOld, fileNew, cfg, directory):
             operation = 'add'
         addedData = {key:value for key,value in merged.iteritems() if key in addedKeys}
         addExtra(addedData,{'operation':operation,'operationTime':timeStamp})
-        fileLocs.append(writeCSV(addedData,'',descriptor,''))
+        addedLoc = writeCSV(addedData,expDir,descriptor,'')
+        fileLocs.append(addedLoc)
     if len(removedKeys) >= 1:
         removedData = {key:value for key,value in merged.iteritems() if key in removedKeys}
         addExtra(removedData,{'operation':'remove','operationTime':timeStamp})
-        fileLocs.append(writeCSV(removedData,'',"Removed",''))
+        removedLoc = writeCSV(removedData,expDir,"Removed",'')
+        fileLocs.append(removedLoc)
     if len(updatedKeys) >= 1:
         updatedData = {key:value for key,value in merged.iteritems() if key in updatedKeys}
         addExtra(updatedData,{'operation':'updated','operationTime':timeStamp})
-        fileLocs.append(writeCSV(updatedData,'',"Updated",''))
+        updatedLoc = writeCSV(updatedData,expDir,"Updated",'')
+        fileLocs.append(updatedLoc)
     
     
-    GISpy.zipData(fileLocs,directory,'DBFeed ',timeStamp)
+    GISpy.zipData(fileLocs,'dbFiles/'+directory,'DBFeed ',timeStamp,cfg)
+    return {'wordWeight':wordWeight,'meta':meta,'added':addedLoc,'removed':removedLoc,'updated':updatedLoc}
 
 if __name__ == '__main__':
     cfg = {'Sanitize':False,'MultiLogin':False,'_login_':{'name':'deboo'}}
-    #getDeltas('testOld.csv','testNew.csv',cfg)
+
     getDeltas('novaTrainer_CollectedTweetsOld.csv','novaTrainer_CollectedTweets.csv',cfg)
    
