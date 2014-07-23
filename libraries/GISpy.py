@@ -261,7 +261,7 @@ def sendCSV(cfg, directory,extra):
     mailServer.starttls()
     mailServer.ehlo()
     mailServer.login(cfg['GDI']['UserName'], cfg['GDI']['Password'])
-    mailServer.sendmail(cfg['GDI']['UserName'],msg['To'],msg['Cc'], msg.as_string())
+    mailServer.sendmail(cfg['GDI']['UserName'],[msg['To'],msg['Cc']], msg.as_string())
     mailServer.close()
     print "File sent succesfully!" 
 
