@@ -991,12 +991,12 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             if cfg['QuickSend']:
                 print "Quick sending email"
                 sendCSV(cfg,directory,reformatTags(tags,cfg))
-            print "DEBOO", cfg
+            
             
             if cfg['Dashboard']:
                 print "Attempting to update database with wordcloud & csv"
                 print "CSV file reference:",csvFile
-                command = "rake epidash:import_raw_tweets[%s]" % csvFile
+                command = "rake %s:import_raw_tweets[%s]" % (cfg['RakeFile'],csvFile)
                 status = os.system(command)
                 if status == 0:
                     print "Update posted!"
@@ -1116,7 +1116,8 @@ def getConfig(directory):
                 'NLPnGrams':[1,2,3,4],'NLPMode':'naive bayes',
 		'NLPFreqLimit':[2],'SVMNumber':1,
 		'MakeDBFeed':False,'OneTimeDump':False,
-		'QuickSend':False,'Dashboard':False}
+		'QuickSend':False,'Dashboard':False,
+		'RakeFile':'epidash/webapp'}
     
     if type(directory) is str:
         if directory == "null":
