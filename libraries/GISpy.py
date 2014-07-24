@@ -9,6 +9,7 @@ import smtplib
 import cPickle
 import TweetMatch
 import zipfile
+import subprocess
 
 import gDocsImport as gd
 
@@ -999,11 +1000,13 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                 command = "rake %s:import_raw_tweets[%s]" % ('epidash',csvFile)
                 fullCommand = 'source $HOME/.bash_profile && rvm use 2.0 && cd %s/webapp && %s' % (cfg['EpidashDir'],command)
                 print "DEBOOOO", fullCommand
-                status = os.system(fullCommand)
-                if status == 0:
+                #status = os.system(fullCommand)
+                process = subprocess.Popen(fullCommand.split(), stdout=subprocess.PIPE)
+                output = process.communicate()[0]
+                """if status == 0:
                     print "Update posted!"
                 else:
-                    print "Update failed, returning status", status
+                    print "Update failed, returning status", status"""
                     
                     
                     
