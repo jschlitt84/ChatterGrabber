@@ -996,15 +996,14 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             if cfg['Dashboard']:
                 print "Attempting to update database with wordcloud & csv"
                 print "CSV file reference:",csvFile
-                command = "cd %s" % cfg['RakeFile']
-                command = "rake %s:import_raw_tweets[%s]" % ('webapp',csvFile)
+                command = "rake %s:import_raw_tweets[%s]" % ('epidash',csvFile)
                 
-                status = os.system('cd %s' % cfg['EpidashDir'])
-                status = os.system(command)
-                if status == 0:
+                status1 = os.system('cd %s/webapp' % cfg['EpidashDir'])
+                status2 = os.system(command)
+                if status1 == 0 and status2 == 0:
                     print "Update posted!"
                 else:
-                    print "Update failed, returning status", status
+                    print "Update failed, returning status", status1, status2
                     
                     
                     
