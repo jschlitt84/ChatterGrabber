@@ -1115,7 +1115,7 @@ def getConfig(directory):
                 'NLPnGrams':[1,2,3,4],'NLPMode':'naive bayes',
 		'NLPFreqLimit':[2],'SVMNumber':1,
 		'MakeDBFeed':False,'OneTimeDump':False,
-		'QuickSend':False,'DashBoard':False}
+		'QuickSend':False,'Dashboard':False}
     
     if type(directory) is str:
         if directory == "null":
