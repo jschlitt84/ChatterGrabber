@@ -997,13 +997,13 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                 print "Attempting to update database with wordcloud & csv"
                 print "CSV file reference:",csvFile
                 command = "rake %s:import_raw_tweets[%s]" % ('epidash',csvFile)
-                
-                status1 = os.system('cd %s/webapp' % cfg['EpidashDir'])
-                status2 = os.system(command)
-                if status1 == 0 and status2 == 0:
+                fullCommand = 'cd %s/webapp && %s' % (cfg['EpidashDir'],command)
+                print "DEBOOOO", fullCommand
+                status = os.system(fullCommand)
+                if status == 0:
                     print "Update posted!"
                 else:
-                    print "Update failed, returning status", status1, status2
+                    print "Update failed, returning status", status
                     
                     
                     
