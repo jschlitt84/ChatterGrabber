@@ -47,7 +47,6 @@ def addExtra(data,extraArgs):
         
         
 def getWordWeights(data,daysPast,directory, timeStamp):
-    print "DEBOO WC DIR", directory
     dates = [entry['created_at'] for entry in data.values()]
     rightBound = max(dates)
     leftBound = rightBound - datetime.timedelta(days = daysPast)
@@ -102,7 +101,6 @@ def getWordWeights(data,daysPast,directory, timeStamp):
 
 
 def writeCSV(data, directory,name,timeStamp):
-    print "DEBOO CSV DIR", directory
     reindexed = data.values()
     orderedKeys = sorted(reindexed[0].keys())
     outName = name + timeStamp.replace(':','.') + '.csv'
