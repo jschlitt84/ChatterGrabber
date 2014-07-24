@@ -148,7 +148,6 @@ def zipData(files, directory, name, timeStamp,cfg):
     for dataFile in files:
         zipOut.write(dataFile, arcname = timeStamp+'/'+dataFile.split('/')[-1])
     zipOut.close()
-    print "DEBOOO", files, directory
     for dataFile in files[1:]:
         if not (cfg['MakeDBFeed'] and 'wordcloud.json' in dataFile):
             os.remove(dataFile)
@@ -981,6 +980,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             csvOut.writer.writerow(orderedKeys)
             csvOut.writerows(collectedContent)
             outFile.close()
+            print "...complete"
             
             if cfg['MakeDBFeed'] or cfg['OneTimeDump'] or cfg['QuickSend']:
                 time.sleep(0.2)
@@ -991,6 +991,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             if cfg['QuickSend']:
                 print "Quick sending email"
                 sendCSV(cfg,directory,reformatTags(tags,cfg))
+            print "DEBOO", cfg
             
             if cfg['Dashboard']:
                 print "Attempting to update database with wordcloud & csv"

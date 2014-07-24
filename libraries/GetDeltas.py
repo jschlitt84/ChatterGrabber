@@ -124,7 +124,7 @@ def getMeta(cfg,directory,timeStamp):
             login = cfg['_login_']['name']
     else:
         login = cfg['Logins']
-    print login
+    login = login.replace("'",'')
     meta = "{\n\tdate_created: '%s',\n\ttwitter_accounts: '%s',\n\tanalytics: {" % (timeStamp,login)
     meta += "\n\t\twordcloud: {\n\t\t\tstore: {\n\t\t\t\turl: 'wordcloud.json',\n\t\t\t\ttype: 'file'"
     meta += "\n\t\t\t}\n\t\t}\n\t}\n}"
