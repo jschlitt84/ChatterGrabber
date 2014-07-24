@@ -1001,8 +1001,11 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                 fullCommand = 'source $HOME/.bash_profile && rvm use 2.0 && cd %s/webapp && %s' % (cfg['EpidashDir'],command)
                 print "DEBOOOO", fullCommand
                 #status = os.system(fullCommand)
-                process = subprocess.Popen(fullCommand.split(), stdout=subprocess.PIPE)
-                output = process.communicate()[0]
+                try:
+                    process = subprocess.Popen(fullCommand.split(), stdout=subprocess.PIPE)
+                    output = process.communicate()[0]
+                except:
+                    print "DB Update failed, was this needed?"
                 """if status == 0:
                     print "Update posted!"
                 else:
