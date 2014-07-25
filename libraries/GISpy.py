@@ -970,10 +970,8 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             fileName = directory+outName+'.csv'
             fileNameOld = directory+outName+'Old.csv'
             
-            if cfg['MakeDBFeed']:
-                shutil.copyfile(fileName, fileNameOld)
              
-            csvFile = directory+outName+'.csv' 
+            #csvFile = directory+outName+'.csv' 
                 
             print "Writing collected tweets to "+outName+".csv"   
             outFile = open(csvFile, "w") 
@@ -985,6 +983,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             
             if cfg['MakeDBFeed'] or cfg['OneTimeDump'] or cfg['QuickSend']:
                 time.sleep(0.2)
+                shutil.copyfile(fileName, fileNameOld)
                 getDeltas(fileNameOld, fileName, cfg, cfg['OutDir'])
 
             tags = getTags(cfg,collectedContent)
@@ -996,20 +995,15 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             
             if cfg['Dashboard']:
                 print "Attempting to update database with wordcloud & csv"
-                print "CSV file reference:",csvFile
-                command = "rake %s:import_raw_tweets[%s]" % ('epidash',csvFile)
+                print "CSV file reference:",fileName
+                command = "rake %s:import_raw_tweets[%s]" % ('epidash',fileName)
                 fullCommand = 'source $HOME/.bash_profile && rvm use 2.0 && cd %s/webapp && %s' % (cfg['EpidashDir'],command)
-                print "DEBOOOO", fullCommand
-                #status = os.system(fullCommand)
+                print "Attempting:", fullCommand
                 try:
                     process = subprocess.Popen(fullCommand.split(), stdout=subprocess.PIPE)
                     output = process.communicate()[0]
                 except:
                     print "DB Update failed, was this needed?"
-                """if status == 0:
-                    print "Update posted!"
-                else:
-                    print "Update failed, returning status", status"""
                     
                     
                     
