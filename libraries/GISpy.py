@@ -1258,7 +1258,7 @@ def stripAddress(address):
     routeWords = {'route','highway','road','us','u.s.'}
     if address == 'null':
         return address
-    splitAddy = address.split(' ')
+    splitAddy = str(address).split(' ')
     words = splitAddy[:-2]
     ends = splitAddy[-2:]
     protect = set()
