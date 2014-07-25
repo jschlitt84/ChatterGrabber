@@ -974,7 +974,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             #csvFile = directory+outName+'.csv' 
                 
             print "Writing collected tweets to "+outName+".csv"   
-            outFile = open(csvFile, "w") 
+            outFile = open(fileName, "w") 
             csvOut = csv.DictWriter(outFile,orderedKeys)
             csvOut.writer.writerow(orderedKeys)
             csvOut.writerows(collectedContent)
