@@ -1189,6 +1189,9 @@ def getConfig(directory):
         params['OnlyKeepNLP'] = textToList(params['OnlyKeepNLP'])
     except:
         None
+        
+    if type(params['OnlyKeepNLP']) is int:
+        params['OnlyKeepNLP']  = [params['OnlyKeepNLP']]
     
     try:
         params['NLPnGrams'] = [int(degree) for degree in textToList(params['NLPnGrams'])] 
