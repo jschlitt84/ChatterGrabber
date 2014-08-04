@@ -10,7 +10,6 @@ import cPickle
 import TweetMatch
 import zipfile
 import subprocess
-import shlex
 
 import gDocsImport as gd
 
@@ -1005,14 +1004,11 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                 print "Attempting:", fullCommand
                 try:
                     print shlex.split(fullCommand)
-                    #process = subprocess.Popen(shlex.split(fullCommand), stdout=subprocess.PIPE, stdin=subprocess.PIPE)
                     process = subprocess.Popen(fullCommand, shell=True)
                     output = process.communicate()[0]
                 except Exception as e:
                     print "DB Update failed, was this needed?"
                     print e
-                    #print "StdIn:", process.stdin.read()
-                    #print "StdOut:", process.stdout.read()
                     
                     
                     
