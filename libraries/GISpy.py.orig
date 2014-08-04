@@ -9,7 +9,6 @@ import smtplib
 import cPickle
 import TweetMatch
 import zipfile
-import subprocess
 
 import gDocsImport as gd
 
@@ -17,7 +16,6 @@ from email.MIMEMultipart import MIMEMultipart
 from email.MIMEBase import MIMEBase
 from email.MIMEText import MIMEText
 from email import Encoders
-#from base64 import encodebytes
 
 from copy import deepcopy, copy
 from geopy.distance import great_circle
@@ -64,6 +62,7 @@ def updateGeoPickle(dictionary,fileRef):
         cPickle.dump(dictionary, pickleOut)
         pickleOut.close()
         time.sleep(.5)
+    #print "DEBOOOOPCIKEL", len(dictionary.keys()),fileRef
     
     
     
@@ -137,7 +136,7 @@ def fillBox(cfg,self):
 
 
 
-def zipData(files, directory, name, timeStamp,cfg):
+def zipData(files, directory, name, timeStamp):
     """Zips list of files from given directory, appends timestampif present"""
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -147,11 +146,12 @@ def zipData(files, directory, name, timeStamp,cfg):
     open(outName, 'w').close()
     zipOut = zipfile.ZipFile(outName,'a', zipfile.ZIP_DEFLATED)
     for dataFile in files:
-        zipOut.write(dataFile, arcname = timeStamp+'/'+dataFile.split('/')[-1])
+        zipOut.write(dataFile, arcname = name+'/'+timeStamp+'/'+dataFile.split('/')[-1])
     zipOut.close()
     for dataFile in files[1:]:
-        if not (cfg['MakeDBFeed'] and 'wordcloud.json' in dataFile):
-            os.remove(dataFile)
+        os.remove(dataFile)
+    print "DEBOOooooooO"
+    quit()
     return outName
     
     
@@ -159,8 +159,6 @@ def zipData(files, directory, name, timeStamp,cfg):
     
 def reformatTags(tags,cfg):
     """Printable hashtag summary"""
-    if tags == []:
-        return "No hashtags found"
     outText = 'Top %s hashtags for the past %s days:\n' % (cfg['TrackHashCount'],cfg['TrackHashDays'])
     if type(tags) is dict:
         for cat in tags.keys():
@@ -168,10 +166,10 @@ def reformatTags(tags,cfg):
     else:
         outText += "%s\n" % (tags)
     return outText
-     
         
-           
-                 
+                    
+                                            
+
 def sendCSV(cfg, directory,extra):
     #Adapting method from http://kutuma.blogspot.com/2007/08/sending-emails-via-gmail-with-python.html
     """Emails results to GDI subscriber(s)"""
@@ -183,30 +181,26 @@ def sendCSV(cfg, directory,extra):
     msg = MIMEMultipart()
     
     msg['From'] = cfg['GDI']['UserName']
-    msg['To'] = ','.join(cfg['GDI']['Email'])
-    msg['Cc'] = ','.join(cfg['GDI']['CC'])
-    recipients = cfg['GDI']['Email']+cfg['GDI']['CC']
+    msg['To'] = cfg['GDI']['Email']
+    msg['Cc'] = cfg['GDI']['CC']
     msg['Subject'] = cfg['FileName'] + ' collected tweets for ' + datetime.datetime.now().strftime("%A %d")
     
-    body = "Please find csv spreadsheet file attached for study: " + cfg['FileName']
-    body += "\nParameters & configuration accessible at: " + cfg['GDI']['URL']
-    body += "\n\nAll changed parameters are updated after midnight & will not influence collection & parsing until the following day.\n\n"
-    body += extra
-    msg.attach(MIMEText(body))
+    text = "Please find csv spreadsheet file attached for study: " + cfg['FileName']
+    text += "\nParameters & configuration accessible at: " + cfg['GDI']['URL']
+    text += "\n\nAll changed parameters are updated after midnight & will not influence collection & parsing until the following day.\n\n"
+    text += extra
+    msg.attach(MIMEText(text))
     
-    dirPrefix = 'studies/' + cfg['OutDir'] + cfg['Method'] + '/'
-    if dirPrefix not in directory:
-        directory += dirPrefix
+    directory += 'studies/' + cfg['OutDir'] + cfg['Method'] + '/'
     outName = cfg['FileName']+"_CollectedTweets"
     attachment = directory+outName+'.csv'
-    attachment = zipData([attachment],directory,'CollectedTweets','',cfg)
+    attachment = zipData([attachment],directory,'CollectedTweets','')
     
-    print '\n',msg.as_string()
     
     part = MIMEBase('application', 'octet-stream')
     part.set_payload(open(attachment, 'rb').read())
     Encoders.encode_base64(part)
-
+    
     part.add_header('Content-Disposition',
             'attachment; filename="%s"' % os.path.basename(attachment))
     msg.attach(part)
@@ -216,13 +210,11 @@ def sendCSV(cfg, directory,extra):
     mailServer.starttls()
     mailServer.ehlo()
     mailServer.login(cfg['GDI']['UserName'], cfg['GDI']['Password'])
-    mailServer.sendmail(cfg['GDI']['UserName'],recipients, msg.as_string())
- 
+    mailServer.sendmail(cfg['GDI']['UserName'],[msg['To'],msg['Cc']], msg.as_string())
     mailServer.close()
-    print "File sent succesfully!" 
+    print "File sent succesfully!"
 
 
-    
     
 def loadGDIAccount(gDocURL,directory):
     """Pulls subscriber info & settings from local config file"""
@@ -325,13 +317,13 @@ def giSpyGDILoad(gDocURL,directory):
         emails = gd.getLine('null', 'null', gDocURL, gdiEmail, False, [])
     
     try:
-        gdi['Email'] = [item for item in emails[0].split(' ') if '@' in item]
+        gdi['Email'] = emails[0].replace(' ',',')
     except:
-        gdi['Email'] = [""]
+        gdi['Email'] = ""
     try:
-        gdi['CC'] = [item for item in emails[1].split(' ') if '@' in item]
+        gdi['CC'] = emails[1].replace(' ',',')
     except:
-        gdi['CC'] = [""]
+        gdi['CC'] = ""
         
     gdi['URL'] = gDocURL
     gdi['UserName'] = account['userName']
@@ -967,48 +959,27 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
   		collectedContent = [entry for entry in collectedContent if str(entry['NLPCat']) in cfg['OnlyKeepNLP']]
   		
             if cfg['Sanitize'] != False:
-                collectedContent = [sanitizeTweet(tweet,cfg) for tweet in collectedContent]
+                collectedContent = [sanitizeTweet(tweet) for tweet in collectedContent]
             
             fileName = directory+outName+'.csv'
-            fileNameOld = directory+outName+'Old.csv'
             
-             
-            #csvFile = directory+outName+'.csv' 
+            if cfg['MakeDBFeed']:
+                fileNameOld = directory+outName+'Old.csv'
+                shutil.copyfile(fileName, fileNameOld)
                 
             print "Writing collected tweets to "+outName+".csv"   
-            outFile = open(fileName, "w") 
+            outFile = open(directory+outName+'.csv', "w") 
             csvOut = csv.DictWriter(outFile,orderedKeys)
             csvOut.writer.writerow(orderedKeys)
             csvOut.writerows(collectedContent)
             outFile.close()
-            print "...complete"
             
-            if cfg['MakeDBFeed'] or cfg['OneTimeDump'] or cfg['QuickSend']:
+            if cfg['MakeDBFeed']:
                 time.sleep(0.2)
-                shutil.copyfile(fileName, fileNameOld)
-                getDeltas(fileNameOld, fileName, cfg, cfg['OutDir'])
+                getDeltas(fileNameOld, fileName, cfg, 'dbFiles/')
 
             tags = getTags(cfg,collectedContent)
             
-            if cfg['QuickSend']:
-                print "Quick sending email"
-                sendCSV(cfg,directory,reformatTags(tags,cfg))
-            
-            
-            if cfg['Dashboard']:
-                print "Attempting to update database with wordcloud & csv"
-                print "CSV file reference:",fileName
-                command = "rake %s:import_raw_tweets[%s]" % ('epidash',fileName)
-                fullCommand = 'source $HOME/.bash_profile && rvm use 2.0 && cd %s/webapp && %s' % (cfg['EpidashDir'],command)
-                print "Attempting:", fullCommand
-                try:
-                    process = subprocess.Popen(fullCommand.split(), stdout=subprocess.PIPE)
-                    output = process.communicate()[0]
-                except:
-                    print "DB Update failed, was this needed?"
-                    
-                    
-                    
             
             print "...complete"
             return tags
@@ -1026,8 +997,6 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
 def getTags(cfg,data):
     """Pulls top n tags for last m days"""
     dates = [parser.parse(entry['created_at']) for entry in data]
-    if dates == []:
-        return []
     rightBound = max(dates)
     leftBound = rightBound - datetime.timedelta(days = cfg['TrackHashDays'])
     data = [entry for entry in data if leftBound < parser.parse(entry['created_at']) < rightBound]
@@ -1121,9 +1090,7 @@ def getConfig(directory):
                 'TrackHashCount':5,'DaysBack':90,
                 'NLPnGrams':[1,2,3,4],'NLPMode':'naive bayes',
 		'NLPFreqLimit':[2],'SVMNumber':1,
-		'MakeDBFeed':False,'OneTimeDump':False,
-		'QuickSend':False,'Dashboard':False,
-		'EpidashDir':'epidash/webapp'}
+		'MakeDBFeed':False}
     
     if type(directory) is str:
         if directory == "null":
@@ -1187,9 +1154,6 @@ def getConfig(directory):
         params['OnlyKeepNLP'] = textToList(params['OnlyKeepNLP'])
     except:
         None
-        
-    if type(params['OnlyKeepNLP']) is int:
-        params['OnlyKeepNLP']  = [params['OnlyKeepNLP']]
     
     try:
         params['NLPnGrams'] = [int(degree) for degree in textToList(params['NLPnGrams'])] 
@@ -1227,8 +1191,11 @@ def textToList(string):
     
     
     
+<<<<<<< HEAD
     
-def sanitizeTweet(tweet,cfg):
+=======
+>>>>>>> c76b389fe234b3dbda72e7881a024bcc0102947a
+def sanitizeTweet(tweet):
     """Strips tweet of personally identifying information"""
     words = tweet['text'].split(' ')
     words = [wordSwap(word) for word in words]
@@ -1240,17 +1207,22 @@ def sanitizeTweet(tweet,cfg):
         tweet['lat'] = float(str(tweet['lat'])[:-2])
     if str(tweet['lon']).lower() != 'nan' and len(str(tweet['lon'])) > 6:
         tweet['lon'] = float(str(tweet['lon'])[:-2])
-    if not cfg['MakeDBFeed']:
-        tweet['id'] = int(str(tweet['id'])[:-2]+'00')
+    tweet['id'] = int(str(tweet['id'])[:-2]+'00')
     return tweet
     
     
     
+<<<<<<< HEAD
     
 def isNumber(number):
     """Checks if value given is a number"""
     try:
         float(number.replace(',',''))
+=======
+def isNumber(number):
+    try:
+        float(number)
+>>>>>>> c76b389fe234b3dbda72e7881a024bcc0102947a
         return True
     except:
         return False
@@ -1258,13 +1230,18 @@ def isNumber(number):
 
 
 def stripAddress(address):
+<<<<<<< HEAD
     """Removes address number from text address"""
     routeWords = {'route','highway','road','us','u.s.'}
+=======
+    routeWords = {'route','highway'
+>>>>>>> c76b389fe234b3dbda72e7881a024bcc0102947a
     if address == 'null':
         return address
-    splitAddy = str(address).split(' ')
+    splitAddy = address.split(' ')
     words = splitAddy[:-2]
     ends = splitAddy[-2:]
+<<<<<<< HEAD
     protect = set()
     pairs = [[words[i],words[i+1]] for i in range(len(words)-1)]
     protect = set([pair[1] for pair in pairs if pair[0].lower() in routeWords])
@@ -1272,6 +1249,15 @@ def stripAddress(address):
     addyWords =  [word for word in words if isAddy(word)]
     if len(addyWords) != 0:
         return address.replace(addyWords[0],"$address"+' ,'*(',' in addyWords[0]),1)
+=======
+    isAddy = lambda x: sum([1 for item in x.split('-') if isNumber(item)]) == x.count('-') + 1
+    addyWords =  [word for word in words if isAddy(word)]
+    if len(addyWords) != 0:
+        print address
+        print address.replace(addyWords[0],"$address",1)
+        print
+        return address.replace(addyWords[0],"$address",1)
+>>>>>>> c76b389fe234b3dbda72e7881a024bcc0102947a
     else:
         return address
     

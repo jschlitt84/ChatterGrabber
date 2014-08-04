@@ -160,8 +160,8 @@ def main():
         if not skipReformat:
 	    reformatOld(directory,lists,cfg,geoCache,NLPClassifier)
 	    updateGeoPickle(geoCache,directory+'caches/'+pickleName)
-            if quickReformat or oneTimeDump or quickSend:
-                quit()        	
+        if quickReformat or oneTimeDump or quickSend:
+            quit()        	
         
     else: 
         print "Loading parameters from config file '%s' in directory '%s'" % (configFile, directory)

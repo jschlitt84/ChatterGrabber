@@ -16,3 +16,5 @@ libraries/Shake*/*
 *ickle*
 *Best*
 *best*
+dbFiles/*
+*.json
