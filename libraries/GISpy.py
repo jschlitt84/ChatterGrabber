@@ -999,7 +999,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                 print "Attempting to update database with wordcloud & csv"
                 print "CSV file reference:",fileName
                 command = "rake %s:import_raw_tweets[%s]" % ('epidash',fileName)
-                fullCommand = 'source $HOME/.bash_profile && rvm use 2.0 && cd %s/webapp && %s' % (cfg['EpidashDir'],command)
+                fullCommand = 'source $HOME/.bash_profile && rvm use 2.0 && cd %swebapp && %s' % (cfg['EpidashDir'],command)
                 print "Attempting:", fullCommand
                 try:
                     process = subprocess.Popen(fullCommand.split(), stdout=subprocess.PIPE)
