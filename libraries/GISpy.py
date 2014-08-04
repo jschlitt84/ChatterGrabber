@@ -994,6 +994,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                 print "Quick sending email"
                 sendCSV(cfg,directory,reformatTags(tags,cfg))
             
+            time.sleep(5)
             
             if cfg['Dashboard']:
                 print "Attempting to update database with wordcloud & csv"
@@ -1006,6 +1007,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                     output = process.communicate()[0]
                 except:
                     print "DB Update failed, was this needed?"
+                    print output
                     
                     
                     
