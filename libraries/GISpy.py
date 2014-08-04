@@ -1000,7 +1000,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                 print "Attempting to update database with wordcloud & csv"
                 print "CSV file reference:",fileName
                 command = "rake %s:import_raw_tweets[%s]" % ('epidash',fileName)
-                fullCommand = 'source $HOME/.bash_profile && rvm use 2.0 && cd %swebapp && %s' % (cfg['EpidashDir'],command)
+                fullCommand = 'source %s/.bash_profile && rvm use 2.0 && cd %swebapp && %s' % (cfg['HomeDir'],cfg['EpidashDir'],command)
                 print "Attempting:", fullCommand
                 try:
                     process = subprocess.Popen(fullCommand.split(), stdout=subprocess.PIPE)
@@ -1125,7 +1125,7 @@ def getConfig(directory):
 		'NLPFreqLimit':[2],'SVMNumber':1,
 		'MakeDBFeed':False,'OneTimeDump':False,
 		'QuickSend':False,'Dashboard':False,
-		'EpidashDir':'epidash/webapp'}
+		'EpidashDir':'epidash/webapp','HomeDir':"/home/jschlitt"}
     
     if type(directory) is str:
         if directory == "null":
