@@ -1004,11 +1004,13 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                 fullCommand = 'source %s/.bash_profile && rvm use 2.0 && cd %swebapp && %s' % (cfg['HomeDir'],cfg['EpidashDir'],command)
                 print "Attempting:", fullCommand
                 try:
-                    process = subprocess.Popen(shlex.split(fullCommand), stdout=subprocess.PIPE)
+                    process = subprocess.Popen(shlex.split(fullCommand), stdout=subprocess.PIPE, stdin=subprocess.PIPE)
                     output = process.communicate()[0]
                 except Exception as e:
                     print "DB Update failed, was this needed?"
                     print e
+                    print "StdIn:", process.stdin.read
+                    print "StdOut:", process.stdout.read
                     
                     
                     
