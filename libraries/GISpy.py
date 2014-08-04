@@ -1005,7 +1005,8 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                 print "Attempting:", fullCommand
                 try:
                     print shlex.split(fullCommand)
-                    process = subprocess.Popen(shlex.split(fullCommand), stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+                    #process = subprocess.Popen(shlex.split(fullCommand), stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+                    process = subprocess.Popen(fullCommand, shell=True)
                     output = process.communicate()[0]
                 except Exception as e:
                     print "DB Update failed, was this needed?"
