@@ -1126,7 +1126,9 @@ def getConfig(directory):
 		'NLPFreqLimit':[2],'SVMNumber':1,
 		'MakeDBFeed':False,'OneTimeDump':False,
 		'QuickSend':False,'Dashboard':False,
-		'EpidashDir':'epidash/webapp','HomeDir':"/home/jschlitt"}
+		'EpidashDir':'epidash/webapp','HomeDir':"/home/jschlitt",
+		'LocationName':'United_States','LocationGranularity':'country',
+		'RegionSearch':False}
     
     if type(directory) is str:
         if directory == "null":
@@ -1162,7 +1164,7 @@ def getConfig(directory):
                         line[1] = True
                     elif line[1].lower() == 'false':
                         line[1] = False
-            params[line[0]] = line[1]
+            params[line[0].replace(' ','')] = line[1]
     print "\nLoaded params:"
     
     for key in params.keys():
@@ -1170,7 +1172,14 @@ def getConfig(directory):
             newKey = key.replace('NLTK','nltk')
             params[newKey.replace('nltk','NLP')] = params.pop(key)
     
-    params['Logins'] = textToList(params['Logins'])    
+    params['Logins'] = textToList(params['Logins'])  
+
+
+    try:
+        params['LocationName'] = params['LocationName'].split(' ')
+    except:
+        None
+  
     try:
         params['TweetData'] = textToList(params['TweetData'])
     except:

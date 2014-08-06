@@ -5,6 +5,7 @@ import os
 
 from random import randint, uniform, choice
 from GISpy import *
+from KwikECache import updateCache
 
 
 class giSeeker():
@@ -42,12 +43,23 @@ class giSeeker():
             
             #if '-f' not in cfg['args']:
             #	self.NLP = TweetMatch.getClassifier(cfg['NLPFile'])
-        
+                
+
+	if type(api) is dict:
+            print "Using multiple API login method"
+            self.multiAPI = True
+        else:
+            print "Using single API login method"
+            self.multiAPI = False
+
         giSeeker.flushTweets(self)
         giSeeker.makeQueries(self)
         
-        geoTemp = getGeo(cfg)
-        
+        if not self.cfg['RegionSearch']:
+		geoTemp = getGeo(cfg)
+        else:
+		geoTemp = "REGION"
+
         self.pathOut = 'studies/'+self.cfg['OutDir']+'search/'
         if not os.path.exists(self.pathOut):
             os.makedirs(self.pathOut) 
@@ -60,15 +72,10 @@ class giSeeker():
         if geoTemp == "STACK":
             cfg['UseStacking'] = True
             self.geo = "STACK"
+	elif geoTemp == 'REGION':
+	    self.geo = 'REGION'
         else:
             self.geo = geoString(getGeo(cfg))
-            
-        if type(api) is dict:
-            print "Using multiple API login method"
-            self.multiAPI = True
-        else:
-            print "Using single API login method"
-            self.multiAPI = False
             
         if cfg['UseGDI']:
             self.searchDelay = cfg['GDI']['Frequency']
@@ -119,21 +126,19 @@ class giSeeker():
                 temp = giSpyGDILoad(self.cfg['GDI']['URL'],self.cfg['Directory'])
                 lists = temp['lists']
                 
-                #print "DEBOO1", self.cfg['_login_'], '\n', self.api
                 
                 for key in temp['config'].keys():
                     self.cfg[key] = temp['config'][key]
                 
                 
-                #ATTEMPTED LOGIN HANDLER FIX
-                
-                geoTemp = getGeo(self.cfg)
-            
-                if geoTemp == "STACK":
-                    self.cfg['UseStacking'] = True
-                    self.geo = "STACK"
-                else:
-                    self.geo = geoString(getGeo(self.cfg))
+            	
+		if geoTemp == "STACK":
+            	    cfg['UseStacking'] = True
+            	    self.geo = "STACK"
+		elif geoTemp == 'REGION':
+	    	    self.geo = 'REGION'
+        	else:
+            	    self.geo = geoString(getGeo(cfg))
                 
                 logins = temp['login']
                 if type(logins) is list:
@@ -286,6 +291,45 @@ class giSeeker():
             self.queries.append(text + ' -"rt @"')
         else:
             self.queries.append(text)
+
+	if self.cfg['RegionSearch']:
+		places = []
+		fileRef = self.cfg['Directory']+'caches/placeID.pickle'
+		placeCache = dict()
+		updateCache(placeCache,fileRef,1)
+		for place in self.cfg['LocationName']:
+		    #print "Pulling location code for", place
+		    if self.multiAPI:
+			tempApi = self.api[self.api.keys()[0]]['api']
+		    else:
+			tempApi = self.api
+		    done = False
+		    while not done:
+			try:
+				if place in placeCache.keys():
+					placeTemp = placeCache[place]
+					print "Place id", placeTemp[0].id, "pulled from cache for place", place
+				else:
+		    			placeTemp = tempApi.geo_search(query=place.replace('_',' ').replace('-',' '), granularity=self.cfg['LocationGranularity'])	
+					if len(placeTemp) != 0:
+						placeCache[place] = placeTemp
+						print "Place id", placeTemp[0].id, "found for place", place
+						updateCache(placeCache,fileRef,1)
+				done = True		
+			except Exception,e:
+				print "Place lookup for",place,"failed, waiting 2 minutes before retrying"
+				print "Error:", e
+				time.sleep(120)
+		    if len(placeTemp) != 0:
+		    	places.append(placeTemp[0].id)
+		    else:
+			print "No place found for", place
+		queriesTemp = []
+		for query in self.queries:
+			for place in places:
+				print "DEBOOO", place
+				queriesTemp.append('place:%s ' % place + query)
+		self.queries = queriesTemp
             
         for item in self.queries:
             print "Query Length: %s\tContents:\n%s\n" % (len(item), item)
@@ -426,16 +470,28 @@ class giSeeker():
 
 				if len(chooseable) > 0:
 				    chosen = choice(chooseable)
-				cellCollected = self.api[chosen]['api'].search(q = query, 
-                                        since_id = self.lastTweet,  
-                                        geocode = self.geo,
-                                        result_type="recent",
-                                        count = 100)
+				    if self.cfg['RegionSearch']:
+					cellCollected = self.api[chosen]['api'].search(q = query, 
+                                            since_id = self.lastTweet,
+                                            result_type="recent",
+                                            count = 100)
+				    else:
+				        cellCollected = self.api[chosen]['api'].search(q = query, 
+                                            since_id = self.lastTweet,  
+                                            geocode = self.geo,
+                                            result_type="recent",
+                                            count = 100)
                                 failCount[chosen] = 0
 				time.sleep(uniform(0,.05))
                                     
-                            else:    
-                                cellCollected = self.api.search(q = query, 
+                            else:
+				if self.cfg['RegionSearch']:
+				    cellCollected = self.api.search(q = query, 
+                                                        since_id = self.lastTweet,
+                                                        result_type="recent",
+                                                        count = 100)
+				else:
+                                    cellCollected = self.api.search(q = query, 
                                                         since_id = self.lastTweet,  
                                                         geocode = self.geo,
                                                         result_type="recent",
