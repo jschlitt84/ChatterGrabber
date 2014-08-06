@@ -327,7 +327,6 @@ class giSeeker():
 		queriesTemp = []
 		for query in self.queries:
 			for place in places:
-				print "DEBOOO", place
 				queriesTemp.append('place:%s ' % place + query)
 		self.queries = queriesTemp
             
