@@ -1293,6 +1293,6 @@ def stripAddress(address):
 def wordSwap(word):
     """Replaces user names with tag"""
     if len(word) > 0:
-        if '@' in word[0]:
+        if '@' in word:
             return "@ATweeter"
     return word
