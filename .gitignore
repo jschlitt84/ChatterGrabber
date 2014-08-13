@@ -18,3 +18,5 @@ libraries/Shake*/*
 *best*
 dbFiles/*
 *.json
+
+*.mp4
