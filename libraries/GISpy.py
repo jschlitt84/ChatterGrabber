@@ -10,12 +10,16 @@ import cPickle
 import TweetMatch
 import zipfile
 import subprocess
+import shlex
 
 import gDocsImport as gd
+import CGVis as vis
+import pandas as pd
 
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEBase import MIMEBase
 from email.MIMEText import MIMEText
+from email.mime.image import MIMEImage
 from email import Encoders
 #from base64 import encodebytes
 
@@ -26,7 +30,6 @@ from dateutil import parser
 from math import pi, cos, ceil
 from multiprocessing import Process, Queue, cpu_count, Manager
 from operator import itemgetter
-
 from GetDeltas import getDeltas
 
 timeArgs = '%a %d %b %Y %H:%M:%S'
@@ -137,7 +140,7 @@ def fillBox(cfg,self):
 
 
 
-def zipData(files, directory, name, timeStamp,cfg):
+def zipData(files, directory, name, timeStamp,cfg,purge=False):
     """Zips list of files from given directory, appends timestampif present"""
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -150,7 +153,7 @@ def zipData(files, directory, name, timeStamp,cfg):
         zipOut.write(dataFile, arcname = timeStamp+'/'+dataFile.split('/')[-1])
     zipOut.close()
     for dataFile in files[1:]:
-        if not (cfg['MakeDBFeed'] and 'wordcloud.json' in dataFile):
+        if not (cfg['MakeDBFeed'] and 'wordcloud.json' in dataFile) or purge:
             os.remove(dataFile)
     return outName
     
@@ -177,9 +180,22 @@ def sendCSV(cfg, directory,extra):
     """Emails results to GDI subscriber(s)"""
     outName = cfg['FileName']+"_CollectedTweets"
     attachment = 'studies/'+cfg['OutDir']+outName+'.csv.zip'
-
-    print "Preparing to send zipped CSV file:", attachment
-        
+    
+    if cfg['SendLinks'] or cfg['SendFigures']:
+        dataSet = {'name':cfg['FileName'],
+             'file':attachment,
+             'cats':'null',
+             'data':pd.DataFrame.from_csv(directory+outName+'.csv',index_col='id')}
+        now = datetime.datetime.now()
+        weekAgo = now - datetime.timedelta(days=7)
+        monthAgo = now - datetime.timedelta(days=31)
+        weekData = vis.trimRange(now,weekAgo,dataSet,mode='dt')
+        monthData = vis.trimRange(now,monthAgo,dataSet,mode='dt')
+    
+    if cfg['SendLinks']:
+        extra += "\nLink analysis for the past 7 days:\n"
+        extra += vis.checkLinks(weekData['data'],n=5, shown = 500, linkfreq=1)
+    
     msg = MIMEMultipart()
     
     msg['From'] = cfg['GDI']['UserName']
@@ -188,20 +204,79 @@ def sendCSV(cfg, directory,extra):
     recipients = cfg['GDI']['Email']+cfg['GDI']['CC']
     msg['Subject'] = cfg['FileName'] + ' collected tweets for ' + datetime.datetime.now().strftime("%A %d")
     
-    body = "Please find csv spreadsheet file attached for study: " + cfg['FileName']
+    body = "Please find csv spreadsheet file, maps, and figures attached for study: " + cfg['FileName']
     body += "\nParameters & configuration accessible at: " + cfg['GDI']['URL']
     body += "\n\nAll changed parameters are updated after midnight & will not influence collection & parsing until the following day.\n\n"
     body += extra
     msg.attach(MIMEText(body))
+    
+    print extra
+        
+    figureLinks = []
+        
+    if cfg['SendFigures']:
+        trackCats = 'NLPCat' in dataSet['data'].keys()
+        figureLinks = []
+        figPrefix = directory+cfg['FileName']
+        if trackCats:
+            cats = list(sorted(dataSet['data']['NLPCat'].unique()))
+            catList = [str(cat) for cat in cats]
+            weekSubsets = [vis.getCatSub(weekData,cat,'') for cat in cats]
+            monthSubsets = [vis.getCatSub(monthData,cat,'') for cat in cats]
+            
+            
+            fig = vis.groupHourly(weekSubsets, catList, "%s Hourly Tweet Distribution\n from %s - %s" % (cfg['FileName'],now,weekAgo),  cfg['TimeOffset'], show = False)
+            fig.savefig(figPrefix+'WeekByHour.png');fig.close(); figureLinks.append(figPrefix+'WeekByHour.png')
+            fig = vis.groupHourly(monthSubsets, catList, "%s Hourly Tweet Distribution\n from %s - %s" % (cfg['FileName'],now,monthAgo),  cfg['TimeOffset'], show = False)  
+            fig.savefig(figPrefix+'MonthByHour.png');fig.close(); figureLinks.append(figPrefix+'MonthByHour.png')
+            fig = vis.groupDaily(monthSubsets, catList, "%s Daily Tweet Distribution\n from %s - %s" % (cfg['FileName'],now,monthAgo),  cfg['TimeOffset'], show = False) 
+            fig.savefig(figPrefix+'MonthByDay.png');fig.close(); figureLinks.append(figPrefix+'MonthByDay.png')
+            fig = vis.dailyDistributionPlot(monthSubsets,catList,"%s Tweet Volume from %s - %s" % (cfg['FileName'],now,monthAgo),cfg['TimeOffset'],8,overlay = False,show = False)
+            fig.savefig(figPrefix+'TimeSeries.png');fig.close(); figureLinks.append(figPrefix+'TimeSeries.png')
+            limit = len(catList); pos = 0
+            for pos in range(limit):
+                fig = vis.mapSubject(weekSubsets[pos],"cat: "+catList[pos], show = False)
+                fig.savefig(figPrefix+'WeekMapped_%s.png'%catList[pos]);fig.close()
+                anim, animFile = vis.animateMap(weekSubsets[pos],"cat: "+catList[pos], show = False, makeGif=False)
+                figureLinks.append(figPrefix+'WeekMapped_%s.png'%catList[pos])
+                figureLinks.append(animFile+'.mp4')
+                
+        else:
+            monthName = monthData['name']
+            weekName = weekData['name']
+            weekData['name'] = weekName + " Hourly Tweet Distribution from %s - %s" % (now,weekAgo)
+            fig = vis.chartHourly(weekData, cfg['TimeOffset'], show = False)
+            fig.savefig(figPrefix+'WeekByHour.png');fig.close(); figureLinks.append(figPrefix+'WeekByHour.png')
+            monthData['name'] = monthName + " Hourly Tweet Distribution from %s - %s" % (now,monthAgo)
+            fig = vis.chartHourly(monthData, cfg['TimeOffset'], show = False)
+            fig.savefig(figPrefix+'MonthByHour.png');fig.close(); figureLinks.append(figPrefix+'MonthByHour.png')
+            monthData['name'] += monthName + " Daily Tweet Distribution from %s - %s" % (now,monthAgo)
+            fig = vis.chartDaily(monthData, cfg['TimeOffset'], show = False)
+            fig.savefig(figPrefix+'MonthByDay.png');fig.close(); figureLinks.append(figPrefix+'MonthByDay.png')
+            fig = vis.dailyDistributionPlot([monthData],['tweets'],"%s Tweet Volume from %s - %s" % (cfg['FileName'],now,monthAgo),cfg['TimeOffset'],8,overlay = False,show = False)
+            fig.savefig(figPrefix+'TimeSeries.png');fig.close(); figureLinks.append(figPrefix+'TimeSeries.png')
+            weekData['name'] = weekName
+            monthData['name'] = monthName
+            anim, animFile = vis.animateMap(weekData,"Keyword Search", show = False, makeGif=False)
+            figureLinks.append(animFile+'.mp4')
+        fig = vis.mapSubject(weekData,"Keyword Search", show = False)
+        fig.savefig(figPrefix+'WeekMapped.png');fig.close()
+        figureLinks.append(figPrefix+'WeekMapped.png')
+        attachedMap = open(figPrefix+'WeekMapped.png', 'rb') 
+        img = MIMEImage(attachedMap.read())
+        img.add_header('Content-ID', attachment)
+        msg.attach(img)
+
+    print "Preparing to send zipped CSV file:", attachment           
     
     dirPrefix = 'studies/' + cfg['OutDir'] + cfg['Method'] + '/'
     if dirPrefix not in directory:
         directory += dirPrefix
     outName = cfg['FileName']+"_CollectedTweets"
     attachment = directory+outName+'.csv'
-    attachment = zipData([attachment],directory,'CollectedTweets','',cfg)
-    
-    print '\n',msg.as_string()
+    attachment = zipData([attachment]+figureLinks,directory,'CollectedTweets','',cfg, purge = True)
+
+    #print '\n',msg.as_string()
     
     part = MIMEBase('application', 'octet-stream')
     part.set_payload(open(attachment, 'rb').read())
@@ -982,17 +1057,20 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             csvOut.writerows(collectedContent)
             outFile.close()
             print "...complete"
-            
+                                    
             if cfg['MakeDBFeed'] or cfg['OneTimeDump'] or cfg['QuickSend']:
                 time.sleep(0.2)
                 shutil.copyfile(fileName, fileNameOld)
                 getDeltas(fileNameOld, fileName, cfg, cfg['OutDir'])
-
-            tags = getTags(cfg,collectedContent)
+            
+            extra = reformatTags(getTags(cfg,collectedContent),cfg)
+            
+            print "Freeing memory..."
+            del collectedContent
             
             if cfg['QuickSend']:
                 print "Quick sending email"
-                sendCSV(cfg,directory,reformatTags(tags,cfg))
+                sendCSV(cfg,directory,extra)
             
             time.sleep(1)
             
@@ -1014,7 +1092,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                     
             
             print "...complete"
-            return tags
+            return extra
             #return geoCache
             
              
@@ -1128,7 +1206,8 @@ def getConfig(directory):
 		'QuickSend':False,'Dashboard':False,
 		'EpidashDir':'epidash/webapp','HomeDir':"/home/jschlitt",
 		'LocationName':'United_States','LocationGranularity':'country',
-		'RegionSearch':False}
+		'RegionSearch':False,'SendLinks':False,
+		'SendFigures':False}
     
     if type(directory) is str:
         if directory == "null":
