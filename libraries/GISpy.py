@@ -189,10 +189,18 @@ def sendCSV(cfg, directory,extra):
     
     if cfg['SendLinks'] or cfg['SendFigures']:
         print "Preparing analysis data structures..."
+	box = {'lat1':cfg['Lat1'],
+		'lat2':cfg['Lat2'],
+		'lon1':cfg['Lon1'],
+		'lon2':cfg['Lon2']}
+
         dataSet = {'name':cfg['FileName'],
              'file':attachmentCsv,
              'cats':'null',
              'data':pd.DataFrame.from_csv(directory+outName+'.csv',index_col='id')}
+
+	dataSet = vis.getGeoSub(dataSet,box,'')
+
         now = datetime.datetime.now()
         weekAgo = now - datetime.timedelta(days=8)
         monthAgo = now - datetime.timedelta(days=31)
