@@ -179,23 +179,43 @@ def sendCSV(cfg, directory,extra):
     #Adapting method from http://kutuma.blogspot.com/2007/08/sending-emails-via-gmail-with-python.html
     """Emails results to GDI subscriber(s)"""
     outName = cfg['FileName']+"_CollectedTweets"
-    attachment = 'studies/'+cfg['OutDir']+outName+'.csv.zip'
+    attachmentZip = 'studies/'+cfg['OutDir']+outName+'.csv.zip'
+    
+    dirPrefix = 'studies/' + cfg['OutDir'] + cfg['Method'] + '/'
+    if dirPrefix not in directory:
+        directory += dirPrefix
+    outName = cfg['FileName']+"_CollectedTweets"
+    attachmentCsv = directory+outName+'.csv'
     
     if cfg['SendLinks'] or cfg['SendFigures']:
+        print "Preparing analysis data structures..."
         dataSet = {'name':cfg['FileName'],
-             'file':attachment,
+             'file':attachmentCsv,
              'cats':'null',
              'data':pd.DataFrame.from_csv(directory+outName+'.csv',index_col='id')}
         now = datetime.datetime.now()
-        weekAgo = now - datetime.timedelta(days=7)
+        weekAgo = now - datetime.timedelta(days=8)
         monthAgo = now - datetime.timedelta(days=31)
+        nowLocal = (now + datetime.timedelta(hours=cfg['TimeOffset'])).strftime("%a %m/%d/%y")
+        weekAgoLocal = (weekAgo + datetime.timedelta(hours=cfg['TimeOffset'])).strftime("%a %m/%d/%y")
+        monthAgoLocal = (monthAgo + datetime.timedelta(hours=cfg['TimeOffset'])).strftime("%a %m/%d/%y")
         weekData = vis.trimRange(now,weekAgo,dataSet,mode='dt')
         monthData = vis.trimRange(now,monthAgo,dataSet,mode='dt')
-    
-    if cfg['SendLinks']:
-        extra += "\nLink analysis for the past 7 days:\n"
-        extra += vis.checkLinks(weekData['data'],n=5, shown = 500, linkfreq=1)
-    
+        
+        trackCats = 'NLPCat' in dataSet['data'].keys()
+        figureLinks = []
+        figPrefix = directory+cfg['FileName']
+        
+        if trackCats:
+            cats = list(sorted(dataSet['data']['NLPCat'].unique()))
+            catList = [str(cat) for cat in cats]
+            
+            worthShowing = list(set(catList).intersection(set(cfg['OnlyKeepNLP'])))
+            worthShowingWeek = vis.getFieldSub(weekData,worthShowing,[],'','NLPCat')
+        else:
+            worthShowing = '{search results}'
+            worthShowingWeek = weekData
+     
     msg = MIMEMultipart()
     
     msg['From'] = cfg['GDI']['UserName']
@@ -207,74 +227,88 @@ def sendCSV(cfg, directory,extra):
     body = "Please find csv spreadsheet file, maps, and figures attached for study: " + cfg['FileName']
     body += "\nParameters & configuration accessible at: " + cfg['GDI']['URL']
     body += "\n\nAll changed parameters are updated after midnight & will not influence collection & parsing until the following day.\n\n"
-    body += extra
-    msg.attach(MIMEText(body))
-    
-    print extra
         
     figureLinks = []
         
     if cfg['SendFigures']:
-        trackCats = 'NLPCat' in dataSet['data'].keys()
-        figureLinks = []
-        figPrefix = directory+cfg['FileName']
-        if trackCats:
-            cats = list(sorted(dataSet['data']['NLPCat'].unique()))
-            catList = [str(cat) for cat in cats]
-            weekSubsets = [vis.getCatSub(weekData,cat,'') for cat in cats]
-            monthSubsets = [vis.getCatSub(monthData,cat,'') for cat in cats]
+        print "Generating Figures..."
+        if True:
+            trackCats = 'NLPCat' in dataSet['data'].keys()
+            figureLinks = []
+            figPrefix = directory+cfg['FileName']
             
-            
-            fig = vis.groupHourly(weekSubsets, catList, "%s Hourly Tweet Distribution from\n %s - %s" % (cfg['FileName'],now,weekAgo),  cfg['TimeOffset'], show = False)
-            fig.savefig(figPrefix+'WeekByHour.png');fig.close(); figureLinks.append(figPrefix+'WeekByHour.png')
-            fig = vis.groupHourly(monthSubsets, catList, "%s Hourly Tweet Distribution from\n %s - %s" % (cfg['FileName'],now,monthAgo),  cfg['TimeOffset'], show = False)  
-            fig.savefig(figPrefix+'MonthByHour.png');fig.close(); figureLinks.append(figPrefix+'MonthByHour.png')
-            fig = vis.groupDaily(monthSubsets, catList, "%s Daily Tweet Distribution from\n %s - %s" % (cfg['FileName'],now,monthAgo),  cfg['TimeOffset'], show = False) 
-            fig.savefig(figPrefix+'MonthByDay.png');fig.close(); figureLinks.append(figPrefix+'MonthByDay.png')
-            fig = vis.dailyDistributionPlot(monthSubsets,catList,"%s Tweet Volume from %s - %s" % (cfg['FileName'],now,monthAgo),cfg['TimeOffset'],8,overlay = False,show = False)
-            fig.savefig(figPrefix+'TimeSeries.png');fig.close(); figureLinks.append(figPrefix+'TimeSeries.png')
-            limit = len(catList); pos = 0
-            for pos in range(limit):
-                fig = vis.mapSubject(weekSubsets[pos],"cat: "+catList[pos], show = False)
-                fig.savefig(figPrefix+'WeekMapped_%s.png'%catList[pos]);fig.close()
-                anim, animFile = vis.animateMap(weekSubsets[pos],"cat: "+catList[pos], show = False, makeGif=False)
-                figureLinks.append(figPrefix+'WeekMapped_%s.png'%catList[pos])
+            if trackCats:
+                weekSubsets = [vis.getCatSub(weekData,cat,'') for cat in cats]
+                monthSubsets = [vis.getCatSub(monthData,cat,'') for cat in cats]         
+                
+                fig = vis.groupHourly(weekSubsets, catList, "%s Hourly Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,weekAgoLocal),  cfg['TimeOffset'], show = False)
+                fig.savefig(figPrefix+'WeekByHour.png');fig.close(); figureLinks.append(figPrefix+'WeekByHour.png')
+                fig = vis.groupHourly(monthSubsets, catList, "%s Hourly Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,monthAgoLocal),  cfg['TimeOffset'], show = False)  
+                fig.savefig(figPrefix+'MonthByHour.png');fig.close(); figureLinks.append(figPrefix+'MonthByHour.png')
+                fig = vis.groupDaily(monthSubsets, catList, "%s Daily Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,monthAgoLocal),  cfg['TimeOffset'], show = False) 
+                fig.savefig(figPrefix+'MonthByDay.png');fig.close(); figureLinks.append(figPrefix+'MonthByDay.png')
+                fig = vis.dailyDistributionPlot(monthSubsets,catList,"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],8,overlay = False,show = False)
+                fig.savefig(figPrefix+'TimeSeries.png');fig.close(); figureLinks.append(figPrefix+'TimeSeries.png')
+                limit = len(catList); pos = 0
+                for pos in range(limit):
+                    fig = vis.mapSubject(weekSubsets[pos],"cat: "+catList[pos], show = False, offset=cfg['TimeOffset'])
+                    fig.savefig(figPrefix+'WeekMapped_%s.png'%catList[pos]);fig.close()
+                    anim, animFile = vis.animateMap(monthSubsets[pos],"cat: "+catList[pos], show = False, makeGif=False, offset=cfg['TimeOffset'])
+                    figureLinks.append(figPrefix+'WeekMapped_%s.png'%catList[pos])
+                    figureLinks.append(animFile+'.mp4')
+                    
+            else:
+                monthName = monthData['name']
+                weekName = weekData['name']
+                weekData['name'] = weekName + " Hourly Tweet Distribution from %s - %s" % (nowLocal,weekAgoLocal)
+                fig = vis.chartHourly(weekData, cfg['TimeOffset'], show = False)
+                fig.savefig(figPrefix+'WeekByHour.png');fig.close(); figureLinks.append(figPrefix+'WeekByHour.png')
+                monthData['name'] = monthName + " Hourly Tweet Distribution from %s - %s" % (nowLocal,monthAgoLocal)
+                fig = vis.chartHourly(monthData, cfg['TimeOffset'], show = False)
+                fig.savefig(figPrefix+'MonthByHour.png');fig.close(); figureLinks.append(figPrefix+'MonthByHour.png')
+                monthData['name'] = monthName + " Daily Tweet Distribution from %s - %s" % (nowLocal,monthAgoLocal)
+                fig = vis.chartDaily(monthData, cfg['TimeOffset'], show = False)
+                fig.savefig(figPrefix+'MonthByDay.png');fig.close(); figureLinks.append(figPrefix+'MonthByDay.png')
+                fig = vis.dailyDistributionPlot([monthData],['tweets'],"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],8,overlay = False,show = False)
+                fig.savefig(figPrefix+'TimeSeries.png');fig.close(); figureLinks.append(figPrefix+'TimeSeries.png')
+                weekData['name'] = weekName
+                monthData['name'] = monthName
+                anim, animFile = vis.animateMap(monthData,"Keyword Search", show = False, makeGif=False, offset=cfg['TimeOffset'])
                 figureLinks.append(animFile+'.mp4')
                 
-        else:
-            monthName = monthData['name']
-            weekName = weekData['name']
-            weekData['name'] = weekName + " Hourly Tweet Distribution from\n %s - %s" % (now,weekAgo)
-            fig = vis.chartHourly(weekData, cfg['TimeOffset'], show = False)
-            fig.savefig(figPrefix+'WeekByHour.png');fig.close(); figureLinks.append(figPrefix+'WeekByHour.png')
-            monthData['name'] = monthName + " Hourly Tweet Distribution from\n %s - %s" % (now,monthAgo)
-            fig = vis.chartHourly(monthData, cfg['TimeOffset'], show = False)
-            fig.savefig(figPrefix+'MonthByHour.png');fig.close(); figureLinks.append(figPrefix+'MonthByHour.png')
-            monthData['name'] += monthName + " Daily Tweet Distribution from\n %s - %s" % (now,monthAgo)
-            fig = vis.chartDaily(monthData, cfg['TimeOffset'], show = False)
-            fig.savefig(figPrefix+'MonthByDay.png');fig.close(); figureLinks.append(figPrefix+'MonthByDay.png')
-            fig = vis.dailyDistributionPlot([monthData],['tweets'],"%s Tweet Volume from %s - %s" % (cfg['FileName'],now,monthAgo),cfg['TimeOffset'],8,overlay = False,show = False)
-            fig.savefig(figPrefix+'TimeSeries.png');fig.close(); figureLinks.append(figPrefix+'TimeSeries.png')
-            weekData['name'] = weekName
-            monthData['name'] = monthName
-            anim, animFile = vis.animateMap(weekData,"Keyword Search", show = False, makeGif=False)
-            figureLinks.append(animFile+'.mp4')
-        fig = vis.mapSubject(weekData,"Keyword Search", show = False)
-        fig.savefig(figPrefix+'WeekMapped.png');fig.close()
-        figureLinks.append(figPrefix+'WeekMapped.png')
-        attachedMap = open(figPrefix+'WeekMapped.png', 'rb') 
-        img = MIMEImage(attachedMap.read())
-        img.add_header('Content-ID', attachment)
-        msg.attach(img)
+            fig = vis.mapSubject(weekData,"Keyword Search", show = False, offset=cfg['TimeOffset'])
+            fig.savefig(figPrefix+'WeekMapped.png');fig.close()
+            figureLinks.append(figPrefix+'WeekMapped.png')
+            
+            attachedMap = open(figPrefix+'WeekMapped.png', 'rb') 
+            img = MIMEImage(attachedMap.read())
+            img.add_header('Content-ID', '<week mapped>')
+            msg.attach(img)
+            attachedMap.close()
+            
+            attachedSeries = open(figPrefix+'TimeSeries.png', 'rb') 
+            img = MIMEImage(attachedSeries.read())
+            img.add_header('Content-ID', '<time series>')
+            msg.attach(img)
+            attachedSeries.close()
+        else:    
+        #except Exception as e:
+            print "\n\nFigure generation failed, was this needed?"
+            #print e,'\n\n\n'
 
-    print "Preparing to send zipped CSV file:", attachment           
+    if cfg['SendLinks']:
+        extra += "\nLink analysis for the past 7 days for categories %s:\n" % str(worthShowing)
+        extra += vis.checkLinks(worthShowingWeek['data'],n=5, shown = 500, linkfreq=1)
+        extra += '\n\nPlease note, with gmail and certain clients, link analysis links may appear as attachments.'
     
-    dirPrefix = 'studies/' + cfg['OutDir'] + cfg['Method'] + '/'
-    if dirPrefix not in directory:
-        directory += dirPrefix
-    outName = cfg['FileName']+"_CollectedTweets"
-    attachment = directory+outName+'.csv'
-    attachment = zipData([attachment]+figureLinks,directory,'CollectedTweets','',cfg, purge = True)
+    body += extra
+    msg.attach(MIMEText(body))
+    print extra
+    
+    
+    print "Preparing to send zipped CSV file:", attachmentZip           
+    
+    attachment = zipData([attachmentCsv]+figureLinks,directory,'CollectedTweets','',cfg, purge = True)
 
     #print '\n',msg.as_string()
     
@@ -799,6 +833,10 @@ def isInBox(cfg,geoCache,status):
 
 def getGeo(cfg):
     """Generates geo queries to cover lat/lon box"""
+    
+    if cfg['RegionSearch']:
+        return 'REGION'
+
     lat1 = cfg['Lat1']
     lat2 = cfg['Lat2']
     lon1 = cfg['Lon1']

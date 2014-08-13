@@ -224,8 +224,8 @@ def dailyDistributionPlot(dataIn,titles,bigTitle,timeShift,divFactor=24,overlay 
     lastRounded = last.replace(second=0,minute=0) + hour
     plotMin = date2num(firstRounded)
     plotMax = date2num(lastRounded)
-    dateFirst = first.strftime("%m/%d/%y")
-    dateLast = last.strftime("%m/%d/%y")
+    dateFirst = first.strftime("%a %m/%d/%y")
+    dateLast = last.strftime("%a %m/%d/%y")
     timeSuffix = " from %s to %s" % (dateFirst,dateLast)
     
     difference = (lastRounded-firstRounded)
@@ -393,22 +393,28 @@ def setWidth(box,longest):
     return lonWidth,latWidth
 
 
-def getData(dataSet):
-    return list(dataSet['data']['lat']), list(dataSet['data']['lon']), list(dataSet['data']['created_at'])
-
+def getData(dataSet,offset):
+    dataSet['data'] = dataSet['data'].dropna(subset=['lat','lon','created_at']) 
+    print "DEBOOO", len(dataSet['data'])
+    lats = list(dataSet['data']['lat']); lons = list(dataSet['data']['lon'])
+    times =  [(parser.parse(entry) + datetime.timedelta(hours=int(offset))) for entry in list(dataSet['data']['created_at'])]
+    return lats, lons, times
 
 def getDensity(box,lats,lons,longest):
     lonWidth, latWidth = setWidth(box,longest)
     lon_bins = np.linspace(box['lon1'], box['lon2'], lonWidth+1)
     lat_bins = np.linspace(box['lat1'], box['lat2'], latWidth+1)
     density, _, _ = np.histogram2d(lats, lons, [lat_bins, lon_bins])
+    print type(density)
+    if np.sum(density) == 0.0:
+        density = np.ndarray((1,2))
+        density.fill(0.0001)
     return density, lon_bins, lat_bins
-
 
 def mapSubject(dataset,subject,box='tight',level='auto',
                longest=20,call='default',highlight=False,
                heatmap=True, mark = 'r', cmap='YlOrRd',
-               show = True):
+               show = True, offset = 0):
     
     if call == 'animate':
         plt.clf()
@@ -416,7 +422,7 @@ def mapSubject(dataset,subject,box='tight',level='auto',
         fig = plt.figure(figsize=(10,10))
         
     box = fixBox(dataset,box)
-    lats, lons, times = getData(dataset)
+    lats, lons, times = getData(dataset,offset)
     
     mapped = Basemap(projection='mill', 
                      llcrnrlon=box['lon1'],
@@ -434,7 +440,13 @@ def mapSubject(dataset,subject,box='tight',level='auto',
         
         if level == 'auto':
             level = np.amax(density)
-                
+        print '\n\n\n'
+        print density
+        print type(density)
+        print
+        print xs
+        print
+        print ys       
         plt.pcolormesh(xs, ys, density, cmap = cmap)
 
     mapped.drawcoastlines()
@@ -476,7 +488,8 @@ def getDays(dataSet):
 
 def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
                timeStamp=False,highlight=False,heatmap=True,mark='r',
-               cmap='YlOrRd',makeVideo=True,makeGif=True,show=True):
+               cmap='YlOrRd',makeVideo=True,makeGif=True,show=True,
+               offset=0):
     
     days = getDays(dataSet)
     length = len(days)
@@ -494,7 +507,7 @@ def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
         maxVal = 0.
         for daySub in daySubs:
             box = fixBox(daySub,box)
-            lats, lons, times = getData(daySub)
+            lats, lons, times = getData(daySub,offset)
             density, lon_bins, lat_bins = getDensity(box,lats,lons,longest)
             maxVal = max(maxVal, float(np.amax(density)))
         level = maxVal
@@ -505,7 +518,7 @@ def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
     def animate(i):
         mapSubject(daySubs[i],subject,box=box,level=level,longest=longest,
                    call='animate',highlight=highlight,heatmap=heatmap,
-                   mark=mark,cmap=cmap)
+                   mark=mark,cmap=cmap,offset=0)
     
     anim = animation.FuncAnimation(fig,animate, frames=length, interval=1500, blit=False)
     

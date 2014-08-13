@@ -130,15 +130,15 @@ class giSeeker():
                 for key in temp['config'].keys():
                     self.cfg[key] = temp['config'][key]
                 
-                
+                geoTemp = getGeo(self.cfg)
             	
 		if geoTemp == "STACK":
-            	    cfg['UseStacking'] = True
+            	    self.cfg['UseStacking'] = True
             	    self.geo = "STACK"
 		elif geoTemp == 'REGION':
 	    	    self.geo = 'REGION'
         	else:
-            	    self.geo = geoString(getGeo(cfg))
+            	    self.geo = geoString(getGeo(self.cfg))
                 
                 logins = temp['login']
                 if type(logins) is list:
@@ -166,10 +166,12 @@ class giSeeker():
                 tillSend =  datetime.datetime.now().day % int(self.cfg['SendEvery'])
                 if tillSend == 0:
                     print "Sending results to GDI user"
-                    try:
+                    if True:
                         sendCSV(self.cfg,directory,self.extra)
-                    except:
+                    else:
+                    #except Exception as e:
                         print "Unable to send email"
+                        print e
                 else:
                     print "Sending next report in", tillSend, "days"  
                 
