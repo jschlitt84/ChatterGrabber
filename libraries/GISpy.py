@@ -240,7 +240,7 @@ def sendCSV(cfg, directory,extra):
         
     if cfg['SendFigures']:
         print "Generating Figures..."
-        if True:
+        try:
             trackCats = 'NLPCat' in dataSet['data'].keys()
             figureLinks = []
             figPrefix = directory+cfg['FileName']
@@ -299,8 +299,8 @@ def sendCSV(cfg, directory,extra):
             img.add_header('Content-ID', '<time series>')
             msg.attach(img)
             attachedSeries.close()
-        else:    
-        #except Exception as e:
+        #else:    
+        except Exception as e:
             print "\n\nFigure generation failed, was this needed?"
             #print e,'\n\n\n'
 
