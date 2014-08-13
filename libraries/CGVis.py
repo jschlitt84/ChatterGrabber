@@ -34,7 +34,9 @@ def printSample(data,title,length):
     
 def getGeoSub(dataIn,box,prefix):
     dataOut = deepcopy(dataIn)
-    dataOut['name'] = prefix + ' ' + dataOut['name']
+    if prefix != '':
+        dataOut['name'] = prefix + ' ' + dataOut['name']
+
     data = dataOut['data']
     data = data[(data.lat > box['lat1']) & (data.lat < box['lat2']) & (data.lon > box['lon1']) & (data.lon < box['lon2'])]
     dataOut['data'] = data
@@ -405,10 +407,22 @@ def getDensity(box,lats,lons,longest):
     lon_bins = np.linspace(box['lon1'], box['lon2'], lonWidth+1)
     lat_bins = np.linspace(box['lat1'], box['lat2'], latWidth+1)
     density, _, _ = np.histogram2d(lats, lons, [lat_bins, lon_bins])
-    if np.sum(density) == 0.0:
-        density = np.ndarray((1,2))
-        density.fill(0.0001)
     return density, lon_bins, lat_bins
+
+
+def fixDensity(density,xs,ys):
+	if np.sum(density) == 0.:
+		density == deepcopy(xs)
+		density.fill(0.00000001)
+	"""denX = len(density)
+	denY = len(density[0])
+	print "DEBBOOO FIX"
+	print denx, deny
+	print len(xs),len(xs[0])
+	print len(ys),len(ys[0])
+	density = np.ndarrary"""
+	return density
+	
 
 def mapSubject(dataset,subject,box='tight',level='auto',
                longest=20,call='default',highlight=False,
@@ -444,9 +458,12 @@ def mapSubject(dataset,subject,box='tight',level='auto',
         print type(density)
         print
         print xs
-        print
-        print ys       
+        print type(xs)
+        print ys  
+	print type(ys) 
+	density = fixDensity(density,xs,ys)    
         plt.pcolormesh(xs, ys, density, cmap = cmap)
+	quit()
 
     mapped.drawcoastlines()
     mapped.drawstates()
