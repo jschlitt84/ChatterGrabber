@@ -225,11 +225,11 @@ def sendCSV(cfg, directory,extra):
             monthSubsets = [vis.getCatSub(monthData,cat,'') for cat in cats]
             
             
-            fig = vis.groupHourly(weekSubsets, catList, "%s Hourly Tweet Distribution\n from %s - %s" % (cfg['FileName'],now,weekAgo),  cfg['TimeOffset'], show = False)
+            fig = vis.groupHourly(weekSubsets, catList, "%s Hourly Tweet Distribution from\n %s - %s" % (cfg['FileName'],now,weekAgo),  cfg['TimeOffset'], show = False)
             fig.savefig(figPrefix+'WeekByHour.png');fig.close(); figureLinks.append(figPrefix+'WeekByHour.png')
-            fig = vis.groupHourly(monthSubsets, catList, "%s Hourly Tweet Distribution\n from %s - %s" % (cfg['FileName'],now,monthAgo),  cfg['TimeOffset'], show = False)  
+            fig = vis.groupHourly(monthSubsets, catList, "%s Hourly Tweet Distribution from\n %s - %s" % (cfg['FileName'],now,monthAgo),  cfg['TimeOffset'], show = False)  
             fig.savefig(figPrefix+'MonthByHour.png');fig.close(); figureLinks.append(figPrefix+'MonthByHour.png')
-            fig = vis.groupDaily(monthSubsets, catList, "%s Daily Tweet Distribution\n from %s - %s" % (cfg['FileName'],now,monthAgo),  cfg['TimeOffset'], show = False) 
+            fig = vis.groupDaily(monthSubsets, catList, "%s Daily Tweet Distribution from\n %s - %s" % (cfg['FileName'],now,monthAgo),  cfg['TimeOffset'], show = False) 
             fig.savefig(figPrefix+'MonthByDay.png');fig.close(); figureLinks.append(figPrefix+'MonthByDay.png')
             fig = vis.dailyDistributionPlot(monthSubsets,catList,"%s Tweet Volume from %s - %s" % (cfg['FileName'],now,monthAgo),cfg['TimeOffset'],8,overlay = False,show = False)
             fig.savefig(figPrefix+'TimeSeries.png');fig.close(); figureLinks.append(figPrefix+'TimeSeries.png')
@@ -244,13 +244,13 @@ def sendCSV(cfg, directory,extra):
         else:
             monthName = monthData['name']
             weekName = weekData['name']
-            weekData['name'] = weekName + " Hourly Tweet Distribution from %s - %s" % (now,weekAgo)
+            weekData['name'] = weekName + " Hourly Tweet Distribution from\n %s - %s" % (now,weekAgo)
             fig = vis.chartHourly(weekData, cfg['TimeOffset'], show = False)
             fig.savefig(figPrefix+'WeekByHour.png');fig.close(); figureLinks.append(figPrefix+'WeekByHour.png')
-            monthData['name'] = monthName + " Hourly Tweet Distribution from %s - %s" % (now,monthAgo)
+            monthData['name'] = monthName + " Hourly Tweet Distribution from\n %s - %s" % (now,monthAgo)
             fig = vis.chartHourly(monthData, cfg['TimeOffset'], show = False)
             fig.savefig(figPrefix+'MonthByHour.png');fig.close(); figureLinks.append(figPrefix+'MonthByHour.png')
-            monthData['name'] += monthName + " Daily Tweet Distribution from %s - %s" % (now,monthAgo)
+            monthData['name'] += monthName + " Daily Tweet Distribution from\n %s - %s" % (now,monthAgo)
             fig = vis.chartDaily(monthData, cfg['TimeOffset'], show = False)
             fig.savefig(figPrefix+'MonthByDay.png');fig.close(); figureLinks.append(figPrefix+'MonthByDay.png')
             fig = vis.dailyDistributionPlot([monthData],['tweets'],"%s Tweet Volume from %s - %s" % (cfg['FileName'],now,monthAgo),cfg['TimeOffset'],8,overlay = False,show = False)

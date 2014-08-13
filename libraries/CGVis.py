@@ -139,7 +139,7 @@ def chartHourly(dataIn, timeShift,show=True):
     return plt
     
     
-def groupHourly(dataGroup, names, title, timeShift, stacked=False,show=True):
+def groupHourly(dataGroup, names, title, timeShift, stacked=True,show=True):
     plt.gca()
     toPlot = []
     for dataIn in dataGroup:
@@ -177,7 +177,7 @@ def chartDaily(dataIn, timeShift, show=True):
     return plt
     
     
-def groupDaily(dataGroup, names, title, timeShift, stacked=False, show=True):
+def groupDaily(dataGroup, names, title, timeShift, stacked=True, show=True):
     plt.gca()
     toPlot = []
     for dataIn in dataGroup:
