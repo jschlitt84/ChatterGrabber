@@ -305,8 +305,8 @@ def sendCSV(cfg, directory,extra):
             #print e,'\n\n\n'
 
     if cfg['SendLinks']:
-        extra += "\nLink analysis for the past 7 days for categories %s:\n" % str(worthShowing)
-        extra += vis.checkLinks(worthShowingWeek['data'],n=5, shown = 500, linkfreq=1)
+        extra += "\nLink analysis for the past 7 days for categories %s:\n" % str(worthShowing).replace("'",'')
+        extra += vis.checkLinks(worthShowingWeek['data'],n=250, shown = 5, linkfreq=1)
         extra += '\n\nPlease note, with gmail and certain clients, link analysis links may appear as attachments.'
     
     body += extra

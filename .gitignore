@@ -18,5 +18,5 @@ libraries/Shake*/*
 *best*
 dbFiles/*
 *.json
-
+caches/GeoPickle.txt
 *.mp4

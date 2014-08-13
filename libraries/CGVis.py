@@ -397,7 +397,6 @@ def setWidth(box,longest):
 
 def getData(dataSet,offset):
     dataSet['data'] = dataSet['data'].dropna(subset=['lat','lon','created_at']) 
-    print "DEBOOO", len(dataSet['data'])
     lats = list(dataSet['data']['lat']); lons = list(dataSet['data']['lon'])
     times =  [(parser.parse(entry) + datetime.timedelta(hours=int(offset))) for entry in list(dataSet['data']['created_at'])]
     return lats, lons, times
@@ -411,17 +410,11 @@ def getDensity(box,lats,lons,longest):
 
 
 def fixDensity(density,xs,ys):
-	if np.sum(density) == 0.:
-		density == deepcopy(xs)
-		density.fill(0.00000001)
-	"""denX = len(density)
-	denY = len(density[0])
-	print "DEBBOOO FIX"
-	print denx, deny
-	print len(xs),len(xs[0])
-	print len(ys),len(ys[0])
-	density = np.ndarrary"""
-	return density
+    if np.sum(density) == 0.:
+        print "Adjusting density of empty sequence"
+      	density == deepcopy(xs)
+	density.fill(0.00000001)
+    return density
 	
 
 def mapSubject(dataset,subject,box='tight',level='auto',
@@ -453,17 +446,9 @@ def mapSubject(dataset,subject,box='tight',level='auto',
         
         if level == 'auto':
             level = np.amax(density)
-        print '\n\n\n'
-        print density
-        print type(density)
-        print
-        print xs
-        print type(xs)
-        print ys  
-	print type(ys) 
+
 	density = fixDensity(density,xs,ys)    
         plt.pcolormesh(xs, ys, density, cmap = cmap)
-	quit()
 
     mapped.drawcoastlines()
     mapped.drawstates()
