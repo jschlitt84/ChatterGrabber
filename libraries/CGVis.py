@@ -405,7 +405,6 @@ def getDensity(box,lats,lons,longest):
     lon_bins = np.linspace(box['lon1'], box['lon2'], lonWidth+1)
     lat_bins = np.linspace(box['lat1'], box['lat2'], latWidth+1)
     density, _, _ = np.histogram2d(lats, lons, [lat_bins, lon_bins])
-    print type(density)
     if np.sum(density) == 0.0:
         density = np.ndarray((1,2))
         density.fill(0.0001)
