@@ -233,7 +233,7 @@ def sendCSV(cfg, directory,extra):
         
     if cfg['SendFigures']:
         print "Generating Figures..."
-        if True:
+        try:
             trackCats = 'NLPCat' in dataSet['data'].keys()
             figureLinks = []
             figPrefix = directory+cfg['FileName']
@@ -255,8 +255,8 @@ def sendCSV(cfg, directory,extra):
                     if limit > 1:
                         fig = vis.mapSubject(weekSubsets[pos],"cat: "+catList[pos], show = False, offset=cfg['TimeOffset'])
                         fig.savefig(figPrefix+'WeekMapped_%s.png'%catList[pos]);fig.close()
+                        figureLinks.append(figPrefix+'WeekMapped_%s.png'%catList[pos])
                     anim, animFile = vis.animateMap(monthSubsets[pos],"cat: "+catList[pos], show = False, makeGif=False, offset=cfg['TimeOffset'])
-                    figureLinks.append(figPrefix+'WeekMapped_%s.png'%catList[pos])
                     figureLinks.append(animFile+'.mp4')
                     
             else:
@@ -293,10 +293,10 @@ def sendCSV(cfg, directory,extra):
             img.add_header('Content-ID', '<time series>')
             msg.attach(img)
             attachedSeries.close()
-        else:    
-        #except Exception as e:
+        #else:    
+        except Exception as e:
             print "\n\nFigure generation failed, was this needed?"
-         #   print e,'\n\n\n'
+            print e,'\n\n\n'
 
     if cfg['SendLinks']:
         extra += "\nLink analysis for the past 7 days for categories %s:\n" % str(worthShowing).replace("'",'')
