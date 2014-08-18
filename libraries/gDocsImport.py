@@ -77,7 +77,7 @@ def getFile(userName, __password, fileName):
 
 # RETURNS PUBLIC SPREADSHEET AS LIST OF STRINGS   
                        
-def getPublicFile(userName, fileName):
+def getPublicFile(userName, fileName, localFile):
     
     try:
         fileName = fileName[:fileName.index('#gid')]
@@ -87,9 +87,19 @@ def getPublicFile(userName, fileName):
     print "\nLoading public file", fileName
     
     response = requests.get(fileName)
-    print "GDATA Response status code:",response.status_code
-    assert response.status_code == 200, 'Wrong status code'
-    data = response.content.split('\n')
+    print "gData Response status code:",response.status_code
+    try:
+        assert response.status_code == 200, 'Wrong status code'
+        data = response.content.split('\n')
+    except:
+        if localFile != 'null':
+            fileIn = open(localFile)
+            data = fileIn.readlines()
+            fileIn.close()
+        else:
+            print "Error, cannot contact google and no local file found"
+            quit()
+
     toDelete = []
     for pos in range(len(data)):
         data[pos] =  data[pos].replace('"','')
@@ -277,10 +287,10 @@ def loadNClean(isPrivate,publicData, start, end, cleanType):
 
 # RETURNS SINGLE LINE FOLLOWING WORDS/ LINE NUMBER
     
-def getLine(userName, __password, fileName, line, isPoly, polyScript):
+def getLine(userName, __password, fileName, line, localFile = 'null', isPoly = False, polyScript = []):
     if __password == "null" and "https://docs.google.com" in fileName:
         
-        publicData = getPublicFile(userName, fileName)
+        publicData = getPublicFile(userName, fileName, localFile)
         isPrivate = False
         
     elif not isPoly:
@@ -298,10 +308,10 @@ def getLine(userName, __password, fileName, line, isPoly, polyScript):
 
 # RETURNS SCRIPT/ VALUES BASED UPON PASSED LOADTYPE                  
             
-def getScript(userName, __password, fileName, start, end, loadType, isPoly, polyScript):
+def getScript(userName, __password, fileName, start, end, loadType, localFile = 'null', isPoly = False, polyScript = []):
     if __password == "null" and "https://docs.google.com" in fileName:
         
-        publicData = getPublicFile(userName, fileName)
+        publicData = getPublicFile(userName, fileName, localFile)
         isPrivate = False
         
     elif not isPoly:

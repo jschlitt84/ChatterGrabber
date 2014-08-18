@@ -444,6 +444,17 @@ def loadGDIAccount(gDocURL,directory):
         sanitize = False
     else:
         sanitize = 'true' in sanLine.lower()
+        
+    found = False
+    for line in content:
+        if experimentName+'.localScript' in line:
+            offLine = line
+            found = True
+            break
+    if not found:
+        localScript = 'null'
+    else:
+        localScript = 'offlineScripts/'+offLine.split(' = ')[1].replace(' ','').replace('\n','')
     
     return {'name':experimentName,
         'login':login,
@@ -452,7 +463,8 @@ def loadGDIAccount(gDocURL,directory):
         'frequency': frequency,
         'fileName': fileName,
         'sanitize': sanitize,
-        'public':public}
+        'public':public,
+        'local':localScript}
         
     
     
@@ -467,9 +479,9 @@ def giSpyGDILoad(gDocURL,directory):
     print "Loading email lists from local directory"
     
     if not public:
-        emails = gd.getLine(account['userName'], account['password'], account['fileName'], gdiEmail, False, [])
+        emails = gd.getLine(account['userName'], account['password'], account['fileName'], gdiEmail, localFile = account['local'])
     else:
-        emails = gd.getLine('null', 'null', gDocURL, gdiEmail, False, [])
+        emails = gd.getLine('null', 'null', gDocURL, gdiEmail, localFile = account['local'])
     
     try:
         gdi['Email'] = [item for item in emails[0].split(' ') if '@' in item]
@@ -484,6 +496,7 @@ def giSpyGDILoad(gDocURL,directory):
     gdi['UserName'] = account['userName']
     gdi['Password'] = account['password']
     gdi['FileName'] = account['fileName']
+    gdi['Local'] = account['localScript']
     try:
         gdi['Frequency'] = int(emails[2])
     except:
@@ -492,9 +505,9 @@ def giSpyGDILoad(gDocURL,directory):
     print "Loading word lists from local directory"
     
     if not public:
-        config = gd.getScript(account['userName'], account['password'], account['fileName'], gdiParams, gdiLists, "default", False, [])
+        config = gd.getScript(account['userName'], account['password'], account['fileName'], gdiParams, gdiLists, "default", localFile = account['local'])
     else:
-        config = gd.getScript('null', 'null', gDocURL, gdiParams, gdiLists, "default", False, [])
+        config = gd.getScript('null', 'null', gDocURL, gdiParams, gdiLists, "default", localFile = account['local'])
         
     cfg = getConfig(config)
     cfg['OutDir'] = account['name'] + '/'
@@ -513,9 +526,9 @@ def giSpyGDILoad(gDocURL,directory):
     #        cfg['OnlyKeepNLP'] = [str(cfg['OnlyKeepNLP'])]
     
     if not public:
-        uglyLists = gd.getScript(account['userName'], account['password'], account['fileName'], gdiLists, -1, "default", False, [])
+        uglyLists = gd.getScript(account['userName'], account['password'], account['fileName'], gdiLists, -1, "default", localFile = account['local'])
     else:
-        uglyLists = gd.getScript('null', 'null', gDocURL, gdiLists, -1, "default", False, [])
+        uglyLists = gd.getScript('null', 'null', gDocURL, gdiLists, -1, "default", localFile = account['local'])
 
     conditions = []
     qualifiers = set()
