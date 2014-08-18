@@ -961,7 +961,8 @@ def getReformatted(directory, lists, cfg, pickleMgmt, fileList, core, out_q, kee
     count = 0
     collectedContent = []
     collectedTypes = {}
-    geoPickle = dict(pickleMgmt.items())
+    #geoPickle = dict(pickleMgmt.items())
+    geoPickle = pickleMgmt
     
     useNLP = NLPClassifier != 'null' and NLPClassifier != False
     
@@ -1019,7 +1020,10 @@ def getReformatted(directory, lists, cfg, pickleMgmt, fileList, core, out_q, kee
                 outFile.close()
             
     collectedContent = cleanJson(collectedContent,cfg,collectedTypes)
-    pickleMgmt = Manager().dict(geoPickle)        
+    #pickleMgmt = Manager().dict(geoPickle)    
+    pickleMgmt = geoPickle
+    print len(pickleMgmt)
+    print pickleMgmt    
     #out_q.put({'content'+str(core):collectedContent,'types'+str(core):collectedTypes})
     print "Core", core, "tasks complete!"
     out_q.put({'content'+str(core):collectedContent})        
@@ -1033,7 +1037,6 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
     homeDirectory = directory
     manager = Manager()
     print "DEBOOO", geoCache
-    quit()
     
     pickleMgmt = manager.dict(geoCache)
     
