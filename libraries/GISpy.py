@@ -284,13 +284,15 @@ def sendCSV(cfg, directory,extra):
             
             attachedMap = open(figPrefix+'WeekMapped.png', 'rb') 
             img = MIMEImage(attachedMap.read())
-            img.add_header('Content-ID', '<week mapped>')
+            #img.add_header('Content-ID', '<week mapped>')
+            img.add_header('Content-Disposition', 'attachment; filename="%sWeekMapped.png"' % cfg['FileName'])
             msg.attach(img)
             attachedMap.close()
             
             attachedSeries = open(figPrefix+'TimeSeries.png', 'rb') 
             img = MIMEImage(attachedSeries.read())
-            img.add_header('Content-ID', '<time series>')
+            #img.add_header('Content-ID', '<time series>')
+            img.add_header('Content-Disposition', 'attachment; filename="%sTimeSeries.png"' % cfg['FileName'])
             msg.attach(img)
             attachedSeries.close()
         #else:    
