@@ -1078,6 +1078,8 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             
         print "Returning updated geoPickle"
         geoCache = dict(pickleMgmt.items())
+        print len(pickleMgmt.keys())
+        print pickleMgmt
         print len(geoCache.keys())
         print geoCache
         updateGeoPickle(geoCache,cfg['Directory']+'caches/'+pickleName)
