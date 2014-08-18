@@ -496,7 +496,7 @@ def giSpyGDILoad(gDocURL,directory):
     gdi['UserName'] = account['userName']
     gdi['Password'] = account['password']
     gdi['FileName'] = account['fileName']
-    gdi['Local'] = account['localScript']
+    gdi['Local'] = account['local']
     try:
         gdi['Frequency'] = int(emails[2])
     except:
