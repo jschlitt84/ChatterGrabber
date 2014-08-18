@@ -87,6 +87,7 @@ def getPublicFile(userName, fileName):
     print "\nLoading public file", fileName
     
     response = requests.get(fileName)
+    print "GDATA Response status code:",response.status_code
     assert response.status_code == 200, 'Wrong status code'
     data = response.content.split('\n')
     toDelete = []
