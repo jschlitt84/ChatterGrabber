@@ -297,6 +297,7 @@ def checkLinks(data,n='all',shown='all',linkfreq=2, imagefreq=1):
         for word in words:
             if word.startswith('http'):
                 links.append(word)
+    total = len(links)
     if type(n) is int:
         if n < len(links):
             links = sample(links,n)
@@ -304,7 +305,7 @@ def checkLinks(data,n='all',shown='all',linkfreq=2, imagefreq=1):
             n = len(links)
     else:
         n = len(links)
-    temp = "%s shortened URLs found, sample size = %s\n\n" % (len(links),n)
+    temp = "%s shortened URLs found, testing sample of size = %s\n\n" % (total,n)
     print temp; output+=temp
     for link in links:
         row += 1

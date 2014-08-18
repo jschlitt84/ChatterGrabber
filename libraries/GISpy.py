@@ -119,16 +119,6 @@ def fillBox(cfg,self):
         if isOffset:
             lat -= (inr/earthr) * 180.0/pi
     
-    """try:
-        secPerSearch = float(self.rateIncrement)/self.rateLimit
-        queries = len(self.queries); locations = len(box)
-        searchPerHour = 3600/secPerSearch
-        completePerHour = float(searchPerHour)/(queries*box)
-        print "%s queries generated with %s locations and %s total searches per cycle" % (queries,box,queries*box)
-        print "%s Total area searches possible per hour" % (completePerHour)
-    finally:
-        return {"list":box,'radius':circumrMiles}"""
-    
     secPerSearch = float(self.rateIncrement)/self.rateLimit
     if self.multiAPI:
 	secPerSearch = secPerSearch/len(self.api.keys())
@@ -167,12 +157,13 @@ def reformatTags(tags,cfg):
     if tags == []:
         return "No hashtags found"
     outText = 'Top %s hashtags for the past %s days:\n' % (cfg['TrackHashCount'],cfg['TrackHashDays'])
+    temp = ''
     if type(tags) is dict:
         for cat in tags.keys():
-            outText += "\t%s: %s\n"  % (cat,tags[cat])
+            temp += "\t%s: %s\n"  % (cat,tags[cat])
     else:
-        outText += "%s\n" % (tags)
-    return outText
+        temp += "%s\n" % (tags)
+    return outText + temp
      
         
            
@@ -264,6 +255,7 @@ def sendCSV(cfg, directory,extra):
                     fig = vis.mapSubject(weekSubsets[pos],"cat: "+catList[pos], show = False, offset=cfg['TimeOffset'])
                     fig.savefig(figPrefix+'WeekMapped_%s.png'%catList[pos]);fig.close()
                     anim, animFile = vis.animateMap(monthSubsets[pos],"cat: "+catList[pos], show = False, makeGif=False, offset=cfg['TimeOffset'])
+                    anim.close()
                     figureLinks.append(figPrefix+'WeekMapped_%s.png'%catList[pos])
                     figureLinks.append(animFile+'.mp4')
                     
@@ -284,6 +276,7 @@ def sendCSV(cfg, directory,extra):
                 weekData['name'] = weekName
                 monthData['name'] = monthName
                 anim, animFile = vis.animateMap(monthData,"Keyword Search", show = False, makeGif=False, offset=cfg['TimeOffset'])
+                anim.close()
                 figureLinks.append(animFile+'.mp4')
                 
             fig = vis.mapSubject(weekData,"Keyword Search", show = False, offset=cfg['TimeOffset'])
@@ -732,7 +725,7 @@ def patientGeoCoder(request,cfg):
     gCoder = geocoders.GoogleV3()
     tries = 0
     limit = 1
-    delay = 5
+    delay = 2
     if "Cores" in cfg.keys():
         delay *= cfg['Cores']
     while True:
