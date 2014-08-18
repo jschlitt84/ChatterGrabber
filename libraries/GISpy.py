@@ -801,7 +801,7 @@ def isInBox(cfg,geoCache,status):
         else:
             return loaded
     elif 'Cores' not in cfg.keys() or True:       
-        print "GEOCACHE: Looking up", cacheRef
+        print "GEOCACHE: Looking up", cacheRef, len(geoCache.keys())
     
     
     if type(coordinates) is list:
