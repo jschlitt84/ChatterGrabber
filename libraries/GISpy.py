@@ -71,35 +71,7 @@ def updateGeoPickle(dictionary,fileRef):
         pickleOut.close()
         time.sleep(.5)"""
         
-        
-def updateCache(dictionary,fileRef,limit):
-    """Updates file & memory version of cache"""
-    loadedLength = length1 = len(dictionary.keys())
-    pickleExists = path.isfile(fileRef)
-    if pickleExists:
-        pickleIn = openWhenReady(fileRef, "rb")
-        pickleLoaded = load(pickleIn)
-        length1 = len(pickleLoaded.keys())
-        pickleIn.close()
-        if dictionary.keys() != pickleLoaded.keys():
-            dictionary.update(pickleLoaded)
-            needsWrite = True
-        else:
-            needsWrite = False
-    else:
-        needsWrite = True
-    length2 = len(dictionary.keys())
-    if needsWrite and loadedLength != 0 or (length2-length1) > limit:
-        print "Updating master cache,", length2-length1,"new entries added with",length2,"total in cache"
-        pickleOut = openWhenReady(fileRef,"wb")
-        dump(dictionary, pickleOut)
-        pickleOut.close()
-        sleep(.5)
 
-
-    
-    
-    
 
 def getDelay(self,elapsed):
     """Calculates optimum stacked search delay for API rate limits"""
@@ -969,13 +941,11 @@ def dictToJsonFix(jsonOut):
 
 
 
-def getReformatted(directory, lists, cfg, pickleMgmt, fileList, core, out_q, keepTypes, NLPClassifier):
+def getReformatted(directory, lists, cfg, geoPickle, fileList, core, out_q, keepTypes, NLPClassifier):
     """Reformats tweet content from raw tweets"""
     count = 0
     collectedContent = []
     collectedTypes = {}
-    #geoPickle = dict(pickleMgmt.items())
-    geoPickle = pickleMgmt
     
     useNLP = NLPClassifier != 'null' and NLPClassifier != False
     
@@ -1032,11 +1002,7 @@ def getReformatted(directory, lists, cfg, pickleMgmt, fileList, core, out_q, kee
                     json.dump(filteredContent,outFile)
                 outFile.close()
             
-    collectedContent = cleanJson(collectedContent,cfg,collectedTypes)
-    #pickleMgmt = Manager().dict(geoPickle)    
-    pickleMgmt = geoPickle
-    print len(pickleMgmt)
-    print pickleMgmt    
+    collectedContent = cleanJson(collectedContent,cfg,collectedTypes)  
     #out_q.put({'content'+str(core):collectedContent,'types'+str(core):collectedTypes})
     print "Core", core, "tasks complete!"
     out_q.put({'content'+str(core):collectedContent})        
@@ -1049,7 +1015,6 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
     keepTypes = ['accepted']*cfg['KeepAccepted']+['partial']*cfg['KeepPartial']+['excluded']*cfg['KeepExcluded']
     homeDirectory = directory
     manager = Manager()
-    print "DEBOOO", geoCache
     
     pickleMgmt = manager.dict(geoCache)
     
@@ -1097,10 +1062,6 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             
         print "Returning updated geoPickle"
         geoCache = dict(pickleMgmt.items())
-        print len(pickleMgmt.keys())
-        print pickleMgmt
-        print len(geoCache.keys())
-        print geoCache
         updateGeoPickle(geoCache,cfg['Directory']+'caches/'+pickleName)
        
 	outName = cfg['FileName']+"_CollectedTweets"
