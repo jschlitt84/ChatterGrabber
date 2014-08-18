@@ -1032,6 +1032,9 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
     keepTypes = ['accepted']*cfg['KeepAccepted']+['partial']*cfg['KeepPartial']+['excluded']*cfg['KeepExcluded']
     homeDirectory = directory
     manager = Manager()
+    print "DEBOOO", geoCache
+    quit()
+    
     pickleMgmt = manager.dict(geoCache)
     
     print "Preparing to reformat from raw tweets..."
