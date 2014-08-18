@@ -233,7 +233,7 @@ def sendCSV(cfg, directory,extra):
         
     if cfg['SendFigures']:
         print "Generating Figures..."
-        try:
+        if True:
             trackCats = 'NLPCat' in dataSet['data'].keys()
             figureLinks = []
             figPrefix = directory+cfg['FileName']
@@ -252,10 +252,10 @@ def sendCSV(cfg, directory,extra):
                 fig.savefig(figPrefix+'TimeSeries.png');fig.close(); figureLinks.append(figPrefix+'TimeSeries.png')
                 limit = len(catList); pos = 0
                 for pos in range(limit):
-                    fig = vis.mapSubject(weekSubsets[pos],"cat: "+catList[pos], show = False, offset=cfg['TimeOffset'])
-                    fig.savefig(figPrefix+'WeekMapped_%s.png'%catList[pos]);fig.close()
+                    if limit > 1:
+                        fig = vis.mapSubject(weekSubsets[pos],"cat: "+catList[pos], show = False, offset=cfg['TimeOffset'])
+                        fig.savefig(figPrefix+'WeekMapped_%s.png'%catList[pos]);fig.close()
                     anim, animFile = vis.animateMap(monthSubsets[pos],"cat: "+catList[pos], show = False, makeGif=False, offset=cfg['TimeOffset'])
-                    anim.close()
                     figureLinks.append(figPrefix+'WeekMapped_%s.png'%catList[pos])
                     figureLinks.append(animFile+'.mp4')
                     
@@ -276,7 +276,6 @@ def sendCSV(cfg, directory,extra):
                 weekData['name'] = weekName
                 monthData['name'] = monthName
                 anim, animFile = vis.animateMap(monthData,"Keyword Search", show = False, makeGif=False, offset=cfg['TimeOffset'])
-                anim.close()
                 figureLinks.append(animFile+'.mp4')
                 
             fig = vis.mapSubject(weekData,"Keyword Search", show = False, offset=cfg['TimeOffset'])
@@ -294,10 +293,10 @@ def sendCSV(cfg, directory,extra):
             img.add_header('Content-ID', '<time series>')
             msg.attach(img)
             attachedSeries.close()
-        #else:    
-        except Exception as e:
+        else:    
+        #except Exception as e:
             print "\n\nFigure generation failed, was this needed?"
-            #print e,'\n\n\n'
+         #   print e,'\n\n\n'
 
     if cfg['SendLinks']:
         extra += "\nLink analysis for the past 7 days for categories %s:\n" % str(worthShowing).replace("'",'')

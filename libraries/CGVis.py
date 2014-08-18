@@ -202,7 +202,8 @@ def groupDaily(dataGroup, names, title, timeShift, stacked=True, show=True):
 
 def dailyDistributionPlot(dataIn,titles,bigTitle,timeShift,divFactor=24,overlay = False, show = True):
     """ draw the histogram of the daily distribution """
-    ax = plt.figure(figsize=(18,6)).gca()
+    #ax = plt.figure(figsize=(18,6)).gca()
+    ax = plt.figure(figsize=(11,5)).gca()
     merged = []
     prepped = [] 
     
@@ -426,7 +427,7 @@ def mapSubject(dataset,subject,box='tight',level='auto',
     if call == 'animate':
         plt.clf()
     else:
-        fig = plt.figure(figsize=(10,10))
+        fig = plt.figure(figsize=(9,9))
         
     box = fixBox(dataset,box)
     lats, lons, times = getData(dataset,offset)
@@ -540,5 +541,6 @@ def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
         writer = animation.writers['ffmpeg'](fps=1)
         anim.save(fileName+'.mp4',writer=writer,dpi=80)
         sleep(5)
-        
+    
+    plt.close()    
     return anim,fileName
