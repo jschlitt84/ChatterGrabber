@@ -20,3 +20,5 @@ dbFiles/*
 *.json
 caches/GeoPickle.txt
 *.mp4
+
+caches/GeoPickle.txt

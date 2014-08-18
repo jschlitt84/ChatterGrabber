@@ -15,6 +15,7 @@ import shlex
 import gDocsImport as gd
 import CGVis as vis
 import pandas as pd
+import KwikECache as kwik
 
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEBase import MIMEBase
@@ -45,7 +46,9 @@ pickleName = "GeoPickle.txt"
 
 def updateGeoPickle(dictionary,fileRef):
     """Updates file & memory version of geoPickle"""
-    loadedLength = length1 = len(dictionary.keys())
+    kwik.updateCache(dictionary,fileRef,25)
+    #old code   
+    """loadedLength = length1 = len(dictionary.keys())
     pickleExists = os.path.isfile(fileRef)
     if pickleExists:
         pickleIn = openWhenReady(fileRef, "rb")
@@ -66,7 +69,34 @@ def updateGeoPickle(dictionary,fileRef):
         pickleOut = openWhenReady(fileRef,"wb")
         cPickle.dump(dictionary, pickleOut)
         pickleOut.close()
-        time.sleep(.5)
+        time.sleep(.5)"""
+        
+        
+def updateCache(dictionary,fileRef,limit):
+    """Updates file & memory version of cache"""
+    loadedLength = length1 = len(dictionary.keys())
+    pickleExists = path.isfile(fileRef)
+    if pickleExists:
+        pickleIn = openWhenReady(fileRef, "rb")
+        pickleLoaded = load(pickleIn)
+        length1 = len(pickleLoaded.keys())
+        pickleIn.close()
+        if dictionary.keys() != pickleLoaded.keys():
+            dictionary.update(pickleLoaded)
+            needsWrite = True
+        else:
+            needsWrite = False
+    else:
+        needsWrite = True
+    length2 = len(dictionary.keys())
+    if needsWrite and loadedLength != 0 or (length2-length1) > limit:
+        print "Updating master cache,", length2-length1,"new entries added with",length2,"total in cache"
+        pickleOut = openWhenReady(fileRef,"wb")
+        dump(dictionary, pickleOut)
+        pickleOut.close()
+        sleep(.5)
+
+
     
     
     
@@ -770,7 +800,7 @@ def isInBox(cfg,geoCache,status):
             coordsWork = True
         else:
             return loaded
-    elif 'Cores' not in cfg.keys():       
+    elif 'Cores' not in cfg.keys() or True:       
         print "GEOCACHE: Looking up", cacheRef
     
     
