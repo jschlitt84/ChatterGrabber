@@ -194,15 +194,15 @@ def sendCSV(cfg, directory,extra):
 
 	dataSet = vis.getGeoSub(dataSet,box,'')
 
-        now = datetime.datetime.now()
-        weekAgo = now - datetime.timedelta(days=8)
+        times =  [parser.parse(time) for time in list(dataSet['data']['created_at'])]
+        now = max(times)
+        weekAgo = now - datetime.timedelta(days=7)
         monthAgo = now - datetime.timedelta(days=31)
         nowLocal = (now + datetime.timedelta(hours=cfg['TimeOffset'])).strftime("%a %m/%d/%y")
         weekAgoLocal = (weekAgo + datetime.timedelta(hours=cfg['TimeOffset'])).strftime("%a %m/%d/%y")
         monthAgoLocal = (monthAgo + datetime.timedelta(hours=cfg['TimeOffset'])).strftime("%a %m/%d/%y")
         weekData = vis.trimRange(now,weekAgo,dataSet,mode='dt')
         monthData = vis.trimRange(now,monthAgo,dataSet,mode='dt')
-        
         trackCats = 'NLPCat' in dataSet['data'].keys()
         figureLinks = []
         figPrefix = directory+cfg['FileName']
@@ -233,7 +233,7 @@ def sendCSV(cfg, directory,extra):
         
     if cfg['SendFigures']:
         print "Generating Figures..."
-        try:
+        if True:
             trackCats = 'NLPCat' in dataSet['data'].keys()
             figureLinks = []
             figPrefix = directory+cfg['FileName']
@@ -248,8 +248,13 @@ def sendCSV(cfg, directory,extra):
                 fig.savefig(figPrefix+'MonthByHour.png');fig.close(); figureLinks.append(figPrefix+'MonthByHour.png')
                 fig = vis.groupDaily(monthSubsets, catList, "%s Daily Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,monthAgoLocal),  cfg['TimeOffset'], show = False) 
                 fig.savefig(figPrefix+'MonthByDay.png');fig.close(); figureLinks.append(figPrefix+'MonthByDay.png')
-                fig = vis.dailyDistributionPlot(monthSubsets,catList,"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],8,overlay = False,show = False)
-                fig.savefig(figPrefix+'TimeSeries.png');fig.close(); figureLinks.append(figPrefix+'TimeSeries.png')
+                try:
+                    fig = vis.dailyDistributionPlot(monthSubsets,catList,"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],8,overlay = False,show = False)
+                    fig.savefig(figPrefix+'TimeSeries.png');fig.close(); figureLinks.append(figPrefix+'TimeSeries.png')
+                    madeTs = True
+                except Exception as e:
+                    print "Time series generation failed, error:", e
+                    madeTS = False
                 limit = len(catList); pos = 0
                 for pos in range(limit):
                     if limit > 1:
@@ -271,8 +276,13 @@ def sendCSV(cfg, directory,extra):
                 monthData['name'] = monthName + " Daily Tweet Distribution from %s - %s" % (nowLocal,monthAgoLocal)
                 fig = vis.chartDaily(monthData, cfg['TimeOffset'], show = False)
                 fig.savefig(figPrefix+'MonthByDay.png');fig.close(); figureLinks.append(figPrefix+'MonthByDay.png')
-                fig = vis.dailyDistributionPlot([monthData],['tweets'],"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],8,overlay = False,show = False)
-                fig.savefig(figPrefix+'TimeSeries.png');fig.close(); figureLinks.append(figPrefix+'TimeSeries.png')
+                try: 
+                    fig = vis.dailyDistributionPlot([monthData],['tweets'],"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],8,overlay = False,show = False)
+                    fig.savefig(figPrefix+'TimeSeries.png');fig.close(); figureLinks.append(figPrefix+'TimeSeries.png')
+                    madeTS = True
+                except Exception as e:
+                    print "Time series generation failed, error:", e
+                    madeTS = False
                 weekData['name'] = weekName
                 monthData['name'] = monthName
                 anim, animFile = vis.animateMap(monthData,"Keyword Search", show = False, makeGif=False, offset=cfg['TimeOffset'])
@@ -289,16 +299,17 @@ def sendCSV(cfg, directory,extra):
             msg.attach(img)
             attachedMap.close()
             
-            attachedSeries = open(figPrefix+'TimeSeries.png', 'rb') 
-            img = MIMEImage(attachedSeries.read())
-            #img.add_header('Content-ID', '<time series>')
-            img.add_header('Content-Disposition', 'attachment; filename="%sTimeSeries.png"' % cfg['FileName'])
-            msg.attach(img)
-            attachedSeries.close()
-        #else:    
-        except Exception as e:
+            if madeTS:
+                attachedSeries = open(figPrefix+'TimeSeries.png', 'rb') 
+                img = MIMEImage(attachedSeries.read())
+                #img.add_header('Content-ID', '<time series>')
+                img.add_header('Content-Disposition', 'attachment; filename="%sTimeSeries.png"' % cfg['FileName'])
+                msg.attach(img)
+                attachedSeries.close()
+        else:    
+        #except Exception as e:
             print "\n\nFigure generation failed, was this needed?"
-            print e,'\n\n\n'
+        #    print e,'\n\n\n'
 
     if cfg['SendLinks']:
         extra += "\nLink analysis for the past 7 days for categories %s:\n" % str(worthShowing).replace("'",'')

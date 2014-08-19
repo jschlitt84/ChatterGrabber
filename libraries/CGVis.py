@@ -58,24 +58,37 @@ def getCatSub(dataIn,cat,categories, catCol = 'NLPCat'):
     
     
 def getLocSub(dataIn,locNames,exclusions,prefix):
-    #return getFieldSub(dataIn,locNames,exclusions,prefix,'place')
-    dataOut = deepcopy(dataIn)
+    return getFieldSub(dataIn,locNames,exclusions,prefix,'place')
+    """dataOut = deepcopy(dataIn)
     dataOut['name'] = prefix + ' ' + dataOut['name']
     data = dataOut['data']
     data = data[data.apply(lambda x: sum([1 for place in locNames if place.lower() in str(x['place']).lower()]) > 0, axis=1)]
     if exclusions != []:
         data = data[data.apply(lambda x: sum([1 for place in exclusions if place.lower() in x['place'].lower()]) == 0, axis=1)]
     dataOut['data'] = data
-    return dataOut
+    return dataOut"""
     
     
 def getFieldSub(dataIn,sought,exclusions,prefix,field):
     dataOut = deepcopy(dataIn)
     dataOut['name'] = prefix + ' ' + dataOut['name']
     data = dataOut['data']
-    data = data[data.apply(lambda x: sum([1 for place in sought if place.lower() in str(x[field]).lower()]) > 0, axis=1)]
+    #print "DEBOOO1", len(data)
+    data = data[data.apply(lambda x: sum([1 for place in sought if str(place).lower() in str(x[str(field)]).lower()]) > 0, axis=1)]
     if exclusions != []:
-        data = data[data.apply(lambda x: sum([1 for place in exclusions if place.lower() in x[field].lower()]) == 0, axis=1)]
+        data = data[data.apply(lambda x: sum([1 for place in exclusions if str(place).lower() in str(x[str(field)]).lower()]) == 0, axis=1)]
+    dataOut['data'] = data
+    #print "DEBOOO2", len(data)
+    return dataOut
+    
+def getFieldItem(dataIn,sought,prefix,field):
+    dataOut = deepcopy(dataIn)
+    #sought = [str(item) for item in sought]
+    dataOut['name'] = prefix + ' ' + dataOut['name']
+    data = dataOut['data']
+    #print "DEBOOO1", len(data)
+    data = data[data[field].isin(sought)]
+    #print "DEBOOO2", len(data)
     dataOut['data'] = data
     return dataOut
     
@@ -108,11 +121,14 @@ def truncData(dataIn,mode):
     limit = len(data)
     pos = limit-1
     if mode == "hour":
-        while getTime(data.irow(pos)['time']) > firstTime or getTime(data.irow(pos-1)['time']) < firstTime:
+        while getTime(data.irow(pos)['time']) > firstTime or getTime(data.irow(pos-1)['time']) < firstTime and pos > 0 :
             pos -= 1
     elif mode == "day":
-        while getTime(data.irow(pos)['time']) > firstTime or getTime(data.irow(pos-1)['time']) < firstTime or firstDay !=data.irow(pos-1)['day']:
+        while getTime(data.irow(pos)['time']) > firstTime or getTime(data.irow(pos-1)['time']) < firstTime or firstDay !=data.irow(pos-1)['day'] and pos > 0:
                 pos -= 1
+    if pos == -1:
+        pos = limit
+            
                 
     dayDiff = parser.parse(data.irow(pos)['created_at']).timetuple().tm_yday - parser.parse(data.irow(0)['created_at']).timetuple().tm_yday
     timeLim = 7*(mode=='day')+1*(mode=='hour')
