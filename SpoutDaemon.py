@@ -9,7 +9,7 @@ format = "\033[91m\033[1m"
 end = "\033[0m"
 secondsPerDay = 86400
 daysToRefresh = 5
-delay = 600
+delay = 1800
 count = 0
 sleepEvery = (secondsPerDay*daysToRefresh)/delay
 
