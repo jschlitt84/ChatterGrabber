@@ -341,7 +341,7 @@ def getClassifier(tweetfile,cfg):
             classifier = {'class':preppedSVM,'mode':'svm','priority':priority}
 	else:
 	    from nltk.classify import NaiveBayesClassifier
-            classifier = {'class':NaiveBayesClassifier.train(readyToSend),'type':'nb'}
+            classifier = {'class':NaiveBayesClassifier.train(readyToSend),'mode':'nb'}
         
         if 'NLPTEST' not in cfg.keys():
             print "Pickling Classifier"
