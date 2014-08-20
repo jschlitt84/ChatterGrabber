@@ -251,7 +251,7 @@ def sendCSV(cfg, directory,extra):
                 try:
                     fig = vis.dailyDistributionPlot(monthSubsets,catList,"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],8,overlay = False,show = False)
                     fig.savefig(figPrefix+'TimeSeries.png');fig.close(); figureLinks.append(figPrefix+'TimeSeries.png')
-                    madeTs = True
+                    madeTS = True
                 except Exception as e:
                     print "Time series generation failed, error:", e
                     madeTS = False
@@ -1272,7 +1272,7 @@ def getConfig(directory):
 		'EpidashDir':'epidash/webapp','HomeDir':"/home/jschlitt",
 		'LocationName':'United_States','LocationGranularity':'country',
 		'RegionSearch':False,'SendLinks':False,
-		'SendFigures':False}
+		'SendFigures':False,'SendAfter':0}
     
     if type(directory) is str:
         if directory == "null":

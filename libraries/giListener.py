@@ -24,6 +24,7 @@ class giSeeker():
         self.useNLP = False
         self.NLP = NLPClassifier
         self.extra = ''
+        self.sendStatus = 'sent'
         
         if cfg['OnlyKeepNLP'] != False:
             global TweetMatch
@@ -164,6 +165,7 @@ class giSeeker():
                 self.extra = reformatTags(reformatOld(directory, lists, self.cfg, self.geoCache,self.NLP),self.cfg)
                 
                 tillSend =  datetime.datetime.now().day % int(self.cfg['SendEvery'])
+                self.sendStatus = 'sent'
                 if tillSend == 0:
                     print "Sending results to GDI user"
                     if True:
@@ -174,6 +176,7 @@ class giSeeker():
                         print e
                 else:
                     print "Sending next report in", tillSend, "days"  
+                self.sendStatus = 'sent'
                 
             else:
                 lists = updateWordBanks(directory, self.cfg)
@@ -551,8 +554,12 @@ class giSeeker():
             
             #if self.lastWrite != 'null' and (self.lastWrite != self.startDay):
             if self.runDay != datetime.datetime.now().strftime("%A %d"):
-                print "Good morning! New day noted, preparing to save tweets."
+                print "Good morning! New day noted, preparing to save tweets after hour:", self.cfg['SendAfter']
                 newDay = True
+                self.sendStatus = 'new day'
+                
+            if datetime.datetime.now().hour >= self.cfg['SendAfter'] and newDay:
+                self.sendStatus = 'ready'
                                    
             for status in collected:
                 idList.add(int(status.id))
@@ -564,7 +571,6 @@ class giSeeker():
                     
                 text = status.text.replace('\n',' ')
                 tweetType = checkTweet(self.conditions, self.qualifiers, self.exclusions, text, self.cfg)
-                #print json.loads(status.json).keys()
                 percentFilled = (self.tweetCount*100)/self.cfg['StopCount']
                 
                 
@@ -623,7 +629,7 @@ class giSeeker():
                         self.tweetTypes[str(status.id)]['NLPCat'] = TweetMatch.classifySingle(status.text,self.NLP,self.cfg['NLPnGrams'])
                     
             
-            if newDay:
+            if newDay and self.sendStatus == 'ready':
                 giSeeker.saveTweets(self)
                 newDay = False
                 giSeeker.closeDay(self)

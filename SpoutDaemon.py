@@ -63,7 +63,7 @@ while True:
     for url in notRunning:
         try:
             subprocess.Popen(['python','TwitterSpout.py', url])
-            sleep(30)
+            sleep(300)
         except:
             print "Process",url,"has stopped"
             None
