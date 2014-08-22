@@ -420,20 +420,23 @@ def main():
                 try:
 			scoreFile = open(scoreName(name,pos))
                 	line = scoreFile.read()
-                	scoreFile.close()
-                	multiplicator = 1
-                	if '-' in line:
-                	    line = line.replace('-','')
-                	    multiplicator = -1   
-                	try:
-                	    tempScore =  multiplicator*float(line)
-                	except:
-                	    tempScore = noLoadScore
-                	if tempScore == noLoadScore:
-                	    canRun -= 1
-                	
-                	if tempScore != noLoadScore and countOff:
-                	    tempScore += countHidden(fileName(name,pos))/(lines/5)
+			if 'nan' in score.lower():
+				tempScore = noLoadScore
+			else:
+                		scoreFile.close()
+                		multiplicator = 1
+                		if '-' in line:
+                		    line = line.replace('-','')
+                		    multiplicator = -1   
+                		try:
+                		    tempScore =  multiplicator*float(line)
+                		except:
+                		    tempScore = noLoadScore
+                		if tempScore == noLoadScore:
+                		    canRun -= 1
+                		
+                		if tempScore != noLoadScore and countOff:
+                		    tempScore += countHidden(fileName(name,pos))/(lines/5)
 		except:
 			tempScore = noLoadScore
 			canRun -= 1
@@ -441,8 +444,8 @@ def main():
                 fileScore[pos] = tempScore
                 logFile = open(logName(name,pos),'a+b')
                 logFile.write('Generation: %s Score: %s\n' % (str(generation), str(tempScore)))
-                logFile.close()
-                
+                logFile.close()	
+
         diversity = float(len(set(fileScore)))/seeds 
         errorMult = adjustError(diversity)
         
