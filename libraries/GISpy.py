@@ -239,8 +239,8 @@ def sendCSV(cfg, directory,extra):
             figPrefix = directory+cfg['FileName']
             
             if trackCats:
-                weekSubsets = [vis.getCatSub(weekData,cat,'') for cat in cats]
-                monthSubsets = [vis.getCatSub(monthData,cat,'') for cat in cats]         
+                weekSubsets = [entry for entry in [vis.getCatSub(weekData,cat,'') for cat in cats] if len(entry) != 0]
+                monthSubsets = [entry for entry in [vis.getCatSub(monthData,cat,'') for cat in cats] if len(entry) != 0]    
                 
                 fig = vis.groupHourly(weekSubsets, catList, "%s Hourly Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,weekAgoLocal),  cfg['TimeOffset'], show = False)
                 fig.savefig(figPrefix+'WeekByHour.png');fig.close(); figureLinks.append(figPrefix+'WeekByHour.png')
