@@ -420,7 +420,7 @@ def main():
                 try:
 			scoreFile = open(scoreName(name,pos))
                 	line = scoreFile.read()
-			if 'nan' in score.lower():
+			if 'nan' in line.lower():
 				tempScore = noLoadScore
 			else:
                 		scoreFile.close()
