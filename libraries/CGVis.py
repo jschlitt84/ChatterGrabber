@@ -160,23 +160,29 @@ def chartHourly(dataIn, timeShift,show=True):
 def groupHourly(dataGroup, names, title, timeShift, stacked=True,show=True):
     plt.gca()
     toPlot = []
-    for dataIn in dataGroup:
-        data = truncData(dataIn['data'],"hour")
-        dates = data['created_at']
-        dates = [parser.parse(date) for date in dates]
-        hour_list = [(t+timedelta(hours=timeShift)).hour for t in dates]
-        toPlot.append(hour_list)
-        numbers=[x for x in xrange(0,25)]
-        labels=map(lambda x: str(x), numbers)
-        plt.xticks(numbers, labels)
-        plt.xlabel("Hour (GMT %s)" % timeShift)
-        plt.ylabel("Tweets")
-    plt.title(title,size = 12)
-    plt.hist(toPlot,bins=numbers,stacked=stacked, alpha=0.5, label=names, align='mid')
-    plt.legend(names,"best")
-    if show:
-        plt.show()
+    namesShown = []
+    for pos in range(len(dataGroup)):
+    #for dataIn in dataGroup:
+        if len(dataGroup[pos]['data']) > 0:
+            data = truncData(dataGroup[pos]['data'],"hour")
+            dates = data['created_at']
+            dates = [parser.parse(date) for date in dates]
+            hour_list = [(t+timedelta(hours=timeShift)).hour for t in dates]
+            toPlot.append(hour_list)
+            namesShown.append(names[pos])
+            numbers=[x for x in xrange(0,25)]
+            labels=map(lambda x: str(x), numbers)
+            plt.xticks(numbers, labels)
+            plt.xlabel("Hour (GMT %s)" % timeShift)
+            plt.ylabel("Tweets")
+    if len(namesShown) != 0:
+        plt.title(title,size = 12)
+        plt.hist(toPlot,bins=numbers,stacked=stacked, alpha=0.5, label=names, align='mid')
+        plt.legend(namesShown,"best")
+        if show:
+            plt.show()
     return plt
+    
     
     
 def chartDaily(dataIn, timeShift, show=True):
@@ -198,21 +204,26 @@ def chartDaily(dataIn, timeShift, show=True):
 def groupDaily(dataGroup, names, title, timeShift, stacked=True, show=True):
     plt.gca()
     toPlot = []
-    for dataIn in dataGroup:
-        data = truncData(dataIn['data'],"day")
-        dates = data['created_at']
-        dates = [parser.parse(date) for date in dates]
-        dayList = [(t+timedelta(hours=timeShift)).weekday() for t in dates]
-        toPlot.append(dayList)
-        plt.xticks(weekNum, weekList)
-        plt.title(dataIn['name'],size = 12)
-        plt.xlabel("Day (GMT %s)" % timeShift)
-        plt.ylabel("Tweets")
-    plt.title(title,size = 12)
-    plt.hist(toPlot,bins=weekNum,stacked=stacked, alpha=0.5, label=names, align='left')
-    plt.legend(names,"best")
-    if show:
-        plt.show()
+    namesShown = []
+    for pos in range(len(dataGroup)):
+    #for dataIn in dataGroup:
+        if len(dataGroup[pos]['data']) > 0:
+            data = truncData(dataGroup[pos]['data'],"day")
+            dates = data['created_at']
+            dates = [parser.parse(date) for date in dates]
+            dayList = [(t+timedelta(hours=timeShift)).weekday() for t in dates]
+            toPlot.append(dayList)
+            namesShown.append(names[pos])
+            plt.xticks(weekNum, weekList)
+            plt.title(dataGroup[pos],size = 12)
+            plt.xlabel("Day (GMT %s)" % timeShift)
+            plt.ylabel("Tweets")
+    if len(namesShown) != 0:
+        plt.title(title,size = 12)
+        plt.hist(toPlot,bins=weekNum,stacked=stacked, alpha=0.5, label=names, align='left')
+        plt.legend(namesShown,"best")
+        if show:
+            plt.show()
     return plt
     
 
