@@ -12,6 +12,7 @@ from dateutil import parser
 from matplotlib.dates import DateFormatter, date2num, num2date
 from copy import deepcopy
 from time import sleep
+from geopy.distance import great_circle
 
 from mpl_toolkits.basemap import Basemap, cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -454,7 +455,7 @@ def fixDensity(density,xs,ys):
 def mapSubject(dataset,subject,box='tight',level='auto',
                longest=20,call='default',highlight=False,
                heatmap=True, mark = 'r', cmap='YlOrRd',
-               show = True, offset = 0):
+               show = True, offset = 0, subtitle = ''):
     
     if call == 'animate':
         plt.clf()
@@ -487,22 +488,35 @@ def mapSubject(dataset,subject,box='tight',level='auto',
     mapped.drawcoastlines()
     mapped.drawstates()
     mapped.drawcountries()
-    parallels = np.arange(-90.,90.,5.)
+
+    smallest = min(box['lat2']-box['lat1'],box['lon2']-box['lon1])
+
+    if smallest < 1:
+	gridIncrement = 0.1
+    elif smallest < 5:
+	gridIncrement = 1.0
+    elif smallest < 10:
+	gridIncrement = 2.5
+    else:
+	gridIncrement = 5.0
+
+    parallels = np.arange(-90.,90.,gridIncrement)
     mapped.drawparallels(parallels,labels=[1,0,0,0],fontsize=10)
-    meridians = np.arange(-180.,180.,5.)
+    meridians = np.arange(-180.,180.,gridIncrement)
     mapped.drawmeridians(meridians,labels=[0,0,0,1],fontsize=10)
     x, y = mapped(lons, lats) # compute map proj coordinates.
     mapped.plot(x, y, 'o', markersize=4,zorder=6, markerfacecolor=mark,markeredgecolor="none", alpha=0.25)
     if highlight != False:
         mapped.plot(x, y, 'o', markersize=4,zorder=6, markerfacecolor=highlight,markeredgecolor="none", alpha=0.03)
     
-    title = '%s search for "%s", %s Related Tweets Found from\n%s to %s' % (dataset['name'],
+    title = '%s search for "%s",\n%s Related Tweets Found from\n%s to %s' % (dataset['name'],
                                                                             subject,
                                                                             len(dataset['data']),
                                                                             times[0],
                                                                             times[-1])
     plt.title(title)
-    
+    plt.xtitle(subtitle)    
+
     if heatmap:
         divider = make_axes_locatable(plt.gca())
         cax = divider.append_axes("right", "5%", pad="3%")
@@ -520,6 +534,21 @@ def getDays(dataSet):
     days = dataSet['data']['date']
     return days.unique()
 
+
+def findCenter(dataSet):
+	mlat = mean(dataSet['data']['lat'])
+	mlon = mean(dataSet['data']['lon'])
+	minDist = 99999999
+	lowest = 'null'
+	for pos in range(len(dataSet['data'])):
+		lat = dataSet.irow(pos)['lat']
+		lon = dataSet.irow(pos)['lon']
+		distance = great_circle((mlon,mlat),(lon,lat))
+		if distance < minDist:
+			lowest = pos
+			minDist = distance
+	return dataSet.irow(pos)['place']
+		
 
 def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
                timeStamp=False,highlight=False,heatmap=True,mark='r',
@@ -569,10 +598,12 @@ def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
             clusterData = getGeoSub(daySub,clusterBox,'')
             clusterBox = fixBox(clusterData,'very tight')
             clusterData = getGeoSub(daySub,clusterBox,'')
+	    subtitle = "Central Point: %s" % findCenter(clusterData)
             
             extraFig = mapSubject(clusterData,subject+' Cluster Analysis',box=clusterBox,level='auto',longest=longest,
                    highlight=highlight, heatmap=heatmap, show=False,
-                   mark=mark, cmap=cmap, offset=offset)
+                   mark=mark, cmap=cmap, offset=offset,
+		   subtitle = subtitle)
             
             
             
