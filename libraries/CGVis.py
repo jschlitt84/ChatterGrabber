@@ -410,6 +410,11 @@ def fixBox(dataSet,box):
                'lat2':max(dataSet['data']['lat']+1.5),
                'lon1':min(dataSet['data']['lon']-1.5),
                'lon2':max(dataSet['data']['lon']+1.5)}
+    elif box == 'very tight':
+        return {'lat1':min(dataSet['data']['lat'])-0.5,
+               'lat2':max(dataSet['data']['lat']+0.5),
+               'lon1':min(dataSet['data']['lon']-0.5),
+               'lon2':max(dataSet['data']['lon']+0.5)}
     else:
         return box
     
@@ -519,7 +524,7 @@ def getDays(dataSet):
 def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
                timeStamp=False,highlight=False,heatmap=True,mark='r',
                cmap='YlOrRd',makeVideo=True,makeGif=True,show=True,
-               offset=0):
+               offset=0, showCluster = True):
     
     days = getDays(dataSet)
     length = len(days)
@@ -527,20 +532,63 @@ def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
     
     daySubs = [getFieldSub(dataSet,[day],[],day,'date') for day in days]
     
-    if box == 'tight':
-        box = {'lat1':min(dataSet['data']['lat']-1.5),
-               'lat2':max(dataSet['data']['lat']+1.5),
-               'lon1':min(dataSet['data']['lon']-1.5),
-               'lon2':max(dataSet['data']['lon']+1.5)}
-        
+    geoBox = fixBox(dataSet,box)
+     
+    extraFig = 'null'   
+              
     if level == 'auto' and heatmap:
-        maxVal = 0.
+        maxVal = 0
         for daySub in daySubs:
-            box = fixBox(daySub,box)
             lats, lons, times = getData(daySub,offset)
-            density, lon_bins, lat_bins = getDensity(box,lats,lons,longest)
+            density, lon_bins, lat_bins = getDensity(geoBox,lats,lons,longest)
             maxVal = max(maxVal, float(np.amax(density)))
-        level = maxVal
+        level = maxVal    
+        maxVal = 0
+        if showCluster:
+            for daySub in daySubs:
+                lats, lons, times = getData(daySub,offset)
+                density, lon_bins, lat_bins = getDensity(geoBox,lats,lons,longest)
+                maxVal = max(maxVal, float(np.amax(density)))
+                if maxVal == level:
+                    maxCluster = deepcopy(daySub)
+                    break 
+                    
+            row,col = np.unravel_index(np.argmax(density), density.shape)
+            
+            cols = len(density[0])
+            rows = len(density)
+            rowInc = (geoBox['lat2']-geoBox['lat1'])/rows
+            colInc = (geoBox['lon2']-geoBox['lon1'])/cols
+            #print 'latwidth',box['lat2']-box['lat1']
+            #print 'lonwidth',box['lon2']-box['lon1']
+            #print rows, cols
+            #print lats
+            #print lons
+            #print box['lat1']+(row)*rowInc,box['lat1']+(row+1)*rowInc
+            #print box['lon1']+(col)*colInc,box['lon1']+(col+1)*colInc
+            
+            
+            clusterBox = {'lat1':-0.5+geoBox['lat1']+row*rowInc,
+               'lat2':0.5+geoBox['lat1']+(row+1)*rowInc,
+               'lon1':-0.5+geoBox['lon1']+col*colInc,
+               'lon2':0.5+geoBox['lon1']+(col+1)*colInc}
+               
+            
+            #print density
+            #print np.amax(density)
+            #print "DEBOOOZLER",row,col,density[row][col]
+            
+            
+            clusterData = getGeoSub(daySub,clusterBox,'')
+            clusterBox = fixBox(clusterData,'very tight')
+            clusterData = getGeoSub(daySub,clusterBox,'')
+            
+            extraFig = mapSubject(clusterData,subject+' Cluster Analysis',box=clusterBox,level='auto',longest=longest,
+                   highlight=highlight, heatmap=heatmap, show=False,
+                   mark=mark, cmap=cmap, offset=offset)
+            
+            
+            
         
     fig = plt.figure(figsize=(10,10))
     
@@ -548,7 +596,7 @@ def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
     def animate(i):
         mapSubject(daySubs[i],subject,box=box,level=level,longest=longest,
                    call='animate',highlight=highlight,heatmap=heatmap,
-                   mark=mark,cmap=cmap,offset=0)
+                   mark=mark,cmap=cmap,offset=offset)
     
     anim = animation.FuncAnimation(fig,animate, frames=length, interval=1500, blit=False)
     
@@ -570,4 +618,4 @@ def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
         sleep(5)
     
     plt.close()    
-    return anim,fileName
+    return anim,fileName,extraFig

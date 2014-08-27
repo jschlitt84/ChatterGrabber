@@ -159,7 +159,8 @@ def reformatTags(tags,cfg):
     outText = 'Top %s hashtags for the past %s days:\n' % (cfg['TrackHashCount'],cfg['TrackHashDays'])
     temp = ''
     if type(tags) is dict:
-        for cat in tags.keys():
+        sortedCats = sorted(tags.keys())
+        for cat in sortedCats:
             temp += "\t%s: %s\n"  % (cat,tags[cat])
     else:
         temp += "%s\n" % (tags)
@@ -237,32 +238,47 @@ def sendCSV(cfg, directory,extra):
             trackCats = 'NLPCat' in dataSet['data'].keys()
             figureLinks = []
             figPrefix = directory+cfg['FileName']
+            makeWeekFig = True
             
             if trackCats:
-                weekSubsets = [entry for entry in [vis.getCatSub(weekData,cat,'') for cat in cats] if len(entry) != 0]
-                monthSubsets = [entry for entry in [vis.getCatSub(monthData,cat,'') for cat in cats] if len(entry) != 0]    
+                catsWeek = list(sorted(weekData['data']['NLPCat'].unique()))
+                catListWeek = [str(cat) for cat in catsWeek]
+                catsMonth = list(sorted(monthData['data']['NLPCat'].unique()))
+                catListMonth = [str(cat) for cat in catsMonth]                
                 
-                fig = vis.groupHourly(weekSubsets, catList, "%s Hourly Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,weekAgoLocal),  cfg['TimeOffset'], show = False)
+                weekSubsets = [entry for entry in [vis.getCatSub(weekData,cat,'') for cat in catsWeek] if len(entry['data']) != 0]
+                monthSubsets = [entry for entry in [vis.getCatSub(monthData,cat,'') for cat in catsMonth] if len(entry['data']) != 0]
+                
+                
+                
+                fig = vis.groupHourly(weekSubsets, catListWeek, "%s Hourly Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,weekAgoLocal),  cfg['TimeOffset'], show = False)
                 fig.savefig(figPrefix+'WeekByHour.png');fig.close(); figureLinks.append(figPrefix+'WeekByHour.png')
-                fig = vis.groupHourly(monthSubsets, catList, "%s Hourly Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,monthAgoLocal),  cfg['TimeOffset'], show = False)  
+                fig = vis.groupHourly(monthSubsets, catListMonth, "%s Hourly Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,monthAgoLocal),  cfg['TimeOffset'], show = False)  
                 fig.savefig(figPrefix+'MonthByHour.png');fig.close(); figureLinks.append(figPrefix+'MonthByHour.png')
-                fig = vis.groupDaily(monthSubsets, catList, "%s Daily Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,monthAgoLocal),  cfg['TimeOffset'], show = False) 
+                fig = vis.groupDaily(monthSubsets, catListMonth, "%s Daily Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,monthAgoLocal),  cfg['TimeOffset'], show = False) 
                 fig.savefig(figPrefix+'MonthByDay.png');fig.close(); figureLinks.append(figPrefix+'MonthByDay.png')
                 try:
-                    fig = vis.dailyDistributionPlot(monthSubsets,catList,"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],8,overlay = False,show = False)
+                    fig = vis.dailyDistributionPlot(monthSubsets,catListMonth,"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],8,overlay = False,show = False)
                     fig.savefig(figPrefix+'TimeSeries.png');fig.close(); figureLinks.append(figPrefix+'TimeSeries.png')
                     madeTS = True
                 except Exception as e:
                     print "Time series generation failed, error:", e
                     madeTS = False
-                limit = len(catList); pos = 0
-                for pos in range(limit):
-                    if limit > 1:
-                        fig = vis.mapSubject(weekSubsets[pos],"cat: "+catList[pos], show = False, offset=cfg['TimeOffset'])
-                        fig.savefig(figPrefix+'WeekMapped_%s.png'%catList[pos]);fig.close()
-                        figureLinks.append(figPrefix+'WeekMapped_%s.png'%catList[pos])
-                    anim, animFile = vis.animateMap(monthSubsets[pos],"cat: "+catList[pos], show = False, makeGif=False, offset=cfg['TimeOffset'])
+ 
+                for pos in range(len(catListWeek)):
+                    fig = vis.mapSubject(weekSubsets[pos],"Cat: "+catListWeek[pos], show = False, offset=cfg['TimeOffset'])
+                    fig.savefig(figPrefix+'WeekMapped_%s.png'%catListWeek[pos]);fig.close()
+                    figureLinks.append(figPrefix+'WeekMapped_%s.png'%catListWeek[pos])
+                for pos in range(len(catListMonth)):
+                    anim, animFile, extrafig = vis.animateMap(monthSubsets[pos],"Cat: "+catListMonth[pos], show = False, makeGif=False, offset=cfg['TimeOffset'])
                     figureLinks.append(animFile+'.mp4')
+                    if extrafig != 'null':
+                        extrafig.savefig(figPrefix+'MonthCluster_%s.png'%catListWeek[pos]);extrafig.close()
+                        figureLinks.append(figPrefix+'MonthCluster_%s.png'%catListWeek[pos])
+                
+                makeWeekFig = len(catListWeek) > 1
+                    
+                
                     
             else:
                 monthName = monthData['name']
@@ -287,14 +303,17 @@ def sendCSV(cfg, directory,extra):
                 monthData['name'] = monthName
                 anim, animFile = vis.animateMap(monthData,"Keyword Search", show = False, makeGif=False, offset=cfg['TimeOffset'])
                 figureLinks.append(animFile+'.mp4')
-                
-            fig = vis.mapSubject(weekData,"Keyword Search", show = False, offset=cfg['TimeOffset'])
-            fig.savefig(figPrefix+'WeekMapped.png');fig.close()
-            figureLinks.append(figPrefix+'WeekMapped.png')
             
-            attachedMap = open(figPrefix+'WeekMapped.png', 'rb') 
+            if makeWeekFig:
+                fig = vis.mapSubject(weekData,"Keyword Search", show = False, offset=cfg['TimeOffset'])
+                fig.savefig(figPrefix+'WeekMapped.png');fig.close()
+                figureLinks.append(figPrefix+'WeekMapped.png')
+                attachedMap = open(figPrefix+'WeekMapped.png', 'rb') 
+            else:
+                attachedMap = open(figPrefix+'WeekMapped_%s.png'%catListWeek[0], 'rb') 
+                
+                
             img = MIMEImage(attachedMap.read())
-            #img.add_header('Content-ID', '<week mapped>')
             img.add_header('Content-Disposition', 'attachment; filename="%sWeekMapped.png"' % cfg['FileName'])
             msg.attach(img)
             attachedMap.close()
@@ -302,7 +321,6 @@ def sendCSV(cfg, directory,extra):
             if madeTS:
                 attachedSeries = open(figPrefix+'TimeSeries.png', 'rb') 
                 img = MIMEImage(attachedSeries.read())
-                #img.add_header('Content-ID', '<time series>')
                 img.add_header('Content-Disposition', 'attachment; filename="%sTimeSeries.png"' % cfg['FileName'])
                 msg.attach(img)
                 attachedSeries.close()
@@ -313,7 +331,7 @@ def sendCSV(cfg, directory,extra):
 
     if cfg['SendLinks']:
         extra += "\nLink analysis for the past 7 days for categories %s:\n" % str(worthShowing).replace("'",'')
-        extra += vis.checkLinks(worthShowingWeek['data'],n=250, shown = 5, linkfreq=1)
+        extra += vis.checkLinks(worthShowingWeek['data'],n=2, shown = 5, linkfreq=1)
         extra += '\n\nPlease note, with gmail and certain clients, link analysis links may appear as attachments.'
     
     body += extra
@@ -1179,7 +1197,7 @@ def getTags(cfg,data):
     data = [entry for entry in data if leftBound < parser.parse(entry['created_at']) < rightBound]
     trackCats = 'NLPCat' in data[0].keys()
     if trackCats:
-        cats = set([entry['NLPCat'] for entry in data])
+        cats = sorted(list(set([entry['NLPCat'] for entry in data])))
         tags =  dict()
         for cat in cats:
             tags[cat] = countHashTags([entry for entry in data if entry['NLPCat'] == cat],cfg['TrackHashCount'])
