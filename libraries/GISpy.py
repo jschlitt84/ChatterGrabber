@@ -301,7 +301,7 @@ def sendCSV(cfg, directory,extra):
                     madeTS = False
                 weekData['name'] = weekName
                 monthData['name'] = monthName
-                anim, animFile = vis.animateMap(monthData,"Keyword Search", show = False, makeGif=False, offset=cfg['TimeOffset'])
+                anim, animFile, extrafig = vis.animateMap(monthData,"Keyword Search", show = False, makeGif=False, offset=cfg['TimeOffset'])
                 figureLinks.append(animFile+'.mp4')
             
             if makeWeekFig:
