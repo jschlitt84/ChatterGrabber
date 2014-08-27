@@ -559,24 +559,11 @@ def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
             rows = len(density)
             rowInc = (geoBox['lat2']-geoBox['lat1'])/rows
             colInc = (geoBox['lon2']-geoBox['lon1'])/cols
-            #print 'latwidth',box['lat2']-box['lat1']
-            #print 'lonwidth',box['lon2']-box['lon1']
-            #print rows, cols
-            #print lats
-            #print lons
-            #print box['lat1']+(row)*rowInc,box['lat1']+(row+1)*rowInc
-            #print box['lon1']+(col)*colInc,box['lon1']+(col+1)*colInc
-            
             
             clusterBox = {'lat1':-0.5+geoBox['lat1']+row*rowInc,
                'lat2':0.5+geoBox['lat1']+(row+1)*rowInc,
                'lon1':-0.5+geoBox['lon1']+col*colInc,
                'lon2':0.5+geoBox['lon1']+(col+1)*colInc}
-               
-            
-            #print density
-            #print np.amax(density)
-            #print "DEBOOOZLER",row,col,density[row][col]
             
             
             clusterData = getGeoSub(daySub,clusterBox,'')
