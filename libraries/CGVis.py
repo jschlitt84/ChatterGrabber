@@ -489,7 +489,7 @@ def mapSubject(dataset,subject,box='tight',level='auto',
     mapped.drawstates()
     mapped.drawcountries()
 
-    smallest = min(box['lat2']-box['lat1'],box['lon2']-box['lon1])
+    smallest = min(box['lat2']-box['lat1'],box['lon2']-box['lon1'])
 
     if smallest < 1:
 	gridIncrement = 0.1
@@ -515,7 +515,7 @@ def mapSubject(dataset,subject,box='tight',level='auto',
                                                                             times[0],
                                                                             times[-1])
     plt.title(title)
-    plt.xtitle(subtitle)    
+    plt.xlabel(subtitle)    
 
     if heatmap:
         divider = make_axes_locatable(plt.gca())
@@ -536,18 +536,18 @@ def getDays(dataSet):
 
 
 def findCenter(dataSet):
-	mlat = mean(dataSet['data']['lat'])
-	mlon = mean(dataSet['data']['lon'])
+	mlat = np.mean(dataSet['data']['lat'])
+	mlon = np.mean(dataSet['data']['lon'])
 	minDist = 99999999
 	lowest = 'null'
 	for pos in range(len(dataSet['data'])):
-		lat = dataSet.irow(pos)['lat']
-		lon = dataSet.irow(pos)['lon']
+		lat = dataSet['data'].irow(pos)['lat']
+		lon = dataSet['data'].irow(pos)['lon']
 		distance = great_circle((mlon,mlat),(lon,lat))
 		if distance < minDist:
 			lowest = pos
 			minDist = distance
-	return dataSet.irow(pos)['place']
+	return dataSet['data'].irow(pos)['place']
 		
 
 def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
@@ -598,10 +598,10 @@ def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
             clusterData = getGeoSub(daySub,clusterBox,'')
             clusterBox = fixBox(clusterData,'very tight')
             clusterData = getGeoSub(daySub,clusterBox,'')
-	    subtitle = "Central Point: %s" % findCenter(clusterData)
+	    subtitle = "\n\nCentral Point: %s" % findCenter(clusterData)
             
             extraFig = mapSubject(clusterData,subject+' Cluster Analysis',box=clusterBox,level='auto',longest=longest,
-                   highlight=highlight, heatmap=heatmap, show=False,
+                   highlight=highlight, heatmap=heatmap, show=show,
                    mark=mark, cmap=cmap, offset=offset,
 		   subtitle = subtitle)
             
