@@ -4,6 +4,8 @@ import datetime
 
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
+import matplotlib.cm as cmx
 import numpy as np
 
 from random import shuffle, sample
@@ -12,7 +14,8 @@ from dateutil import parser
 from matplotlib.dates import DateFormatter, date2num, num2date
 from copy import deepcopy
 from time import sleep
-from geopy.distance import great_circle
+from geopy.distance import great_circle, vincenty
+from math import sqrt,pow
 
 from mpl_toolkits.basemap import Basemap, cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -74,12 +77,10 @@ def getFieldSub(dataIn,sought,exclusions,prefix,field):
     dataOut = deepcopy(dataIn)
     dataOut['name'] = prefix + ' ' + dataOut['name']
     data = dataOut['data']
-    #print "DEBOOO1", len(data)
     data = data[data.apply(lambda x: sum([1 for place in sought if str(place).lower() in str(x[str(field)]).lower()]) > 0, axis=1)]
     if exclusions != []:
         data = data[data.apply(lambda x: sum([1 for place in exclusions if str(place).lower() in str(x[str(field)]).lower()]) == 0, axis=1)]
     dataOut['data'] = data
-    #print "DEBOOO2", len(data)
     return dataOut
     
 def getFieldItem(dataIn,sought,prefix,field):
@@ -87,9 +88,7 @@ def getFieldItem(dataIn,sought,prefix,field):
     #sought = [str(item) for item in sought]
     dataOut['name'] = prefix + ' ' + dataOut['name']
     data = dataOut['data']
-    #print "DEBOOO1", len(data)
     data = data[data[field].isin(sought)]
-    #print "DEBOOO2", len(data)
     dataOut['data'] = data
     return dataOut
     
@@ -450,19 +449,40 @@ def fixDensity(density,xs,ys):
       	density == deepcopy(xs)
 	density.fill(0.00000001)
     return density
+
+
+def mapTransparency(grid,coloredGrid,level):
+    #coloredGrid = cm.hsv(grid)
+    temp = deepcopy(coloredGrid)
+    for i in range(len(temp)):
+        for j in range(len(temp[0])):
+            temp[i][j][3] = pow((float(grid[i][j])/level),.333)
+    return temp
+
+
+def mapColors(grid,level,cmap):
+	cNorm  = colors.Normalize(vmin=0, vmax=level)
+	scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cmap)
+	temp = grid.tolist()
+	for x in range(len(grid)):
+	    for y in range(len(grid[0])):
+		temp[x][y] = list(scalarMap.to_rgba(float(grid[x][y])))
+	return temp
 	
 
 def mapSubject(dataset,subject,box='tight',level='auto',
                longest=20,call='default',highlight=False,
                heatmap=True, mark = 'r', cmap='YlOrRd',
-               show = True, offset = 0, subtitle = ''):
-    
+               show = True, offset = 0, subtitle = '', geobox = 'null',
+	       important = 'null',background = 'none'):
+
     if call == 'animate':
         plt.clf()
     else:
         fig = plt.figure(figsize=(9,9))
-        
-    box = fixBox(dataset,box)
+    
+    if geobox != 'null' or box == 'tight': 
+    	box = fixBox(dataset,box)
     lats, lons, times = getData(dataset,offset)
     
     mapped = Basemap(projection='mill', 
@@ -470,6 +490,21 @@ def mapSubject(dataset,subject,box='tight',level='auto',
                      llcrnrlat=box['lat1'],
                      urcrnrlon=box['lon2'],
                      urcrnrlat=box['lat2'])
+
+    mapOpacity = 0.75
+
+    if background == 'etopo':
+	mapped.etopo(zorder=0, alpha=mapOpacity)
+    elif background == 'shaded relief':
+	mapped.shadedrelief(zorder=0, alpha=mapOpacity)
+    elif background == 'blue marble':
+        mapped.bluemarble(zorder=0, alpha=mapOpacity)
+    else:
+	background = 'null'
+
+    mapped.drawcoastlines(zorder=2)
+    mapped.drawstates(zorder=2)
+    mapped.drawcountries(zorder=2)
     
     if heatmap:
         # ######################################################################
@@ -482,12 +517,16 @@ def mapSubject(dataset,subject,box='tight',level='auto',
         if level == 'auto':
             level = np.amax(density)
 
-	density = fixDensity(density,xs,ys)    
-        plt.pcolormesh(xs, ys, density, cmap = cmap)
+	density = fixDensity(density,xs,ys)
+	
+  	if background == 'null':
+        	plt.pcolormesh(xs, ys, density, cmap = cmap,zorder=2, alpha = 1, vmin =1)
+	else:
+		extent = (xs[0][0],xs[0][-1],ys[0][0],ys[-1][0]) 
+		colorized = mapColors(density,level,cmap)
+		colorized = mapTransparency(density,colorized,level)
+		plt.imshow(colorized, extent=extent,cmap=cmap,origin='lower',interpolation='nearest',zorder=1)
 
-    mapped.drawcoastlines()
-    mapped.drawstates()
-    mapped.drawcountries()
 
     smallest = min(box['lat2']-box['lat1'],box['lon2']-box['lon1'])
 
@@ -501,13 +540,21 @@ def mapSubject(dataset,subject,box='tight',level='auto',
 	gridIncrement = 5.0
 
     parallels = np.arange(-90.,90.,gridIncrement)
-    mapped.drawparallels(parallels,labels=[1,0,0,0],fontsize=10)
+    mapped.drawparallels(parallels,labels=[1,0,0,0],fontsize=10, alpha = .75)
     meridians = np.arange(-180.,180.,gridIncrement)
-    mapped.drawmeridians(meridians,labels=[0,0,0,1],fontsize=10)
+    mapped.drawmeridians(meridians,labels=[0,0,0,1],fontsize=10, alpha = .75)
+
+    if important != 'null':
+	xI,yI = mapped(important[0],important[1])
+	xM,yM = mapped(np.mean(lons),np.mean(lats))
+	mapped.plot(xI,yI,'o',markersize=15, zorder=6, markerfacecolor = "white", markeredgecolor=mark, alpha = 1.0)
+	mapped.plot(xM,yM,'x',markersize=15, zorder=6, markerfacecolor = "white", markeredgecolor=mark, alpha = 1.0)
+
     x, y = mapped(lons, lats) # compute map proj coordinates.
-    mapped.plot(x, y, 'o', markersize=4,zorder=6, markerfacecolor=mark,markeredgecolor="none", alpha=0.25)
+    mapped.plot(x, y, 'o', markersize=4,zorder=6, markerfacecolor=mark,markeredgecolor="none", alpha=0.30)
     if highlight != False:
         mapped.plot(x, y, 'o', markersize=4,zorder=6, markerfacecolor=highlight,markeredgecolor="none", alpha=0.03)
+
     
     title = '%s search for "%s",\n%s Related Tweets Found from\n%s to %s' % (dataset['name'],
                                                                             subject,
@@ -515,7 +562,8 @@ def mapSubject(dataset,subject,box='tight',level='auto',
                                                                             times[0],
                                                                             times[-1])
     plt.title(title)
-    plt.xlabel(subtitle)    
+    if subtitle != '':
+   	 plt.xlabel(subtitle)
 
     if heatmap:
         divider = make_axes_locatable(plt.gca())
@@ -538,22 +586,22 @@ def getDays(dataSet):
 def findCenter(dataSet):
 	mlat = np.mean(dataSet['data']['lat'])
 	mlon = np.mean(dataSet['data']['lon'])
-	minDist = 99999999
+	minDist = 999999999999
 	lowest = 'null'
 	for pos in range(len(dataSet['data'])):
 		lat = dataSet['data'].irow(pos)['lat']
 		lon = dataSet['data'].irow(pos)['lon']
-		distance = great_circle((mlon,mlat),(lon,lat))
+		distance = vincenty((mlon,mlat),(lon,lat))
 		if distance < minDist:
 			lowest = pos
 			minDist = distance
-	return dataSet['data'].irow(pos)['place']
+	return dataSet['data'].irow(lowest)
 		
 
 def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
                timeStamp=False,highlight=False,heatmap=True,mark='r',
                cmap='YlOrRd',makeVideo=True,makeGif=True,show=True,
-               offset=0, showCluster = True):
+               offset=0, showCluster = True, background = 'none'):
     
     days = getDays(dataSet)
     length = len(days)
@@ -561,7 +609,8 @@ def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
     
     daySubs = [getFieldSub(dataSet,[day],[],day,'date') for day in days]
     
-    geoBox = fixBox(dataSet,box)
+    if box == 'tight':
+    	geoBox = fixBox(dataSet,box)
      
     extraFig = 'null'   
               
@@ -596,14 +645,20 @@ def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
             
             
             clusterData = getGeoSub(daySub,clusterBox,'')
-            clusterBox = fixBox(clusterData,'very tight')
+            clusterBox = fixBox(clusterData,'tight')
             clusterData = getGeoSub(daySub,clusterBox,'')
-	    subtitle = "\n\nCentral Point: %s" % findCenter(clusterData)
+            clusterBox = fixBox(clusterData,'very tight')
+
+	    temp = findCenter(clusterData)
+	    subtitle = "\n\nCentral Point: %s {%s,%s}" % (temp['place'],
+							str(temp['lon'])[:5],
+							str(temp['lat'])[:5])
+	    important = [[temp['lon']],[temp['lat']]]
             
             extraFig = mapSubject(clusterData,subject+' Cluster Analysis',box=clusterBox,level='auto',longest=longest,
                    highlight=highlight, heatmap=heatmap, show=show,
                    mark=mark, cmap=cmap, offset=offset,
-		   subtitle = subtitle)
+		   subtitle = subtitle, important = important, background = background)
             
             
             
@@ -614,7 +669,8 @@ def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
     def animate(i):
         mapSubject(daySubs[i],subject,box=box,level=level,longest=longest,
                    call='animate',highlight=highlight,heatmap=heatmap,
-                   mark=mark,cmap=cmap,offset=offset)
+                   mark=mark,cmap=cmap,offset=offset, geobox = geoBox,
+		   background=background)
     
     anim = animation.FuncAnimation(fig,animate, frames=length, interval=1500, blit=False)
     
