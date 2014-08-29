@@ -481,8 +481,11 @@ def mapSubject(dataset,subject,box='tight',level='auto',
     else:
         fig = plt.figure(figsize=(9,9))
     
-    if geobox != 'null' or box == 'tight': 
+    if geobox == 'null' or (type(box) is str and type(geobox) is str):
     	box = fixBox(dataset,box)
+    else:
+        box = geobox
+    	
     lats, lons, times = getData(dataset,offset)
     
     mapped = Basemap(projection='mill', 
@@ -492,7 +495,6 @@ def mapSubject(dataset,subject,box='tight',level='auto',
                      urcrnrlat=box['lat2'])
 
     mapOpacity = 0.75
-
     if background == 'etopo':
 	mapped.etopo(zorder=0, alpha=mapOpacity)
     elif background == 'shaded relief':
@@ -502,9 +504,9 @@ def mapSubject(dataset,subject,box='tight',level='auto',
     else:
 	background = 'null'
 
-    mapped.drawcoastlines(zorder=2)
-    mapped.drawstates(zorder=2)
-    mapped.drawcountries(zorder=2)
+    mapped.drawcoastlines(zorder=3)
+    mapped.drawstates(zorder=3)
+    mapped.drawcountries(zorder=3)
     
     if heatmap:
         # ######################################################################
@@ -525,13 +527,15 @@ def mapSubject(dataset,subject,box='tight',level='auto',
 		extent = (xs[0][0],xs[0][-1],ys[0][0],ys[-1][0]) 
 		colorized = mapColors(density,level,cmap)
 		colorized = mapTransparency(density,colorized,level)
-		plt.imshow(colorized, extent=extent,cmap=cmap,origin='lower',interpolation='nearest',zorder=1)
+		plt.imshow(colorized, extent=extent,cmap=cmap,origin='lower',interpolation='nearest',zorder=2)
 
 
     smallest = min(box['lat2']-box['lat1'],box['lon2']-box['lon1'])
-
-    if smallest < 1:
-	gridIncrement = 0.1
+    
+    if smallest < 1.0:
+        gridIncrement = 0.1
+    if smallest < 2.5:
+	gridIncrement = 0.5
     elif smallest < 5:
 	gridIncrement = 1.0
     elif smallest < 10:

@@ -105,6 +105,8 @@ def main():
     oneTimeDump = '-o' in sys.argv and not skipReformat
     quickSend = '-e' in sys.argv and not skipReformat
     
+    skipReformat = not(quickReformat or oneTimeDump or quickSend) or skipReformat
+    
     try: 
         userLogin = sys.argv[2]
         print "Login '%s' passed explicitly" % (userLogin)
