@@ -501,12 +501,25 @@ def mapSubject(dataset,subject,box='tight',level='auto',
 	mapped.shadedrelief(zorder=0, alpha=mapOpacity)
     elif background == 'blue marble':
         mapped.bluemarble(zorder=0, alpha=mapOpacity)
+    elif '/' in background or '.' in background:
+        try:
+            mapped.warpimage(image='maps/'+background, scale=None, zorder=0, alpha=mapOpacity)
+        except:
+            mapped.warpimage(image=background, scale=None, zorder=0, alpha=mapOpacity)
     else:
 	background = 'null'
+	
+    smallest = min(box['lat2']-box['lat1'],box['lon2']-box['lon1'])
 
     mapped.drawcoastlines(zorder=3)
-    mapped.drawstates(zorder=3)
-    mapped.drawcountries(zorder=3)
+    
+    if smallest < 5:
+        mapped.drawcountries(zorder=3,linewidth = 3)
+        mapped.drawstates(zorder=3, linewidth = 2)
+        mapped.drawcounties(zorder=3,linewidth = 1)
+    else:
+        mapped.drawcountries(zorder=3,linewidth = 2)
+        mapped.drawstates(zorder=3, linewidth = 1)
     
     if heatmap:
         # ######################################################################
