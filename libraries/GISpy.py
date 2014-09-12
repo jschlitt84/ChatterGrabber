@@ -136,8 +136,9 @@ def zipData(files, directory, name, timeStamp,cfg,purge=False):
     """Zips list of files from given directory, appends timestampif present"""
     if not os.path.exists(directory):
         os.makedirs(directory)
-
+    
     outName = directory + name + timeStamp.replace(':','.') + '.zip'
+    files = [x for x in files if x != 'null']
         
     open(outName, 'w').close()
     zipOut = zipfile.ZipFile(outName,'a', zipfile.ZIP_DEFLATED)
@@ -146,7 +147,10 @@ def zipData(files, directory, name, timeStamp,cfg,purge=False):
     zipOut.close()
     for dataFile in files[1:]:
         if not (cfg['MakeDBFeed'] and 'wordcloud.json' in dataFile) or purge:
-            os.remove(dataFile)
+            try:
+                os.remove(dataFile)
+            except:
+                pass
     return outName
     
     
@@ -260,31 +264,35 @@ def sendCSV(cfg, directory,extra):
                 
                 
                 fig = vis.groupHourly(weekSubsets, catListWeek, "%s Hourly Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,weekAgoLocal),  cfg['TimeOffset'], show = False, truncate = False)
-                fig.savefig(figPrefix+'WeekByHour'+format);fig.close(); figureLinks.append(figPrefix+'WeekByHour'+format)
+                figureLinks.append(vis.cleanSave(fig,figPrefix+'WeekByHour'+format,'fig'))
+                #fig.savefig(figPrefix+'WeekByHour'+format);fig.close(); figureLinks.append(figPrefix+'WeekByHour'+format)
                 fig = vis.groupHourly(monthSubsets, catListMonth, "%s Hourly Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,monthAgoLocal),  cfg['TimeOffset'], show = False, truncate = False)  
-                fig.savefig(figPrefix+'MonthByHour'+format);fig.close(); figureLinks.append(figPrefix+'MonthByHour'+format)
+                figureLinks.append(vis.cleanSave(fig,figPrefix+'MonthByHour'+format,'fig'))
+                #fig.savefig(figPrefix+'MonthByHour'+format);fig.close(); figureLinks.append(figPrefix+'MonthByHour'+format)
                 fig = vis.groupDaily(monthSubsets, catListMonth, "%s Daily Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,monthAgoLocal),  cfg['TimeOffset'], show = False, truncate = False) 
-                fig.savefig(figPrefix+'MonthByDay'+format);fig.close(); figureLinks.append(figPrefix+'MonthByDay'+format)
+                figureLinks.append(vis.cleanSave(fig,figPrefix+'MonthByDay'+format,'fig'))
+                #fig.savefig(figPrefix+'MonthByDay'+format);fig.close(); figureLinks.append(figPrefix+'MonthByDay'+format)
                 try:
                     fig = vis.dailyDistributionPlot(monthSubsets,catListMonth,"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],8,overlay = False,show = False)
-                    fig.savefig(figPrefix+'TimeSeries'+format);fig.close(); figureLinks.append(figPrefix+'TimeSeries'+format)
+                    figureLinks.append(vis.cleanSave(fig,figPrefix+'TimeSeries'+format,'fig'))
+                    #fig.savefig(figPrefix+'TimeSeries'+format);fig.close(); figureLinks.append(figPrefix+'TimeSeries'+format)
                     madeTS = True
                 except Exception as e:
                     print "Time series generation failed, error:", e
                     madeTS = False
  
-                print catListWeek, catsWeek
                 for pos in range(len(catListWeek)):
-                    print "DEBOOO", pos, len(weekSubsets), len(catListWeek)
                     fig = vis.mapSubject(weekSubsets[pos],"Cat: "+catListWeek[pos], show = False, offset=cfg['TimeOffset'], background = cfg['ShowMap'])
-                    fig.savefig(figPrefix+'WeekMapped_%s%s' % (catListWeek[pos],format));fig.close()
-                    figureLinks.append(figPrefix+'WeekMapped_%s%s' % (catListWeek[pos],format))
+                    figureLinks.append(vis.cleanSave(fig,figPrefix+'WeekMapped_%s%s' % (catListWeek[pos],format),'fig'))
+                    #fig.savefig(figPrefix+'WeekMapped_%s%s' % (catListWeek[pos],format));fig.close()
+                    #figureLinks.append(figPrefix+'WeekMapped_%s%s' % (catListWeek[pos],format))
                 for pos in range(len(catListMonth)):
                     anim, animFile, extrafig = vis.animateMap(monthSubsets[pos],"Cat: "+catListMonth[pos], show = False, makeGif=False, offset=cfg['TimeOffset'], background = cfg['ShowMap'])
                     figureLinks.append(animFile+'.mp4')
                     if extrafig != 'null':
-                        extrafig.savefig(figPrefix+'MonthCluster_%s%s' % (catListMonth[pos],format));extrafig.close()
-                        figureLinks.append(figPrefix+'MonthCluster_%s%s' % (catListMonth[pos],format))
+                        figureLinks.append(vis.cleanSave(fig,figPrefix+'MonthCluster_%s%s' % (catListMonth[pos],format),'fig'))
+                        #extrafig.savefig(figPrefix+'MonthCluster_%s%s' % (catListMonth[pos],format));extrafig.close()
+                        #figureLinks.append(figPrefix+'MonthCluster_%s%s' % (catListMonth[pos],format))
                 
                 makeWeekFig = len(catListWeek) > 1
                     
@@ -295,16 +303,20 @@ def sendCSV(cfg, directory,extra):
                 weekName = weekData['name']
                 weekData['name'] = weekName + " Hourly Tweet Distribution from %s - %s" % (nowLocal,weekAgoLocal)
                 fig = vis.chartHourly(weekData, cfg['TimeOffset'], show = False)
-                fig.savefig(figPrefix+'WeekByHour'+format);fig.close(); figureLinks.append(figPrefix+'WeekByHour'+format)
+                figureLinks.append(vis.cleanSave(fig,figPrefix+'WeekByHour'+format,'fig'))
+                #fig.savefig(figPrefix+'WeekByHour'+format);fig.close(); figureLinks.append(figPrefix+'WeekByHour'+format)
                 monthData['name'] = monthName + " Hourly Tweet Distribution from %s - %s" % (nowLocal,monthAgoLocal)
                 fig = vis.chartHourly(monthData, cfg['TimeOffset'], show = False)
-                fig.savefig(figPrefix+'MonthByHour'+format);fig.close(); figureLinks.append(figPrefix+'MonthByHour'+format)
+                figureLinks.append(vis.cleanSave(fig,figPrefix+'MonthByHour'+format,'fig'))
+                #fig.savefig(figPrefix+'MonthByHour'+format);fig.close(); figureLinks.append(figPrefix+'MonthByHour'+format)
                 monthData['name'] = monthName + " Daily Tweet Distribution from %s - %s" % (nowLocal,monthAgoLocal)
                 fig = vis.chartDaily(monthData, cfg['TimeOffset'], show = False)
-                fig.savefig(figPrefix+'MonthByDay'+format);fig.close(); figureLinks.append(figPrefix+'MonthByDay'+format)
+                figureLinks.append(vis.cleanSave(fig,figPrefix+'MonthByDay'+format,'fig'))
+                #fig.savefig(figPrefix+'MonthByDay'+format);fig.close(); figureLinks.append(figPrefix+'MonthByDay'+format)
                 try: 
                     fig = vis.dailyDistributionPlot([monthData],['tweets'],"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],8,overlay = False,show = False)
-                    fig.savefig(figPrefix+'TimeSeries'+format);fig.close(); figureLinks.append(figPrefix+'TimeSeries'+format)
+                    figureLinks.append(vis.cleanSave(fig,figPrefix+'TimeSeries'+format,'fig'))
+                    #fig.savefig(figPrefix+'TimeSeries'+format);fig.close(); figureLinks.append(figPrefix+'TimeSeries'+format)
                     madeTS = True
                 except Exception as e:
                     print "Time series generation failed, error:", e
@@ -313,14 +325,16 @@ def sendCSV(cfg, directory,extra):
                 monthData['name'] = monthName
                 anim, animFile, extrafig = vis.animateMap(monthData,"Keyword Search", show = False, makeGif=False, offset=cfg['TimeOffset'], background = cfg['ShowMap'])
                 if extrafig != 'null':
-                    extrafig.savefig(figPrefix+'MonthCluster'+format);extrafig.close()
-                    figureLinks.append(figPrefix+'MonthCluster'+format)
+                    figureLinks.append(vis.cleanSave(extrafig,figPrefix+'MonthCluster'+format,'fig'))
+                    #extrafig.savefig(figPrefix+'MonthCluster'+format);extrafig.close()
+                    #figureLinks.append(figPrefix+'MonthCluster'+format)
                 figureLinks.append(animFile+'.mp4')
             
             if makeWeekFig:
                 fig = vis.mapSubject(weekData,"Keyword Search", show = False, offset=cfg['TimeOffset'], background = cfg['ShowMap'])
-                fig.savefig(figPrefix+'WeekMapped'+format);fig.close()
-                figureLinks.append(figPrefix+'WeekMapped'+format)
+                figureLinks.append(vis.cleanSave(fig,figPrefix+'WeekMapped'+format,'fig'))
+                #fig.savefig(figPrefix+'WeekMapped'+format);fig.close()
+                #figureLinks.append(figPrefix+'WeekMapped'+format)
                 attachedMap = open(figPrefix+'WeekMapped'+format, 'rb') 
             else:
                 attachedMap = open(figPrefix+'WeekMapped_%s%s' % (catListWeek[0],format), 'rb') 

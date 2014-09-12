@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
 import numpy as np
+import os
 
 from random import shuffle, sample
 from datetime import timedelta
@@ -26,6 +27,23 @@ import matplotlib.animation as animation
 weekList = ['zero','Mon','Tue','Wed','Thu','Fri','Sat','Sun','null']
 weekNum = [-1,0,1,2,3,4,5,6,7]
 
+
+
+def cleanSave(content,directory,mode,**kwargs):
+    try:
+        os.remove(directory)
+    except OSError:
+        pass
+    try:
+        if mode == 'fig':
+            content.savefig(directory,**kwargs)
+        elif mode == 'anim':
+            content.save(directory,**kwargs)
+        content.close()
+    except Exception as e:
+        print "Figure",directory,'save failed, error:', e
+        return 'null'
+    return directory
 
 def printSample(data,title,length):
     characters = 100
@@ -166,6 +184,8 @@ def groupHourly(dataGroup, names, title, timeShift, stacked=True, show=True ,tru
         if len(dataGroup[pos]['data']) > 0:
             if truncate:
                 data = truncData(dataGroup[pos]['data'],"hour")
+            else:
+                data = dataGroup[pos]['data']
             dates = data['created_at']
             dates = [parser.parse(date) for date in dates]
             hour_list = [(t+timedelta(hours=timeShift)).hour for t in dates]
@@ -211,6 +231,8 @@ def groupDaily(dataGroup, names, title, timeShift, stacked=True, show=True, trun
         if len(dataGroup[pos]['data']) > 0:
             if truncate:
                 data = truncData(dataGroup[pos]['data'],"day")
+            else:
+                data = dataGroup[pos]['data']
             dates = data['created_at']
             dates = [parser.parse(date) for date in dates]
             dayList = [(t+timedelta(hours=timeShift)).weekday() for t in dates]

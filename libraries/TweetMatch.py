@@ -53,7 +53,16 @@ def loadFile(text):
     
     for pos in loaded.index:
         if len(str(loaded[categoryColumn][pos])) != 0 and str(loaded[categoryColumn][pos]) != 'nan':
-            outPut.append({'text': loaded[textColumn][pos], 'category': loaded[categoryColumn][pos]})
+            temp = loaded[categoryColumn][pos]
+            try:
+                if int(temp) == float(temp):
+                    temp = str(int(temp))
+                else:
+                    temp = str(temp)
+            except:
+                temp = str(temp)
+                    
+            outPut.append({'text': loaded[textColumn][pos], 'category': temp})
     
     print "Loaded",len(outPut),"entries"
     return outPut
