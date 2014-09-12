@@ -422,7 +422,7 @@ class giSeeker():
                                 loggedIn = False
                                 while not loggedIn:
                                     if not self.multiAPI:
-					print "Experiment", self.name,"login error, will sleep 120 before reconnection, error code:",e
+					print "Experiment", self.cfg['FileName'],"login error, will sleep 120 before reconnection, error code:",e
                                         time.sleep(120 + randint(-3,3))
 				    else:
 					failCount[chosen] += 1
@@ -517,7 +517,7 @@ class giSeeker():
                             loggedIn = False
                             while not loggedIn:
                                     if not self.multiAPI:
-					print "Experiment", self.name,"login error, will sleep 120 before reconnection, error code:",e
+					print "Experiment", self.cfg['FileName'],"login error, will sleep 120 before reconnection, error code:",e
                                         time.sleep(120 + randint(-3,3))
 				    else:
 					failCount[chosen] += 1
