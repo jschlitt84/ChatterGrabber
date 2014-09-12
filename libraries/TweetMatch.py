@@ -52,7 +52,8 @@ def loadFile(text):
     loaded = read_csv(fileIn)
     
     for pos in loaded.index:
-        outPut.append({'text': loaded[textColumn][pos], 'category': loaded[categoryColumn][pos]})
+        if len(str(loaded[categoryColumn][pos])) != 0 and str(loaded[categoryColumn][pos]) != 'nan':
+            outPut.append({'text': loaded[textColumn][pos], 'category': loaded[categoryColumn][pos]})
     
     print "Loaded",len(outPut),"entries"
     return outPut

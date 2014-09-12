@@ -194,9 +194,14 @@ def sendCSV(cfg, directory,extra):
              'data':pd.DataFrame.from_csv(directory+outName+'.csv',index_col='id')}
 
 	dataSet = vis.getGeoSub(dataSet,box,'')
-
-        times =  [parser.parse(time) for time in list(dataSet['data']['created_at'])]
-        now = max(times)
+        
+        if True:
+            times =  [parser.parse(time) for time in list(dataSet['data']['created_at'])]
+            now = max(times)
+        else:
+            times =  list(dataSet['data']['created_at'])
+            now = max(times)
+            
         weekAgo = now - datetime.timedelta(days=7)
         monthAgo = now - datetime.timedelta(days=31)
         nowLocal = (now + datetime.timedelta(hours=cfg['TimeOffset'])).strftime("%a %m/%d/%y")
@@ -254,11 +259,11 @@ def sendCSV(cfg, directory,extra):
                 
                 
                 
-                fig = vis.groupHourly(weekSubsets, catListWeek, "%s Hourly Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,weekAgoLocal),  cfg['TimeOffset'], show = False)
+                fig = vis.groupHourly(weekSubsets, catListWeek, "%s Hourly Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,weekAgoLocal),  cfg['TimeOffset'], show = False, truncate = False)
                 fig.savefig(figPrefix+'WeekByHour'+format);fig.close(); figureLinks.append(figPrefix+'WeekByHour'+format)
-                fig = vis.groupHourly(monthSubsets, catListMonth, "%s Hourly Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,monthAgoLocal),  cfg['TimeOffset'], show = False)  
+                fig = vis.groupHourly(monthSubsets, catListMonth, "%s Hourly Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,monthAgoLocal),  cfg['TimeOffset'], show = False, truncate = False)  
                 fig.savefig(figPrefix+'MonthByHour'+format);fig.close(); figureLinks.append(figPrefix+'MonthByHour'+format)
-                fig = vis.groupDaily(monthSubsets, catListMonth, "%s Daily Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,monthAgoLocal),  cfg['TimeOffset'], show = False) 
+                fig = vis.groupDaily(monthSubsets, catListMonth, "%s Daily Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,monthAgoLocal),  cfg['TimeOffset'], show = False, truncate = False) 
                 fig.savefig(figPrefix+'MonthByDay'+format);fig.close(); figureLinks.append(figPrefix+'MonthByDay'+format)
                 try:
                     fig = vis.dailyDistributionPlot(monthSubsets,catListMonth,"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],8,overlay = False,show = False)
@@ -268,7 +273,9 @@ def sendCSV(cfg, directory,extra):
                     print "Time series generation failed, error:", e
                     madeTS = False
  
+                print catListWeek, catsWeek
                 for pos in range(len(catListWeek)):
+                    print "DEBOOO", pos, len(weekSubsets), len(catListWeek)
                     fig = vis.mapSubject(weekSubsets[pos],"Cat: "+catListWeek[pos], show = False, offset=cfg['TimeOffset'], background = cfg['ShowMap'])
                     fig.savefig(figPrefix+'WeekMapped_%s%s' % (catListWeek[pos],format));fig.close()
                     figureLinks.append(figPrefix+'WeekMapped_%s%s' % (catListWeek[pos],format))

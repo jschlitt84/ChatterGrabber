@@ -157,14 +157,15 @@ def chartHourly(dataIn, timeShift,show=True):
     return plt
     
     
-def groupHourly(dataGroup, names, title, timeShift, stacked=True,show=True):
+def groupHourly(dataGroup, names, title, timeShift, stacked=True, show=True ,truncate=True):
     plt.gca()
     toPlot = []
     namesShown = []
     for pos in range(len(dataGroup)):
     #for dataIn in dataGroup:
         if len(dataGroup[pos]['data']) > 0:
-            data = truncData(dataGroup[pos]['data'],"hour")
+            if truncate:
+                data = truncData(dataGroup[pos]['data'],"hour")
             dates = data['created_at']
             dates = [parser.parse(date) for date in dates]
             hour_list = [(t+timedelta(hours=timeShift)).hour for t in dates]
@@ -201,14 +202,15 @@ def chartDaily(dataIn, timeShift, show=True):
     return plt
     
     
-def groupDaily(dataGroup, names, title, timeShift, stacked=True, show=True):
+def groupDaily(dataGroup, names, title, timeShift, stacked=True, show=True, truncate = True):
     plt.gca()
     toPlot = []
     namesShown = []
     for pos in range(len(dataGroup)):
     #for dataIn in dataGroup:
         if len(dataGroup[pos]['data']) > 0:
-            data = truncData(dataGroup[pos]['data'],"day")
+            if truncate:
+                data = truncData(dataGroup[pos]['data'],"day")
             dates = data['created_at']
             dates = [parser.parse(date) for date in dates]
             dayList = [(t+timedelta(hours=timeShift)).weekday() for t in dates]
@@ -511,14 +513,14 @@ def mapSubject(dataset,subject,box='tight',level='auto',
 	
     smallest = min(box['lat2']-box['lat1'],box['lon2']-box['lon1'])
 
-    mapped.drawcoastlines(zorder=3)
+    mapped.drawcoastlines(zorder=3,linewidth = 1.5)
     
     if smallest < 5:
-        mapped.drawcountries(zorder=3,linewidth = 3)
-        mapped.drawstates(zorder=3, linewidth = 2)
+        mapped.drawcountries(zorder=3,linewidth = 2)
+        mapped.drawstates(zorder=3, linewidth = 1.5)
         mapped.drawcounties(zorder=3,linewidth = 1)
     else:
-        mapped.drawcountries(zorder=3,linewidth = 2)
+        mapped.drawcountries(zorder=3,linewidth = 1.5)
         mapped.drawstates(zorder=3, linewidth = 1)
     
     if heatmap:
