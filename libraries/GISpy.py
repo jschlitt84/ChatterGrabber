@@ -1135,13 +1135,17 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
        
 	outName = cfg['FileName']+"_CollectedTweets"
         
+	print "DEBOOO1", len(collectedContent)
+
         print "Writing collected tweets to "+outName+".json"
         with open(directory+outName+'.json', 'w') as outFile:
                 json.dump(collectedContent,outFile)
         outFile.close()
         print "...complete"
         
+	print "DEBOOO2", len(collectedContent)
         jsonToDictFix(collectedContent)
+	print "DEBOOO3", len(collectedContent)
 	collectedContent = uniqueJson(collectedContent)        
         
         if len(collectedContent) == 0:
@@ -1166,12 +1170,13 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                         collectedContent[pos][key] = 'NaN'
                     else:
                         collectedContent[pos][key] = stripUnicode(collectedContent[pos][key])
-        
+            print "DEBOOO4", len(collectedContent)
             if cfg['OnlyKeepNLP'] != False and not cfg['KeepDiscardsNLP']:
   		collectedContent = [entry for entry in collectedContent if str(entry['NLPCat']) in cfg['OnlyKeepNLP']]
-  		
+  	    print "DEBOOO5", len(collectedContent)
             if cfg['Sanitize'] != False:
                 collectedContent = [sanitizeTweet(tweet,cfg) for tweet in collectedContent]
+	    print "DEBOOO6", len(collectedContent)
             
             fileName = directory+outName+'.csv'
             fileNameOld = directory+outName+'Old.csv'
