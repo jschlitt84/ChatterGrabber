@@ -185,6 +185,9 @@ def sendCSV(cfg, directory,extra):
     outName = cfg['FileName']+"_CollectedTweets"
     attachmentCsv = directory+outName+'.csv'
     
+    if cfg['ExtraCategories'] != 'null':
+        makeExtra = True
+    
     if cfg['SendLinks'] or cfg['SendFigures']:
         print "Preparing analysis data structures..."
 	box = {'lat1':cfg['Lat1'],
@@ -199,10 +202,10 @@ def sendCSV(cfg, directory,extra):
 
 	dataSet = vis.getGeoSub(dataSet,box,'')
         
-        if True:
+        try:
             times =  [parser.parse(time) for time in list(dataSet['data']['created_at'])]
             now = max(times)
-        else:
+        except:
             times =  list(dataSet['data']['created_at'])
             now = max(times)
             
@@ -252,14 +255,30 @@ def sendCSV(cfg, directory,extra):
             figPrefix = directory+cfg['FileName']
             makeWeekFig = True
             
-            if trackCats:
-                catsWeek = list(sorted(weekData['data']['NLPCat'].unique()))
-                catListWeek = [str(cat) for cat in catsWeek]
-                catsMonth = list(sorted(monthData['data']['NLPCat'].unique()))
-                catListMonth = [str(cat) for cat in catsMonth]                
+            if trackCats or makeExtra:
+                catsWeek = []
+                catListWeek = []
+                catsMonth = []
+                catListMonth = []
+                weekSubsets = []
+                monthSubsets = []
                 
-                weekSubsets = [entry for entry in [vis.getCatSub(weekData,cat,'') for cat in catsWeek] if len(entry['data']) != 0]
-                monthSubsets = [entry for entry in [vis.getCatSub(monthData,cat,'') for cat in catsMonth] if len(entry['data']) != 0]
+                if trackCats:
+                    catsWeek += list(sorted(weekData['data']['NLPCat'].unique()))
+                    catListWeek += [str(cat) for cat in catsWeek]
+                    catsMonth += list(sorted(monthData['data']['NLPCat'].unique()))
+                    catListMonth += [str(cat) for cat in catsMonth]
+                    weekSubsets += [entry for entry in [vis.getCatSub(weekData,cat,'') for cat in catsWeek] if len(entry['data']) != 0]
+                    monthSubsets += [entry for entry in [vis.getCatSub(monthData,cat,'') for cat in catsMonth] if len(entry['data']) != 0]
+                if makeExtra:
+                    catsWeek += sorted(cfg['ExtraCategories'].keys())
+                    catListWeek += [str(cat) for cat in catsWeek]
+                    catsMonth += sorted(cfg['ExtraCategories'].keys())
+                    catListMonth += [str(cat) for cat in catsMonth]
+                    tempWeek = [vis.getFieldSub(weekData,cfg['ExtraCategories'][key][1],cfg['ExtraCategories'][key][2],'',cfg['ExtraCategories'][key][0]) for key in cfg['ExtraCategories']]
+                    tempMonth = [vis.getFieldSub(monthData,cfg['ExtraCategories'][key][1],cfg['ExtraCategories'][key][2],'',cfg['ExtraCategories'][key][0]) for key in cfg['ExtraCategories']]
+                    weekSubsets += [entry for entry in tempWeek if len(entry['data']) != 0]
+                    monthSubsets += [entry for entry in tempMonth if len(entry['data']) != 0]
                 
                 
                 
@@ -1289,6 +1308,28 @@ def cleanJson(jsonOriginal, cfg, types):
         
 
 
+def getComplex(line):
+    """Loader for complex arguments"""
+    parts = line.split(' ')
+    commands = dict()
+    parts = [entry for entry in parts if ':' in entry]
+    if parts == []:
+        return 'null'
+    for entry in parts:
+        splitEntry = entry.split(':')
+        key = splitEntry[0]
+        sought = splitEntry[1].split('-').split('_')
+        if len(splitEntry) == 1:
+            excluded = []
+        else:
+            excluded = splitEntry[2].split('-').split('_')
+        commands[key] = [sought,excluded]
+    return commands
+            
+
+    
+    
+    
 def getConfig(directory):
     """Loads configuration from file config"""
     hidden = ['Sanitize','login']
@@ -1318,7 +1359,7 @@ def getConfig(directory):
 		'LocationName':'United_States','LocationGranularity':'country',
 		'RegionSearch':False,'SendLinks':False,
 		'SendFigures':False,'SendAfter':0,
-		'ShowMap':'blue marble'}
+		'ShowMap':'blue marble','ExtraCategories':'null'}
     
     if type(directory) is str:
         if directory == "null":
@@ -1402,6 +1443,8 @@ def getConfig(directory):
         params['NLPFreqLimit'] = [int(degree) for degree in textToList(params['NLPFreqLimit'])]
     except:
         None
+        
+    params['ExtraCategories'] = getComplex(params['ExtraCategories'])
         
         
     for key in sorted(params.keys()):
