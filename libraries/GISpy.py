@@ -185,8 +185,7 @@ def sendCSV(cfg, directory,extra):
     outName = cfg['FileName']+"_CollectedTweets"
     attachmentCsv = directory+outName+'.csv'
     
-    if cfg['ExtraCategories'] != 'null':
-        makeExtra = True
+    makeExtra = cfg['ExtraCategories'] != 'null'
     
     if cfg['SendLinks'] or cfg['SendFigures']:
         print "Preparing analysis data structures..."
