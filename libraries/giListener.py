@@ -162,7 +162,7 @@ class giSeeker():
                 self.cfg['_login_'] = login
                 
                 self.cfg['Directory'] = directory
-                self.extra = reformatTags(reformatOld(directory, lists, self.cfg, self.geoCache,self.NLP),self.cfg)
+                reformatOld(directory, lists, self.cfg, self.geoCache,self.NLP)
                 
                 tillSend =  datetime.datetime.now().day % int(self.cfg['SendEvery'])
                 self.sendStatus = 'sent'

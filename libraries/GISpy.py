@@ -155,7 +155,7 @@ def zipData(files, directory, name, timeStamp,cfg,purge=False):
     
     
     
-    
+
 def reformatTags(tags,cfg):
     """Printable hashtag summary"""
     if tags == []:
@@ -173,7 +173,7 @@ def reformatTags(tags,cfg):
         
            
                  
-def sendCSV(cfg, directory,extra):
+def sendCSV(cfg, directory,extra = ''):
     #Adapting method from http://kutuma.blogspot.com/2007/08/sending-emails-via-gmail-with-python.html
     """Emails results to GDI subscriber(s)"""
     outName = cfg['FileName']+"_CollectedTweets"
@@ -187,7 +187,7 @@ def sendCSV(cfg, directory,extra):
     
     makeExtra = cfg['ExtraCategories'] != 'null'
     
-    if cfg['SendLinks'] or cfg['SendFigures']:
+    if cfg['SendLinks'] or cfg['SendFigures'] or makeExtra:
         print "Preparing analysis data structures..."
 	box = {'lat1':cfg['Lat1'],
 		'lat2':cfg['Lat2'],
@@ -228,6 +228,38 @@ def sendCSV(cfg, directory,extra):
         else:
             worthShowing = '{search results}'
             worthShowingWeek = weekData
+
+
+	if trackCats or makeExtra:
+                catListWeek = []
+                catListMonth = []
+                weekSubsets = []
+                monthSubsets = []
+                
+		if trackCats:
+                    catsWeek = list(sorted(weekData['data']['NLPCat'].unique()))
+                    catsMonth = list(sorted(monthData['data']['NLPCat'].unique()))
+                    for cat in catsWeek:
+			temp = vis.getCatSub(weekData,cat,'')
+			if len(temp['data']) != 0:
+				catListWeek.append(str(cat))
+				weekSubsets.append(temp)
+		    for cat in catsMonth:
+			temp = vis.getCatSub(monthData,cat,'')
+			if len(temp['data']) != 0:
+				catListMonth.append(str(cat))
+				monthSubsets.append(temp)
+                if makeExtra:
+	            for key in sorted((cfg['ExtraCategories'].keys())):
+			temp = vis.getFieldSub(weekData,cfg['ExtraCategories'][key][0],cfg['ExtraCategories'][key][1],'',cfg['ExtraCategories'][key][2])
+			if len(temp['data']) != 0:
+				catListWeek.append(str(key))
+				weekSubsets.append(temp)
+	            for key in sorted(cfg['ExtraCategories'].keys()):
+			temp = vis.getFieldSub(monthData,cfg['ExtraCategories'][key][0],cfg['ExtraCategories'][key][1],'',cfg['ExtraCategories'][key][2])
+			if len(temp['data']) != 0:
+				catListMonth.append(str(key))
+				monthSubsets.append(temp)
      
     msg = MIMEMultipart()
     
@@ -254,46 +286,17 @@ def sendCSV(cfg, directory,extra):
             figPrefix = directory+cfg['FileName']
             makeWeekFig = True
             
-            if trackCats or makeExtra:
-                catsWeek = []
-                catListWeek = []
-                catsMonth = []
-                catListMonth = []
-                weekSubsets = []
-                monthSubsets = []
-                
-                if trackCats:
-                    catsWeek += list(sorted(weekData['data']['NLPCat'].unique()))
-                    catListWeek += [str(cat) for cat in catsWeek]
-                    catsMonth += list(sorted(monthData['data']['NLPCat'].unique()))
-                    catListMonth += [str(cat) for cat in catsMonth]
-                    weekSubsets += [entry for entry in [vis.getCatSub(weekData,cat,'') for cat in catsWeek] if len(entry['data']) != 0]
-                    monthSubsets += [entry for entry in [vis.getCatSub(monthData,cat,'') for cat in catsMonth] if len(entry['data']) != 0]
-                if makeExtra:
-                    catsWeek += sorted(cfg['ExtraCategories'].keys())
-                    catListWeek += [str(cat) for cat in catsWeek]
-                    catsMonth += sorted(cfg['ExtraCategories'].keys())
-                    catListMonth += [str(cat) for cat in catsMonth]
-                    tempWeek = [vis.getFieldSub(weekData,cfg['ExtraCategories'][key][1],cfg['ExtraCategories'][key][2],'',cfg['ExtraCategories'][key][0]) for key in cfg['ExtraCategories']]
-                    tempMonth = [vis.getFieldSub(monthData,cfg['ExtraCategories'][key][1],cfg['ExtraCategories'][key][2],'',cfg['ExtraCategories'][key][0]) for key in cfg['ExtraCategories']]
-                    weekSubsets += [entry for entry in tempWeek if len(entry['data']) != 0]
-                    monthSubsets += [entry for entry in tempMonth if len(entry['data']) != 0]
-                
-                
-                
+            if trackCats or makeExtra:			               
+    
                 fig = vis.groupHourly(weekSubsets, catListWeek, "%s Hourly Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,weekAgoLocal),  cfg['TimeOffset'], show = False, truncate = False)
                 figureLinks.append(vis.cleanSave(fig,figPrefix+'WeekByHour'+format,'fig'))
-                #fig.savefig(figPrefix+'WeekByHour'+format);fig.close(); figureLinks.append(figPrefix+'WeekByHour'+format)
                 fig = vis.groupHourly(monthSubsets, catListMonth, "%s Hourly Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,monthAgoLocal),  cfg['TimeOffset'], show = False, truncate = False)  
                 figureLinks.append(vis.cleanSave(fig,figPrefix+'MonthByHour'+format,'fig'))
-                #fig.savefig(figPrefix+'MonthByHour'+format);fig.close(); figureLinks.append(figPrefix+'MonthByHour'+format)
                 fig = vis.groupDaily(monthSubsets, catListMonth, "%s Daily Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,monthAgoLocal),  cfg['TimeOffset'], show = False, truncate = False) 
                 figureLinks.append(vis.cleanSave(fig,figPrefix+'MonthByDay'+format,'fig'))
-                #fig.savefig(figPrefix+'MonthByDay'+format);fig.close(); figureLinks.append(figPrefix+'MonthByDay'+format)
                 try:
                     fig = vis.dailyDistributionPlot(monthSubsets,catListMonth,"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],8,overlay = False,show = False)
                     figureLinks.append(vis.cleanSave(fig,figPrefix+'TimeSeries'+format,'fig'))
-                    #fig.savefig(figPrefix+'TimeSeries'+format);fig.close(); figureLinks.append(figPrefix+'TimeSeries'+format)
                     madeTS = True
                 except Exception as e:
                     print "Time series generation failed, error:", e
@@ -302,15 +305,11 @@ def sendCSV(cfg, directory,extra):
                 for pos in range(len(catListWeek)):
                     fig = vis.mapSubject(weekSubsets[pos],"Cat: "+catListWeek[pos], show = False, offset=cfg['TimeOffset'], background = cfg['ShowMap'])
                     figureLinks.append(vis.cleanSave(fig,figPrefix+'WeekMapped_%s%s' % (catListWeek[pos],format),'fig'))
-                    #fig.savefig(figPrefix+'WeekMapped_%s%s' % (catListWeek[pos],format));fig.close()
-                    #figureLinks.append(figPrefix+'WeekMapped_%s%s' % (catListWeek[pos],format))
-                for pos in range(len(catListMonth)):
+                """for pos in range(len(catListMonth)):
                     anim, animFile, extrafig = vis.animateMap(monthSubsets[pos],"Cat: "+catListMonth[pos], show = False, makeGif=False, offset=cfg['TimeOffset'], background = cfg['ShowMap'])
                     figureLinks.append(animFile+'.mp4')
                     if extrafig != 'null':
-                        figureLinks.append(vis.cleanSave(fig,figPrefix+'MonthCluster_%s%s' % (catListMonth[pos],format),'fig'))
-                        #extrafig.savefig(figPrefix+'MonthCluster_%s%s' % (catListMonth[pos],format));extrafig.close()
-                        #figureLinks.append(figPrefix+'MonthCluster_%s%s' % (catListMonth[pos],format))
+                        figureLinks.append(vis.cleanSave(fig,figPrefix+'MonthCluster_%s%s' % (catListMonth[pos],format),'fig'))"""
                 
                 makeWeekFig = len(catListWeek) > 1
                     
@@ -322,19 +321,15 @@ def sendCSV(cfg, directory,extra):
                 weekData['name'] = weekName + " Hourly Tweet Distribution from %s - %s" % (nowLocal,weekAgoLocal)
                 fig = vis.chartHourly(weekData, cfg['TimeOffset'], show = False)
                 figureLinks.append(vis.cleanSave(fig,figPrefix+'WeekByHour'+format,'fig'))
-                #fig.savefig(figPrefix+'WeekByHour'+format);fig.close(); figureLinks.append(figPrefix+'WeekByHour'+format)
                 monthData['name'] = monthName + " Hourly Tweet Distribution from %s - %s" % (nowLocal,monthAgoLocal)
                 fig = vis.chartHourly(monthData, cfg['TimeOffset'], show = False)
                 figureLinks.append(vis.cleanSave(fig,figPrefix+'MonthByHour'+format,'fig'))
-                #fig.savefig(figPrefix+'MonthByHour'+format);fig.close(); figureLinks.append(figPrefix+'MonthByHour'+format)
                 monthData['name'] = monthName + " Daily Tweet Distribution from %s - %s" % (nowLocal,monthAgoLocal)
                 fig = vis.chartDaily(monthData, cfg['TimeOffset'], show = False)
                 figureLinks.append(vis.cleanSave(fig,figPrefix+'MonthByDay'+format,'fig'))
-                #fig.savefig(figPrefix+'MonthByDay'+format);fig.close(); figureLinks.append(figPrefix+'MonthByDay'+format)
                 try: 
                     fig = vis.dailyDistributionPlot([monthData],['tweets'],"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],8,overlay = False,show = False)
                     figureLinks.append(vis.cleanSave(fig,figPrefix+'TimeSeries'+format,'fig'))
-                    #fig.savefig(figPrefix+'TimeSeries'+format);fig.close(); figureLinks.append(figPrefix+'TimeSeries'+format)
                     madeTS = True
                 except Exception as e:
                     print "Time series generation failed, error:", e
@@ -344,15 +339,11 @@ def sendCSV(cfg, directory,extra):
                 anim, animFile, extrafig = vis.animateMap(monthData,"Keyword Search", show = False, makeGif=False, offset=cfg['TimeOffset'], background = cfg['ShowMap'])
                 if extrafig != 'null':
                     figureLinks.append(vis.cleanSave(extrafig,figPrefix+'MonthCluster'+format,'fig'))
-                    #extrafig.savefig(figPrefix+'MonthCluster'+format);extrafig.close()
-                    #figureLinks.append(figPrefix+'MonthCluster'+format)
                 figureLinks.append(animFile+'.mp4')
             
             if makeWeekFig:
                 fig = vis.mapSubject(weekData,"Keyword Search", show = False, offset=cfg['TimeOffset'], background = cfg['ShowMap'])
                 figureLinks.append(vis.cleanSave(fig,figPrefix+'WeekMapped'+format,'fig'))
-                #fig.savefig(figPrefix+'WeekMapped'+format);fig.close()
-                #figureLinks.append(figPrefix+'WeekMapped'+format)
                 attachedMap = open(figPrefix+'WeekMapped'+format, 'rb') 
             else:
                 attachedMap = open(figPrefix+'WeekMapped_%s%s' % (catListWeek[0],format), 'rb') 
@@ -374,9 +365,11 @@ def sendCSV(cfg, directory,extra):
             print "\n\nFigure generation failed, was this needed?"
         #    print e,'\n\n\n'
 
+    extra += reformatTags(getTags(cfg,weekSubsets,catListWeek),cfg)
+
     if cfg['SendLinks']:
         extra += "\nLink analysis for the past 7 days for categories %s:\n" % str(worthShowing).replace("'",'')
-        extra += vis.checkLinks(worthShowingWeek['data'],n=250, shown = 5, linkfreq=1)
+        extra += vis.checkLinks(worthShowingWeek['data'],n=250, shown = 5, linkfreq=1, cfg=cfg)
         extra += '\n\nPlease note, with gmail and certain clients, link analysis links may appear as attachments.'
     
     body += extra
@@ -1196,14 +1189,12 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                 shutil.copyfile(fileName, fileNameOld)
                 getDeltas(fileNameOld, fileName, cfg, cfg['OutDir'])
             
-            extra = reformatTags(getTags(cfg,collectedContent),cfg)
-            
             print "Freeing memory..."
             del collectedContent
             
             if cfg['QuickSend']:
                 print "Quick sending email"
-                sendCSV(cfg,directory,extra)
+                sendCSV(cfg,directory)
             
             time.sleep(1)
             
@@ -1225,7 +1216,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                     
             
             print "...complete"
-            return extra
+            return 'null'
             #return geoCache
             
              
@@ -1237,7 +1228,21 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
 
 
 
-def getTags(cfg,data):
+def getTags(cfg,data,dataCats):
+    """Pulls top n tags for last m days"""
+    tags = dict()
+    if len(data) == 0:
+        return []
+    trackCats = 'NLPCat' in data[0].keys()
+    for pos in range(len(dataCats)):
+        tags[dataCats[pos]] = countHashTags(data[pos]['data'],cfg['TrackHashCount'])
+        print "Top 5 hashtags for past 7 days in category %s: %s"  % (dataCats[pos],tags[dataCats[pos]])
+    return tags
+
+
+
+
+def getTagsOld(cfg,data):
     """Pulls top n tags for last m days"""
     dates = [parser.parse(entry['created_at']) for entry in data]
     if dates == []:
@@ -1262,7 +1267,7 @@ def getTags(cfg,data):
     
 def countHashTags(data,number):
     """Pulls top tags from data sample"""
-    entries = [entry['text'] for entry in data]
+    entries = list(data['text'])
         
     counts = dict()
     toReturn = []
@@ -1314,6 +1319,11 @@ def cleanJson(jsonOriginal, cfg, types):
 
 def getComplex(line):
     """Loader for complex arguments"""
+    field = 'text'
+    if '$' in line:
+	temp = line.split('$')
+	line = temp[0]
+	field = temp[1]
     parts = line.split(' ')
     commands = dict()
     for pos in range(len(parts)):
@@ -1329,7 +1339,7 @@ def getComplex(line):
             excluded = []
         else:
             excluded = splitEntry[2].replace('-','_').split('_')
-        commands[key] = [sought,excluded]
+        commands[key] = [sought,excluded,field]
     return commands
             
 

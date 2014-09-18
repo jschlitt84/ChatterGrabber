@@ -287,6 +287,9 @@ def dailyDistributionPlot(dataIn,titles,bigTitle,timeShift,divFactor=24,overlay 
     if hourBlocks%2 != 0:
         plotMax = date2num(lastRounded + hour)
         hourBlocks += 1
+
+    while (hourBlocks/divFactor) <= 1 and divFactor > 1:
+	divFactor = divFactor/4
     
     plotTitle = titles[0]
     for i in range(len(prepped)):
@@ -337,7 +340,7 @@ def countHashTags(data,number='all',freq=1):
         print count
         
         
-def checkLinks(data,n='all',shown='all',linkfreq=2, imagefreq=1):
+def checkLinks(data,n='all',shown='all',linkfreq=2, imagefreq=1, cfg = 'null'):
     entries = data['text']
     output = ''
     links = []
