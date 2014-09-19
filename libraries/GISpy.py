@@ -1449,6 +1449,11 @@ def getConfig(directory):
         None
         
     params['ExtraCategories'] = getComplex(params['ExtraCategories'])
+    
+    if params['OnlyKeepNLP'] != False and params['OnlyKeepNLP'] != 'null':
+        if type(params['OnlyKeepNLP']) != list:
+            params['OnlyKeepNLP'] = [params['OnlyKeepNLP']]
+        params['OnlyKeepNLP'] = [str(item) for item in params['OnlyKeepNLP']]
         
         
     for key in sorted(params.keys()):
