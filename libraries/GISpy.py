@@ -1316,17 +1316,19 @@ def getComplex(line):
     """Loader for complex arguments"""
     parts = line.split(' ')
     commands = dict()
-    parts = [entry for entry in parts if ':' in entry]
+    for pos in range(len(parts)):
+        if ':' not in parts[pos]:
+            parts[pos] = parts[pos]+':'+parts[pos]
     if parts == []:
         return 'null'
     for entry in parts:
         splitEntry = entry.split(':')
         key = splitEntry[0]
-        sought = splitEntry[1].split('-').split('_')
-        if len(splitEntry) == 1:
+        sought = splitEntry[1].replace('-','_').split('_')
+        if len(splitEntry) == 2:
             excluded = []
         else:
-            excluded = splitEntry[2].split('-').split('_')
+            excluded = splitEntry[2].replace('-','_').split('_')
         commands[key] = [sought,excluded]
     return commands
             
