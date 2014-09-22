@@ -136,7 +136,7 @@ def main(args,user):
         loaded = read_csv(inFile)
         for pos in loaded.index:
             outPut.append({'text': loaded[textColumn][pos], 'category': loaded[categoryColumn][pos]})
-        shuffle(outPut)
+        #shuffle(outPut)
         classifications = set()
         for entry in outPut:
             classifications.add(str(entry['category']))
