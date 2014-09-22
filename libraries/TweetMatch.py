@@ -398,6 +398,7 @@ def getAccuracy(toRun,mode,degrees,n,percent,classifications,outPut,cfg,core,out
 	    scored = len(outPut)
 	    index = range(scored)
 	    percentLength = int(scored*percent+.5)
+	    jump = int(1/percent)
 	    remainder = scored - percentLength
 	    
 	    print "\033[1mReducing scoring set of size %s to %s%% random training set with %s entries for %s iterations and %s scored posts\033[0m\n" % (scored,percent*100,percentLength,n,remainder)	
@@ -406,7 +407,12 @@ def getAccuracy(toRun,mode,degrees,n,percent,classifications,outPut,cfg,core,out
 		shuffle(index)
 		points = 100
 		
-		trainingSet = deepcopy(index)[0:percentLength]
+		if True:
+			trainingSet = deepcopy(index)[iteration::jump]	
+		else:
+			trainingSet = deepcopy(index)[0:percentLength]
+		
+		
 		scoringSet = list(set(index)-set(trainingSet))
 		toTrain = [deepcopy(outPut[item]) for item in trainingSet]
 		toScore = [deepcopy(outPut[item]) for item in scoringSet]
