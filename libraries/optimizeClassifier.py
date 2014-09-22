@@ -4,6 +4,7 @@ from os import getcwd, mkdir, path
 from copy import deepcopy
 from pandas import read_csv
 from numpy import mean, std
+from random import shuffle
 
 
 def getArgs(flag,listed):
@@ -134,7 +135,8 @@ def main(args,user):
         outPut = []
         loaded = read_csv(inFile)
         for pos in loaded.index:
-            outPut.append({'text': loaded[textColumn][pos], 'category': loaded[categoryColumn][pos]})        
+            outPut.append({'text': loaded[textColumn][pos], 'category': loaded[categoryColumn][pos]})
+        shuffle(outPut)
         classifications = set()
         for entry in outPut:
             classifications.add(str(entry['category']))
