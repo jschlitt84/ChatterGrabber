@@ -266,13 +266,13 @@ def sendCSV(cfg, directory,extra = ''):
 			temp = deepcopy(weekData)
 			for entry in weekSubsets[-len(queries.keys()):]:
 				temp['data'] = temp['data'].drop(entry['data'].index)
-			catListWeek.append('kw:other')
+			catListWeek.append('kw-other')
 			weekSubsets.append(temp)
 
 			temp = deepcopy(monthData)     					
 			for entry in monthSubsets[-len(queries.keys()):]:
 				temp['data'] = temp['data'].drop(entry['data'].index)
-			catListMonth.append('kw:other')
+			catListMonth.append('kw-other')
 			monthSubsets.append(temp)	
 
     msg = MIMEMultipart()
@@ -281,10 +281,10 @@ def sendCSV(cfg, directory,extra = ''):
     msg['To'] = ','.join(cfg['GDI']['Email'])
     msg['Cc'] = ','.join(cfg['GDI']['CC'])
     recipients = cfg['GDI']['Email']+cfg['GDI']['CC']
-    msg['Subject'] = cfg['FileName'] + ' collected tweets for ' + datetime.datetime.now().strftime("%A %d")
+    msg['Subject'] = cfg['FileName'] + ' collected tweets for <b>' + datetime.datetime.now().strftime("%A %d") + '</b>'
     
-    body = "Please find csv spreadsheet file, maps, and figures attached for study: " + cfg['FileName']
-    body += "\nParameters & configuration accessible at: " + cfg['GDI']['URL']
+    body = "Please find csv spreadsheet file, maps, and figures attached for study: <b>" + cfg['FileName']
+    body += "</b>\nParameters & configuration accessible at: " + cfg['GDI']['URL']
     body += "\n\nAll changed parameters are updated after midnight & will not influence collection & parsing until the following day.\n\n"
         
     figureLinks = []
@@ -389,6 +389,7 @@ def sendCSV(cfg, directory,extra = ''):
     body += extra
     msg.attach(MIMEText(body))
     print extra
+
     
     
     print "Preparing to send zipped CSV file:", attachmentZip           
@@ -1339,6 +1340,7 @@ def getComplex(line):
 	line = temp[0]
 	field = temp[1]
     parts = line.split(' ')
+    parts = [entry.replace('_',' ') for entry in parts]
     commands = dict()
     for pos in range(len(parts)):
         if ':' not in parts[pos]:
@@ -1348,11 +1350,11 @@ def getComplex(line):
     for entry in parts:
         splitEntry = entry.split(':')
         key = splitEntry[0]
-        sought = splitEntry[1].replace('-','_').split('_')
+        sought = splitEntry[1].split('-')
         if len(splitEntry) == 2:
             excluded = []
         else:
-            excluded = splitEntry[2].replace('-','_').split('_')
+            excluded = splitEntry[2].split('-')
         commands[key] = [sought,excluded,field]
     return commands
             
