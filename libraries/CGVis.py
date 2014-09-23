@@ -96,7 +96,7 @@ def getFieldSub(dataIn,sought,exclusions,prefix,field):
     dataOut['name'] = prefix + ' ' + dataOut['name']
     data = dataOut['data']
     data = data[data.apply(lambda x: sum([1 for place in sought if str(place).lower() in str(x[str(field)]).lower()]) > 0, axis=1)]
-    if exclusions != []:
+    if exclusions != [] and len(data) > 0:
         data = data[data.apply(lambda x: sum([1 for place in exclusions if str(place).lower() in str(x[str(field)]).lower()]) == 0, axis=1)]
     dataOut['data'] = data
     return dataOut

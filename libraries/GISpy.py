@@ -252,11 +252,13 @@ def sendCSV(cfg, directory,extra = ''):
                 if makeExtra:
 		    queries = cfg['ExtraCategories']
 	            for key in sorted((queries.keys())):
+			print queries[key]
 			temp = vis.getFieldSub(weekData,queries[key][0],queries[key][1],'',queries[key][2])
 			if len(temp['data']) != 0:
 				catListWeek.append('kw-'+str(key))
 				weekSubsets.append(temp)
 	            for key in sorted(queries.keys()):
+			print queries[key]
 			temp = vis.getFieldSub(monthData,queries[key][0],queries[key][1],'',queries[key][2])
 			if len(temp['data']) != 0:
 				catListMonth.append('kw-'+str(key))
@@ -265,15 +267,19 @@ def sendCSV(cfg, directory,extra = ''):
 		    if not trackCats:
 			temp = deepcopy(weekData)
 			for entry in weekSubsets[-len(queries.keys()):]:
-				temp['data'] = temp['data'].drop(entry['data'].index)
-			catListWeek.append('kw-other')
-			weekSubsets.append(temp)
+				tempIndex = [x for x in entry['data'].index if x in temp['data'].index]
+				temp['data'] = temp['data'].drop(tempIndex)
+			if len(temp['data']) != 0:
+				catListWeek.append('kw-other')
+				weekSubsets.append(temp)
 
 			temp = deepcopy(monthData)     					
 			for entry in monthSubsets[-len(queries.keys()):]:
-				temp['data'] = temp['data'].drop(entry['data'].index)
-			catListMonth.append('kw-other')
-			monthSubsets.append(temp)	
+				tempIndex = [x for x in entry['data'].index if x in temp['data'].index]
+				temp['data'] = temp['data'].drop(tempIndex)
+			if len(temp['data']) != 0:
+				catListMonth.append('kw-other')
+				monthSubsets.append(temp)	
 
     msg = MIMEMultipart()
     
