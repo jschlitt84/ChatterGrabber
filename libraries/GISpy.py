@@ -250,17 +250,31 @@ def sendCSV(cfg, directory,extra = ''):
 				catListMonth.append(str(cat))
 				monthSubsets.append(temp)
                 if makeExtra:
-	            for key in sorted((cfg['ExtraCategories'].keys())):
-			temp = vis.getFieldSub(weekData,cfg['ExtraCategories'][key][0],cfg['ExtraCategories'][key][1],'',cfg['ExtraCategories'][key][2])
+		    queries = cfg['ExtraCategories']
+	            for key in sorted((queries.keys())):
+			temp = vis.getFieldSub(weekData,queries[key][0],queries[key][1],'',queries[key][2])
 			if len(temp['data']) != 0:
-				catListWeek.append(str(key))
+				catListWeek.append('kw-'+str(key))
 				weekSubsets.append(temp)
-	            for key in sorted(cfg['ExtraCategories'].keys()):
-			temp = vis.getFieldSub(monthData,cfg['ExtraCategories'][key][0],cfg['ExtraCategories'][key][1],'',cfg['ExtraCategories'][key][2])
+	            for key in sorted(queries.keys()):
+			temp = vis.getFieldSub(monthData,queries[key][0],queries[key][1],'',queries[key][2])
 			if len(temp['data']) != 0:
-				catListMonth.append(str(key))
+				catListMonth.append('kw-'+str(key))
 				monthSubsets.append(temp)
-     
+
+		    if not trackCats:
+			temp = deepcopy(weekData)
+			for entry in weekSubsets[-len(queries.keys()):]:
+				temp['data'] = temp['data'].drop(entry['data'].index)
+			catListWeek.append('kw:other')
+			weekSubsets.append(temp)
+
+			temp = deepcopy(monthData)     					
+			for entry in monthSubsets[-len(queries.keys()):]:
+				temp['data'] = temp['data'].drop(entry['data'].index)
+			catListMonth.append('kw:other')
+			monthSubsets.append(temp)	
+
     msg = MIMEMultipart()
     
     msg['From'] = cfg['GDI']['UserName']
@@ -305,11 +319,11 @@ def sendCSV(cfg, directory,extra = ''):
                 for pos in range(len(catListWeek)):
                     fig = vis.mapSubject(weekSubsets[pos],"Cat: "+catListWeek[pos], show = False, offset=cfg['TimeOffset'], background = cfg['ShowMap'])
                     figureLinks.append(vis.cleanSave(fig,figPrefix+'WeekMapped_%s%s' % (catListWeek[pos],format),'fig'))
-                """for pos in range(len(catListMonth)):
+                for pos in range(len(catListMonth)):
                     anim, animFile, extrafig = vis.animateMap(monthSubsets[pos],"Cat: "+catListMonth[pos], show = False, makeGif=False, offset=cfg['TimeOffset'], background = cfg['ShowMap'])
                     figureLinks.append(animFile+'.mp4')
                     if extrafig != 'null':
-                        figureLinks.append(vis.cleanSave(fig,figPrefix+'MonthCluster_%s%s' % (catListMonth[pos],format),'fig'))"""
+                        figureLinks.append(vis.cleanSave(fig,figPrefix+'MonthCluster_%s%s' % (catListMonth[pos],format),'fig'))
                 
                 makeWeekFig = len(catListWeek) > 1
                     
