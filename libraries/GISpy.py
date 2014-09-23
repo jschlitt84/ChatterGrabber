@@ -1334,12 +1334,15 @@ def cleanJson(jsonOriginal, cfg, types):
 
 def getComplex(line):
     """Loader for complex arguments"""
-    field = 'text'
-    if '$' in line:
-	temp = line.split('$')
-	line = temp[0]
-	field = temp[1]
+    fields = []
     parts = line.split(' ')
+    for pos in range(len(parts)):
+	if '$' in parts[pos]:
+		temp = parts[pos].split('$')
+		parts[pos] = temp[0]
+		fields.append(temp[1])
+	else:
+		fields.append('text')
     parts = [entry.replace('_',' ') for entry in parts]
     commands = dict()
     for pos in range(len(parts)):
@@ -1347,15 +1350,15 @@ def getComplex(line):
             parts[pos] = parts[pos]+':'+parts[pos]
     if parts == []:
         return 'null'
-    for entry in parts:
-        splitEntry = entry.split(':')
+    for pos in range(len(parts)):
+        splitEntry = parts[pos].split(':')
         key = splitEntry[0]
         sought = splitEntry[1].split('-')
         if len(splitEntry) == 2:
             excluded = []
         else:
             excluded = splitEntry[2].split('-')
-        commands[key] = [sought,excluded,field]
+        commands[key] = [sought,excluded,fields[pos]]
     return commands
             
 
