@@ -1502,6 +1502,9 @@ def getConfig(directory):
     if params['Lon1']>params['Lon2']:
         params['Lon1'],params['Lon2'] = params['Lon2'],params['Lon1']
     
+    if params['AutoUpdate']:
+          os.system('git pull')
+          
     return params
     
     
