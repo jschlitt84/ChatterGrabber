@@ -170,6 +170,10 @@ class giSeeker():
                     print "Sending results to GDI user"
                     if True:
                         sendCSV(self.cfg,directory,self.extra)
+                        if self.cfg['AutoUpdate']:
+                            os.system('git pull')
+                            quit()
+                            
                     else:
                     #except Exception as e:
                         print "Unable to send email"

@@ -854,7 +854,7 @@ def isInBox(cfg,geoCache,status):
             coordinates = coordinates['coordinates']
             hasCoords = True
     
-    cacheRef = (unicode(coordinates) + unicode(userLoc)).lower()
+    cacheRef = (unicode(coordinates) + (not hasCoords)*unicode(userLoc)).lower()
     if cacheRef in geoCache.keys():
         if 'Cores' not in cfg.keys():
             print "GEOCACHE: Inboxed from memory", cacheRef
@@ -1400,7 +1400,8 @@ def getConfig(directory):
 		'LocationName':'United_States','LocationGranularity':'country',
 		'RegionSearch':False,'SendLinks':False,
 		'SendFigures':False,'SendAfter':0,
-		'ShowMap':'blue marble','ExtraCategories':'null'}
+		'ShowMap':'blue marble','ExtraCategories':'null',
+		'AutoUpdate':False}
     
     if type(directory) is str:
         if directory == "null":
