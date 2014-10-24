@@ -399,34 +399,35 @@ def checkLinks(data,n='all',shown='all',linkfreq=2, imagefreq=1, cfg = 'null'):
     sortedDomainCounts= sorted(domainCounts.iteritems(), key=operator.itemgetter(-1))
     sortedPhotoCounts= sorted(photos.iteritems(), key=operator.itemgetter(-1))
     
-    temp = ''
+    outStyle = lambda x: '\t' + str(x).replace("'"," ").replace('(','[').replace(')',']') + '\n'
     
+
     if shown == 'all':
         if len(sortedCounts) != 0:
             temp = "Highest Ranked Links:\n"
             for count in reversed(sortedCounts):
-                temp += '\t' + str(count).replace("'"," ") + '\n'
+                temp += outStyle(count)
         if len(sortedDomainCounts) != 0:
             temp += "Highest Ranked Domains:\n"
             for count in reversed(sortedDomainCounts):
-                temp += '\t' + str(count).replace("'"," ") + '\n'
+                temp += outStyle(count)
         if len(sortedPhotoCounts) != 0:
             temp += "Most Shared Images:\n"
             for count in reversed(sortedPhotoCounts):
-                temp += '\t' + str(count).replace("'"," ") + '\n'
+                temp += outStyle(count)
     else:
         if len(sortedCounts) != 0:
             temp = "Highest Ranked Links:\n"
             for count in reversed(sortedCounts[-shown:]):
-                temp += '\t' + str(count).replace("'"," ") + '\n'
+                temp += outStyle(count)
         if len(sortedDomainCounts) != 0:
             temp += "Highest Ranked Domains:\n"
             for count in reversed(sortedDomainCounts[-shown:]):
-                temp += '\t' + str(count).replace("'"," ") + '\n'
+                temp += outStyle(count)
         if len(sortedPhotoCounts) != 0:
             temp += "Most Shared Images:\n"
             for count in reversed(sortedPhotoCounts[-shown:]):
-                temp += '\t' + str(count).replace("'"," ") + '\n'
+                temp += outStyle(count)
     print temp; output += temp
     return output
     

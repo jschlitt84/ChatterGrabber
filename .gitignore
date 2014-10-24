@@ -22,3 +22,5 @@ caches/GeoPickle.txt
 *.mp4
 
 caches/GeoPickle.txt
+
+.ipynb_checkpoints/RoviScraper-checkpoint.ipynb

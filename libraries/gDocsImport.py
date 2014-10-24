@@ -172,7 +172,7 @@ def loadNClean(isPrivate,publicData, start, end, cleanType):
     pos = 0
     length = len(script)
     while pos < length:
-        if "#" in script[pos] and "#IGNORE" not in script[pos] or len(script[pos].replace(",",''))<1:
+        if "#" in script[pos] and "#KEEP" not in script[pos] and "#IGNORE" not in script[pos] or len(script[pos].replace(",",''))<1:
             del script[pos]
             length -= 1
         else:
@@ -235,7 +235,7 @@ def loadNClean(isPrivate,publicData, start, end, cleanType):
                 script[pos] = script[pos].replace('enum enum','enum')
                 script[pos] = script[pos].replace('enum 0','enum')
                 pos += 1
-                while "#" in script[pos] or len(script[pos].replace(",",''))<1:
+                while "#" in script[pos] and "#KEEP" not in script[pos] or len(script[pos].replace(",",''))<1:
                     del script[pos]
                     pos -= 1
                     length -= 1

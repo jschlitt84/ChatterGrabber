@@ -287,10 +287,10 @@ def sendCSV(cfg, directory,extra = ''):
     msg['To'] = ','.join(cfg['GDI']['Email'])
     msg['Cc'] = ','.join(cfg['GDI']['CC'])
     recipients = cfg['GDI']['Email']+cfg['GDI']['CC']
-    msg['Subject'] = cfg['FileName'] + ' collected tweets for <b>' + datetime.datetime.now().strftime("%A %d") + '</b>'
+    msg['Subject'] = cfg['FileName'] + ' collected tweets for ' + datetime.datetime.now().strftime("%A %d")
     
-    body = "Please find csv spreadsheet file, maps, and figures attached for study: <b>" + cfg['FileName']
-    body += "</b>\nParameters & configuration accessible at: " + cfg['GDI']['URL']
+    body = "Please find csv spreadsheet file, maps, and figures attached for study: " + cfg['FileName']
+    body += "\nParameters & configuration accessible at: " + cfg['GDI']['URL']
     body += "\n\nAll changed parameters are updated after midnight & will not influence collection & parsing until the following day.\n\n"
         
     figureLinks = []
@@ -315,7 +315,7 @@ def sendCSV(cfg, directory,extra = ''):
                 fig = vis.groupDaily(monthSubsets, catListMonth, "%s Daily Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,monthAgoLocal),  cfg['TimeOffset'], show = False, truncate = False) 
                 figureLinks.append(vis.cleanSave(fig,figPrefix+'MonthByDay'+format,'fig'))
                 try:
-                    fig = vis.dailyDistributionPlot(monthSubsets,catListMonth,"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],8,overlay = False,show = False)
+                    fig = vis.dailyDistributionPlot(monthSubsets,catListMonth,"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],24,overlay = False,show = False)
                     figureLinks.append(vis.cleanSave(fig,figPrefix+'TimeSeries'+format,'fig'))
                     madeTS = True
                 except Exception as e:
@@ -348,7 +348,7 @@ def sendCSV(cfg, directory,extra = ''):
                 fig = vis.chartDaily(monthData, cfg['TimeOffset'], show = False)
                 figureLinks.append(vis.cleanSave(fig,figPrefix+'MonthByDay'+format,'fig'))
                 try: 
-                    fig = vis.dailyDistributionPlot([monthData],['tweets'],"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],8,overlay = False,show = False)
+                    fig = vis.dailyDistributionPlot([monthData],['tweets'],"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],24,overlay = False,show = False)
                     figureLinks.append(vis.cleanSave(fig,figPrefix+'TimeSeries'+format,'fig'))
                     madeTS = True
                 except Exception as e:
@@ -854,7 +854,11 @@ def isInBox(cfg,geoCache,status):
             coordinates = coordinates['coordinates']
             hasCoords = True
     
-    cacheRef = (unicode(coordinates) + (not hasCoords)*unicode(userLoc)).lower()
+    oldRef = (unicode(coordinates) + unicode(userLoc)).lower()
+    if oldRef in geoCache.keys():
+        cacheRef = oldRef
+    else:
+        cacheRef = (unicode(coordinates) + (not hasCoords)*unicode(userLoc)).lower()
     if cacheRef in geoCache.keys():
         if 'Cores' not in cfg.keys():
             print "GEOCACHE: Inboxed from memory", cacheRef
@@ -1304,27 +1308,57 @@ def countHashTags(data,number):
     sortedCounts= sorted(counts.iteritems(), key=itemgetter(-1))[-number:]
     return [count[0] for count in reversed(sortedCounts)]
 
-      
+
+def getThing(loaded,i):
+    try:
+        return loaded[i]
+    except:
+        return 'False'      
       
       
 def cleanJson(jsonOriginal, cfg, types):
     """Returns filtered json with only desired data & derived data"""
     tweetData = cfg['TweetData']
     userData = cfg['UserData']
+    mediaData = cfg['MediaData']
     keepUser = len(userData) > 0 and 'user' not in tweetData
+    keepMedia = len(mediaData) > 0 and 'media' not in tweetData
     jsonIn = []
     
     if len(tweetData + userData) > 0:
         for row in range(len(jsonOriginal)):
             loaded = jsonToDictFix(deepcopy(jsonOriginal[row]))
             ID = str(loaded['id'])
+            
 	    loadedUser = loaded['user']
-            del loaded['user']
+	    
+	    del loaded['user']
+            
             tempJson = dict([(i, loaded[i]) for i in tweetData if i in loaded])
-            userJson = dict([(i, loadedUser[i]) for i in userData if i in loadedUser])
+            
             if keepUser:
+                userJson = dict([(i, loadedUser[i]) for i in userData if i in loadedUser])
                 for key in userJson.keys():
                     tempJson['user_' + key] = userJson[key]
+                    
+            if keepMedia:        
+                try:
+	           loadedMedia = loaded["entities"]['media'][0]
+	           del loaded["entities"]['media']
+	           mediaJson = dict([(i, getThing(loadedMedia,i)) for i in mediaData])
+	           for key in mediaJson.keys():
+	               tempJson['media1_' + key] = mediaJson[key]
+	        except:
+	           for key in mediaData:
+                        tempJson['media1_' + key] = 'False'
+                    
+            if cfg['SendLinks']:
+                try:
+                    tempJson['link1'] = loaded["entities"]['urls'][0]['expanded_url']
+                except:
+                    tempJson['link1'] = 'False'
+                
+                     
             jsonIn.append(tempJson)
             if ID in types.keys():
 	        for key in types[ID].keys():
@@ -1401,7 +1435,7 @@ def getConfig(directory):
 		'RegionSearch':False,'SendLinks':False,
 		'SendFigures':False,'SendAfter':0,
 		'ShowMap':'blue marble','ExtraCategories':'null',
-		'AutoUpdate':False}
+		'AutoUpdate':False,'MediaData':{}}
     
     if type(directory) is str:
         if directory == "null":
@@ -1455,6 +1489,11 @@ def getConfig(directory):
   
     try:
         params['TweetData'] = textToList(params['TweetData'])
+    except:
+        None
+        
+    try:
+        params['MediaData'] = textToList(params['MediaData'])
     except:
         None
         
