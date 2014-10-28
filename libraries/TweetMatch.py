@@ -85,12 +85,12 @@ def prepTweet(word):
     text = text.replace("&amp",'') #cleanup conversion bug
     toAdd = set()
     
-    if text[0] == '"' and text[-1] == '"' or   text[0] == "'" and text[-1] == "'":
-        toAdd.add('$isQuote')
-    elif text.count('"') > 1 or text.count("'") > 1:
-        toAdd.add('$hasQuote')
-    if text.isupper():
-        toAdd.add('$allCaps')
+    #if text[0] == '"' and text[-1] == '"' or   text[0] == "'" and text[-1] == "'":
+    #    toAdd.add('$isQuote')
+    #elif text.count('"') > 1 or text.count("'") > 1:
+    #    toAdd.add('$hasQuote')
+    #if text.isupper():
+    #    toAdd.add('$allCaps')
         
     if '?' in text:
 	toAdd.add('$?')
@@ -136,8 +136,8 @@ def prepTweet(word):
     wordCount = len(listed)
     wordLength = int(mean([len(word) for word in listed])+.5)
     
-    toAdd.add('$wordCount'+str(wordCount))
-    toAdd.add('$wordLength'+str(wordLength))
+    #toAdd.add('$wordCount'+str(wordCount))
+    #toAdd.add('$wordLength'+str(wordLength))
    
         
     lemList(listed) #Lemmatize list to common stem words

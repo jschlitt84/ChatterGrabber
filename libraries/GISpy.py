@@ -325,6 +325,9 @@ def sendCSV(cfg, directory,extra = ''):
                 for pos in range(len(catListWeek)):
                     fig = vis.mapSubject(weekSubsets[pos],"Cat: "+catListWeek[pos], show = False, offset=cfg['TimeOffset'], background = cfg['ShowMap'])
                     figureLinks.append(vis.cleanSave(fig,figPrefix+'WeekMapped_%s%s' % (catListWeek[pos],format),'fig'))
+                    clouds = vis.getWordWeights(weekSubsets[pos],7,'','')
+                    fig = vis.showWordCloud(clouds['all'],show=False)
+                    figureLinks.append(vis.cleanSave(fig,figPrefix+'WeekCloud_%s%s' % (catListWeek[pos],format),'fig'))
                 for pos in range(len(catListMonth)):
                     anim, animFile, extrafig = vis.animateMap(monthSubsets[pos],"Cat: "+catListMonth[pos], show = False, makeGif=False, offset=cfg['TimeOffset'], background = cfg['ShowMap'])
                     figureLinks.append(animFile+'.mp4')
@@ -347,6 +350,9 @@ def sendCSV(cfg, directory,extra = ''):
                 monthData['name'] = monthName + " Daily Tweet Distribution from %s - %s" % (nowLocal,monthAgoLocal)
                 fig = vis.chartDaily(monthData, cfg['TimeOffset'], show = False)
                 figureLinks.append(vis.cleanSave(fig,figPrefix+'MonthByDay'+format,'fig'))
+                clouds = vis.getWordWeights(weekData,7,'','')
+                fig = vis.showWordCloud(clouds['all'],show=False)
+                figureLinks.append(vis.cleanSave(fig,figPrefix+'WeekCloud%s' % (format),'fig'))
                 try: 
                     fig = vis.dailyDistributionPlot([monthData],['tweets'],"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],24,overlay = False,show = False)
                     figureLinks.append(vis.cleanSave(fig,figPrefix+'TimeSeries'+format,'fig'))
@@ -1053,6 +1059,8 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList, core, out_q, keep
                 count += 1
                 if count%250 == 0:
                     print "\tCore",core,count,"tweets sorted"
+                if count%cfg['PickleEvery'] == 0:
+                    updateGeoPickle(geoPickle,cfg['Directory']+'caches/'+pickleName)
                 tweet['text'] = tweet['text'].replace('\n',' ')
                 tweetType = checkTweet(lists['conditions'],lists['qualifiers'],lists['exclusions'], tweet['text'], cfg)
                 if tweetType in keepTypes:
@@ -1100,9 +1108,9 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
     """Keeps old content up to date with latests queries & settings"""
     keepTypes = ['accepted']*cfg['KeepAccepted']+['partial']*cfg['KeepPartial']+['excluded']*cfg['KeepExcluded']
     homeDirectory = directory
-    manager = Manager()
-    
-    pickleMgmt = manager.dict(geoCache)
+    #manager = Manager()
+    #pickleMgmt = manager.dict(geoCache)
+    pickleMgmt = geoCache
     
     print "Preparing to reformat from raw tweets..."
     if cfg['OutDir'] not in directory.lower():
@@ -1147,12 +1155,12 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             #collectedTypes.append(merged['types'+str(i)])
             
         print "Returning updated geoPickle"
-        geoCache = dict(pickleMgmt.items())
+        #geoCache = dict(pickleMgmt.items())
         updateGeoPickle(geoCache,cfg['Directory']+'caches/'+pickleName)
        
 	outName = cfg['FileName']+"_CollectedTweets"
         
-	print "DEBOOO1", len(collectedContent)
+	#print "DEBOOO1", len(collectedContent)
 
         print "Writing collected tweets to "+outName+".json"
         with open(directory+outName+'.json', 'w') as outFile:
@@ -1160,9 +1168,9 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
         outFile.close()
         print "...complete"
         
-	print "DEBOOO2", len(collectedContent)
+	#print "DEBOOO2", len(collectedContent)
         jsonToDictFix(collectedContent)
-	print "DEBOOO3", len(collectedContent)
+	#print "DEBOOO3", len(collectedContent)
 	collectedContent = uniqueJson(collectedContent)        
         
         if len(collectedContent) == 0:
@@ -1187,13 +1195,13 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                         collectedContent[pos][key] = 'NaN'
                     else:
                         collectedContent[pos][key] = stripUnicode(collectedContent[pos][key])
-            print "DEBOOO4", len(collectedContent)
+            #print "DEBOOO4", len(collectedContent)
             if cfg['OnlyKeepNLP'] != False and not cfg['KeepDiscardsNLP']:
   		collectedContent = [entry for entry in collectedContent if str(entry['NLPCat']) in cfg['OnlyKeepNLP']]
-  	    print "DEBOOO5", len(collectedContent)
+  	    #print "DEBOOO5", len(collectedContent)
             if cfg['Sanitize'] != False:
                 collectedContent = [sanitizeTweet(tweet,cfg) for tweet in collectedContent]
-	    print "DEBOOO6", len(collectedContent)
+	    #print "DEBOOO6", len(collectedContent)
             
             fileName = directory+outName+'.csv'
             fileNameOld = directory+outName+'Old.csv'
@@ -1208,7 +1216,10 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             csvOut.writerows(collectedContent)
             outFile.close()
             print "...complete"
-                                    
+            
+            if cfg['RunScript'] != False:
+                process = subprocess.Popen(cfg['RunScript'], shell=True)                        
+                                                                            
             if cfg['MakeDBFeed'] or cfg['OneTimeDump'] or cfg['QuickSend']:
                 time.sleep(0.2)
                 shutil.copyfile(fileName, fileNameOld)
@@ -1435,7 +1446,8 @@ def getConfig(directory):
 		'RegionSearch':False,'SendLinks':False,
 		'SendFigures':False,'SendAfter':0,
 		'ShowMap':'blue marble','ExtraCategories':'null',
-		'AutoUpdate':False,'MediaData':{}}
+		'AutoUpdate':False,'MediaData':{},
+		'RunScript':False}
     
     if type(directory) is str:
         if directory == "null":

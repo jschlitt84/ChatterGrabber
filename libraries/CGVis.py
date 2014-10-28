@@ -27,7 +27,24 @@ import matplotlib.animation as animation
 weekList = ['zero','Mon','Tue','Wed','Thu','Fri','Sat','Sun','null']
 weekNum = [-1,0,1,2,3,4,5,6,7]
 
+#Wordcloud dependencies
+import nltk
+import sys
+import unicodedata
 
+from nltk.stem.wordnet import WordNetLemmatizer
+from nltk.corpus import stopwords
+from wordcloud import WordCloud
+
+
+blockKeys = ['$!','$?','$...','#yesallwomen']
+stopWords = stopwords.words('english')
+lmtzr = WordNetLemmatizer()
+
+
+#Timeline dependencies
+import subprocess
+import os
 
 def cleanSave(content,directory,mode,**kwargs):
     try:
@@ -327,10 +344,11 @@ def countHashTags(data,number='all',freq=1):
         words = entry.split(' ')
         for word in words:
             if word.startswith('#'):
-                if word not in counts.keys():
-                    counts[word] = 1
+                wordL = word.lower()
+                if wordL not in counts.keys():
+                    counts[wordL] = 1
                 else:
-                    counts[word] += 1
+                    counts[wordL] += 1
     if type(freq) is int and freq != 1:
         counts = {key: value for key, value in counts.iteritems() if value >= freq}
     sortedCounts= sorted(counts.iteritems(), key=operator.itemgetter(-1))
@@ -738,3 +756,264 @@ def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
     
     plt.close()    
     return anim,fileName,extraFig
+    
+    
+    
+    
+def makeTimeLine(inFile,
+                name='default',
+                embed='media',
+                sort='place',
+                placeLevel = 1,
+                keep = 'null',
+                keepStyle = 'direct',
+                directory = ''):
+    
+    outFile = 'timeLineTemp.csv'
+    
+    if embed == 'media':
+        contentCol = 'media1_display_url'
+        mediaCol = 'media1_media_url_https'
+    else:
+        contentCol = 'link1'
+        mediaCol = 'link1'
+
+    
+    if type(inFile) is str:
+        data =  pd.DataFrame.from_csv(inFile,index_col='id')
+    elif type(inFile) is dict:
+        data = inFile['data']
+    else:
+        data = inFile
+        
+    fileOut = open(outFile,'wb')
+    newKeys = 'date,display_date,description,link,series,html\n'
+    
+    fileOut.write(newKeys)
+    
+    print "Generating new csv as", outFile
+    
+    for index, row in data.iterrows():
+        date = row['created_at']
+        displayDate = ' '.join([entry for entry in row['created_at'].split() if not entry.startswith('+')])
+        description = '<b>Text:</b> '+' '.join(row['text'].split())
+        try:
+            description += '<br><b>Location:</b> '+str(row['place'])
+        except:
+            None
+        try:
+            description += '<br><b>Retweets:</b> '+str(row['retweet_count'])
+        except:
+            None
+        try:
+            description += '<br><b>Favorites:</b> '+str(row['favorite_count'])
+        except:
+            None
+        
+        link = row[contentCol]; media = row[mediaCol]
+        
+        if not link.startswith('http') and str(link).lower() != 'false':
+            link = 'https://'+link
+        if not media.startswith('http') and str(media).lower() != 'false':
+            media = 'https://'+media
+            
+        series = row[sort]
+        
+        if sort == 'place':
+            series = str(series).split(', ')[-placeLevel]
+            
+        inKeep = ((series in keep) == (keepStyle == 'direct')) or keep == 'null'
+        
+        if embed == 'media':    
+            html = "<img src='%s'>" % media
+        else:
+            html = "<iframe width='800' height='600' src='%s'></iframe>" % media
+            
+        cleaned = lambda x: str(x).replace(',','').replace('"','').replace("'",'')
+        content = [date,displayDate,description,link,series]
+        content = [cleaned(item) for item in content]
+        content.append(html)
+        lens = [len(str(item)) for item in content]
+        
+        if str(link).lower() != 'false' and min(lens) != 0 and inKeep:
+            fileOut.write("%s,%s,%s,%s,%s,%s\n" % tuple(content))
+            
+    fileOut.close(); sleep(1)
+    
+    if directory != '' and directory[-1] != '/':
+        directory += '/'
+    outDir = directory+'TimeLine'+name
+    
+    command = "timeline-setter -c %s -o %s -O" % (outFile,outDir)
+    
+    print "Running timeline-setter"
+
+    process = subprocess.Popen(command, shell=True)
+    output = process.communicate()[0]
+    
+    fileDirect = os.getcwd()+'/'+outDir+'/timeline.html'
+    
+    print "Operation complete, timeline available at:",fileDirect
+    
+    return fileDirect
+    
+    
+    
+def showWordCloud(text,show=True):
+    plt.figure(figsize=(8,8)).gca()
+    fontPath = '/Library/Fonts/Microsoft/'
+    font = 'Verdana.ttf'
+    wc = WordCloud(background_color="white", max_words=2000,font_path=fontPath+font,stopwords=['ebola','link','atweeter','user'],
+                   height = 800, width = 800)
+    wc.generate(text)
+    plt.imshow(wc)
+    plt.axis("off")
+    if show:
+        plt.show()
+    else:
+        return plt
+
+
+
+def getWordWeights(dataIn,daysPast,directory, timeStamp,mode = 'image'):
+    if type(dataIn) is dict:
+        data = deepcopy(dataIn['data'])
+    else:
+        data = deepcopy(dataIn)
+    dates = [parser.parse(entry['created_at']) for index,entry in data.iterrows()]
+    rightBound = max(dates)
+    leftBound = rightBound - datetime.timedelta(days = daysPast)
+    data = [entry for index,entry in data.iterrows() if leftBound < parser.parse(entry['created_at']) < rightBound]
+    
+    if  'nlpCat' in data[0].keys():
+        CatCol = 'nlpCat'
+    elif 'nltkCat' in data[0].keys():
+        CatCol = 'nltkCat'
+    else:
+        CatCol = 'tweetType'
+    
+    wordList = dict()
+    
+    if mode == 'image':
+        wordList['all'] = [prepTweet(entry['text']) for entry in data]
+        
+        cats = set([entry[CatCol] for entry in data])
+        for cat in cats:
+            wordList[cat] = [prepTweet(entry['text']) for entry in data if entry[CatCol] == cat]
+        cats.add('all')
+        for cat in cats:
+            wordList[cat] = ' '.join([' '.join([word.split("'")[0] for word in entry if word not in blockKeys]) for entry in wordList[cat]]) 
+        return wordList
+        
+    elif mode != 'image':    
+        wordWeights = dict()
+        wordCloud = []
+        wordList['all'] = [prepTweet(entry['text']) for entry in data] 
+    
+        cats = set([entry[CatCol] for entry in data])
+        for cat in cats:
+            wordList[cat] = [prepTweet(entry['text']) for entry in data if entry[CatCol] == cat] 
+    
+        cats.add('all')
+        for cat in cats:
+            wordList[cat] = [[word.split("'")[0] for word in entry if word not in blockKeys] for entry in wordList[cat]]
+        
+        
+        for cat in cats:
+            wordWeights[cat] = dict()  
+            for tweet in wordList[cat]:
+                for word in tweet:
+                    if word not in wordWeights[cat].keys():
+                        wordWeights[cat][word] = 1
+                    else:
+                        wordWeights[cat][word] += 1
+                        
+        for cat in cats:
+            listed = []
+            for key in wordWeights[cat].keys():
+                listed.append('{text: "%s", weight: %s}' % (str(key),wordWeights[cat][key]))
+            wordCloud.append('{%s: [%s]}' % (cat,', '.join(listed)))
+        
+    jsonOut = '{wordcloud: [%s]}' % ', '.join(wordCloud)
+    outName = "wordcloud.json"
+    print "Writing wordcloud to '"+outName + "'"
+    
+    outFile = open(directory+outName, "w")
+    outFile.write(jsonOut)
+    outFile.close()
+    return directory+outName
+
+
+def lemList(listed):
+    listed = list(set([lmtzr.lemmatize(word) for word in listed if len(word)>1]))
+
+
+def stripUnicode(text):
+    """Strips unicode special characters for text storage (smileys, etc)"""
+    if text == None:
+        return "NaN"
+    else:
+        if type(text) == unicode:
+            return str(unicodedata.normalize('NFKD', text).encode('ascii', 'ignore'))
+        else:
+            return str(text)
+
+
+
+def prepTweet(word):
+    word =  stripUnicode(word)
+    original = text = str(word)
+    
+    text = text.replace("&amp",'') #cleanup conversion bug
+    toAdd = set()
+        
+    if '?' in text:
+	toAdd.add('$?')
+    if '!' in text:
+	toAdd.add('$!')
+    if '...' in text:
+	toAdd.add('$...')
+
+    punctuations = ".,\"-_%!?=+\n\t:;()*&$/"
+    
+    #Remove accentuated characters
+    text = unicode(text)
+    text = ''.join(char for char in unicodedata.normalize('NFD', text) if unicodedata.category(char) != 'Mn')
+        
+    #End of string operations, continuing with list ops.    
+    
+
+    while 'http' in text:
+	toAdd.add('$link')
+	temp = text.index('http')
+	text = text[:temp] + text[text.find(' ',temp):]
+    while 'RT @' in text:
+	toAdd.add('$RT')
+	temp = text.index('RT @')
+	text = text[:temp] + text[text.find(' ',temp):]
+    """while '@' in text:
+	toAdd.add('@user')
+	temp = text.index('@')
+	if temp == len(text) - 1:
+		text = text[:-1]
+	else:
+		text = text[:temp] + text[text.find(' ',temp):]"""
+    for char in punctuations:
+	text = text.replace(char,' ')
+    while '  ' in text:
+        text = text.replace('  ',' ')
+    while text.startswith(' '):
+        text = text[1:]
+    while text.endswith(' '):
+        text = text[:-1]
+    listed = text.lower().split(' ')
+        
+    lemList(listed) #Lemmatize list to common stem words
+    
+    toDel = set()
+
+
+    listed = [word for word in [word for word in listed if word not in stopWords] if word not in toDel] + list(toAdd) 
+    
+    return listed
+    
