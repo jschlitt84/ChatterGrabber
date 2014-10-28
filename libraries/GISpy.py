@@ -1110,7 +1110,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
     homeDirectory = directory
     #manager = Manager()
     #pickleMgmt = manager.dict(geoCache)
-    pickleMgmt = geoCache
+    #pickleMgmt = geoCache
     
     print "Preparing to reformat from raw tweets..."
     if cfg['OutDir'] not in directory.lower():
@@ -1138,7 +1138,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
 
         for i in range(cores):
         #for i in range(1):
-            p = Process(target = getReformatted, args = (directory, lists, cfg, pickleMgmt, fileList[block*i:block*(i+1)], i, out_q, keepTypes, NLPClassifier))
+            p = Process(target = getReformatted, args = (directory, lists, cfg, geoCache, fileList[block*i:block*(i+1)], i, out_q, keepTypes, NLPClassifier))
             processes.append(p)
             p.start() 
         merged = {}
