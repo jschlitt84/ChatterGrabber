@@ -325,9 +325,12 @@ def sendCSV(cfg, directory,extra = ''):
                 for pos in range(len(catListWeek)):
                     fig = vis.mapSubject(weekSubsets[pos],"Cat: "+catListWeek[pos], show = False, offset=cfg['TimeOffset'], background = cfg['ShowMap'])
                     figureLinks.append(vis.cleanSave(fig,figPrefix+'WeekMapped_%s%s' % (catListWeek[pos],format),'fig'))
-                    clouds = vis.getWordWeights(weekSubsets[pos],7,'','')
-                    fig = vis.showWordCloud(clouds['all'],show=False)
-                    figureLinks.append(vis.cleanSave(fig,figPrefix+'WeekCloud_%s%s' % (catListWeek[pos],format),'fig'))
+                    try:
+                        clouds = vis.getWordWeights(weekSubsets[pos],7,'','')
+                        fig = vis.showWordCloud(clouds['all'],show=False)
+                        figureLinks.append(vis.cleanSave(fig,figPrefix+'WeekCloud_%s%s' % (catListWeek[pos],format),'fig'))
+                    except:
+                        None
                 for pos in range(len(catListMonth)):
                     anim, animFile, extrafig = vis.animateMap(monthSubsets[pos],"Cat: "+catListMonth[pos], show = False, makeGif=False, offset=cfg['TimeOffset'], background = cfg['ShowMap'])
                     figureLinks.append(animFile+'.mp4')
