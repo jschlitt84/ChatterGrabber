@@ -10,7 +10,7 @@ def updateCache(dictionary,fileRef,limit):
     loadedLength = length1 = len(dictionary.keys())
     pickleExists = path.isfile(fileRef)
     if pickleExists:
-        pickleLoaded = loadWhenReady(fileRef)
+        pickleLoaded = loadWhenReady(fileRef,dictionary)
         length1 = len(pickleLoaded.keys())
         if dictionary.keys() != pickleLoaded.keys():
             dictionary.update(pickleLoaded)
@@ -55,7 +55,7 @@ def getNLPScore(cacheKey,cache,cacheRef,args,updateLimit):
     
     
     
-def loadWhenReady(fileRef):
+def loadWhenReady(fileRef,dictionary):
     """Trys to load a pickle, if unable, waits five seconds and tries again"""
     attempts = 0
     while True:
@@ -68,9 +68,15 @@ def loadWhenReady(fileRef):
         except:
             sleep(5)
             attempts += 1
-            if attempts == 1000:
-                print "Error: Unable to load pickle, quiting now"
-                quit()
+            if attempts == 100:
+                print "Error: Unable to load pickle, corrupted?"
+                if len(dictionary.keys())>1000:
+                    print "Dumping memory dictionary instead"
+                    dumpWhenReady(fileRef,dictionary)
+                    return dictionary
+                else:
+                    print "None in memory either... quitting now"
+                    quit()
     return pickleLoaded
     
     

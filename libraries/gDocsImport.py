@@ -79,10 +79,18 @@ def getFile(userName, __password, fileName):
                        
 def getPublicFile(userName, fileName, localFile):
     
-    try:
-        fileName = fileName[:fileName.index('#gid')]
-    finally:
-        fileName += '&output=csv'
+    if '/d/' in fileName:
+        print 'Using 4th gen URL format'
+        format = 'https://docs.google.com/spreadsheets/d/$KEY/export?format=csv&id=$KEY'
+        key = fileName.split('/')[-2]
+        fileName = format.replace('$KEY',key)
+    else:
+        print 'Using 1-3rd gen URL format'
+        try:
+            fileName = fileName[:fileName.index('#gid')]
+        finally:
+            fileName += '&output=csv'
+
 
     print "\nLoading public file", fileName
     
