@@ -2,13 +2,14 @@ import sys
 sys.path.insert(0, 'libraries')
 import subprocess
 from time import sleep
+from shutil import copyfile
 
 
 
 format = "\033[91m\033[1m"
 end = "\033[0m"
 secondsPerDay = 86400
-daysToRefresh = 5
+daysToRefresh = 3
 delay = 1800
 count = 0
 sleepEvery = (secondsPerDay*daysToRefresh)/delay
@@ -52,9 +53,15 @@ while True:
                     foundUrl = process[process.index('https://'):]
                     print format+"RUNNING:",foundUrl,end
                     running.add(foundUrl)
-                    
+    
+    #if True:                
     if count%sleepEvery == 0:
-        None
+        try:
+            print "%sBacking up geoPickle%s" % (format,end)
+            copyfile('caches/GeoPickle.txt','caches/GeoPickleBackUp.txt')
+            print "%sOperation succesful%s" % (format,end)
+        except:
+            print "%sError, could not copy%s" % (format,end)
     
     notRunning = set.difference(urls,running)
     for item in notRunning:

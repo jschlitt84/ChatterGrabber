@@ -12,6 +12,9 @@ import zipfile
 import subprocess
 import shlex
 
+import hashlib
+hasher = hashlib.md5()
+
 import gDocsImport as gd
 import CGVis as vis
 import pandas as pd
@@ -1584,7 +1587,8 @@ def sanitizeTweet(tweet,cfg):
     tweet['text'] = ' '.join(words)
     tweet['place'] = stripAddress(tweet['place'])
     if 'user_screen_name' in tweet.keys():
-        tweet['user_screen_name'] = "ATweeter"
+        #tweet['user_screen_name'] = "ATweeter"
+        tweet['user_screen_name'] = getHash(tweet['user_screen_name'])
     if str(tweet['lat']).lower() != 'nan' and len(str(tweet['lat'])) > 6:
         tweet['lat'] = float(str(tweet['lat'])[:-2])
     if str(tweet['lon']).lower() != 'nan' and len(str(tweet['lon'])) > 6:
@@ -1624,12 +1628,16 @@ def stripAddress(address):
     else:
         return address
     
-    
-    
+
+def getHash(text):
+    hasher.update(text+'movie theatre popcorn')
+    return hasher.hexdigest()
+
     
 def wordSwap(word):
     """Replaces user names with tag"""
     if len(word) > 0:
         if '@' in word:
-            return "@ATweeter"
+            #return "@ATweeter"
+            return '@ATweeter_'+ getHash(word)
     return word
