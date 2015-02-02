@@ -1588,7 +1588,7 @@ def sanitizeTweet(tweet,cfg):
     tweet['place'] = stripAddress(tweet['place'])
     if 'user_screen_name' in tweet.keys():
         #tweet['user_screen_name'] = "ATweeter"
-        tweet['user_screen_name'] = getHash(tweet['user_screen_name'])
+        tweet['user_screen_name'] = '@ATweeter_'+getHash(tweet['user_screen_name'])
     if str(tweet['lat']).lower() != 'nan' and len(str(tweet['lat'])) > 6:
         tweet['lat'] = float(str(tweet['lat'])[:-2])
     if str(tweet['lon']).lower() != 'nan' and len(str(tweet['lon'])) > 6:

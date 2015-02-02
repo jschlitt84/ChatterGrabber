@@ -11,6 +11,7 @@ def updateCache(dictionary,fileRef,limit):
     pickleExists = path.isfile(fileRef)
     if pickleExists:
         pickleLoaded = loadWhenReady(fileRef,dictionary)
+        #failed = pickleLoaded == 'null'
         length1 = len(pickleLoaded.keys())
         if dictionary.keys() != pickleLoaded.keys():
             dictionary.update(pickleLoaded)
@@ -68,7 +69,7 @@ def loadWhenReady(fileRef,dictionary):
         except:
             sleep(5)
             attempts += 1
-            if attempts == 100:
+            if attempts == 3:
                 print "Error: Unable to load pickle, corrupted?"
                 if len(dictionary.keys())>1000:
                     print "Dumping memory dictionary instead"
