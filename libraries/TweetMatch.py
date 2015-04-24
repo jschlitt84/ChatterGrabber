@@ -378,8 +378,9 @@ def getClassifier(tweetfile,cfg):
     return classifier
 
             
-def getAccuracy(toRun,mode,degrees,n,percent,classifications,outPut,cfg,core,out_q):
-	try:
+def getAccuracy(toRun,mode,degrees,n,percent,classifications,rOutput,cfg,core,out_q):
+	if True:
+	    #print rOutput[0:3]
 	    sens = dict()
 	    spec = dict()
 	    outDict = dict()
@@ -395,30 +396,25 @@ def getAccuracy(toRun,mode,degrees,n,percent,classifications,outPut,cfg,core,out
 		sensScores[category] = []
 		specScores[category] = []
 	    
-	    scored = len(outPut)
+	    scored = len(rOutput)
 	    index = range(scored)
 	    percentLength = int(scored*percent+.5)
 	    jump = int(1/percent)
 	    remainder = scored - percentLength
 	    
 	    print "\033[1mReducing scoring set of size %s to %s%% random training set with %s entries for %s iterations and %s scored posts\033[0m\n" % (scored,percent*100,percentLength,n,remainder)	
-		
+	
 	    for iteration in toRun:
-		shuffle(index)
 		points = 100
+			
+		scoringSet = deepcopy(index)[iteration*remainder::remainder]	
+		trainingSet = list(set(index)-set(scoringSet))
 		
-		if True:
-			trainingSet = deepcopy(index)[iteration::jump]	
-		else:
-			trainingSet = deepcopy(index)[0:percentLength]
-		
-		
-		scoringSet = list(set(index)-set(trainingSet))
-		toTrain = [deepcopy(outPut[item]) for item in trainingSet]
-		toScore = [deepcopy(outPut[item]) for item in scoringSet]
-		
+		toTrain = [deepcopy(rOutput[item]) for item in trainingSet]
+		toScore = [deepcopy(rOutput[item]) for item in scoringSet]
+	        #print classifications	
 		classifications = set()
-		
+
 		for category in allCats:
 		    totals[category] = 0
 		
@@ -457,15 +453,16 @@ def getAccuracy(toRun,mode,degrees,n,percent,classifications,outPut,cfg,core,out
 		        spec[scoreCat] -= specDelta[scoreCat]
 		
 		outDict['scores'+str(iteration)] = points
-		outDict['toTrain'+str(iteration)] =len(trainingSet)
+		outDict['toTrain'+str(iteration)] = len(trainingSet)
 		
 		for category in classifications:
+		    #print "DEBOO", category
 		    outDict['sensScores'+'_'+category+'_'+str(iteration)]  = sens[category]
 		    outDict['specScores'+'_'+category+'_'+str(iteration)]  = spec[category]
 	    
 	       
 	    out_q.put(outDict)
-	except:
+	else:
 		print "Subprocesses failed, returning error"
 		outDict['failed'] = True
 		out_q.put(outDict)
@@ -486,11 +483,12 @@ def evalAccuracy(mode,degrees,n,percent,cores,classifications,outPut,cfg):
     block =  int(ceil(n/float(cores)))
     processes = []
     toDel = []
-    
+    rOutput = deepcopy(outPut)
+    shuffle(rOutput) 
     for i in range(cores):
         toSend = iterationNumber[block*i:block*(i+1)]
         if len(toSend) != 0:
-            p = Process(target = getAccuracy, args = (iterationNumber[block*i:block*(i+1)], mode,degrees,n,percent,classifications,outPut,cfg,cores,out_q))
+            p = Process(target = getAccuracy, args = (iterationNumber[block*i:block*(i+1)], mode,degrees,n,percent,classifications,rOutput,cfg,cores,out_q))
             processes.append(p)
             p.start()
         else:
@@ -516,8 +514,9 @@ def evalAccuracy(mode,degrees,n,percent,cores,classifications,outPut,cfg):
 	    if ('sensScores'+'_'+category+'_'+str(i)) in merged.keys():
         	sensScores[category].append(merged['sensScores'+'_'+category+'_'+str(i)])
         	specScores[category].append(merged['specScores'+'_'+category+'_'+str(i)])
-    
+    #print "DEBOO", sensScores, specScores
     for category in allCats:
+        #print 'DEBOOO', category
         sensScores[category] = mean(sensScores[category])
         specScores[category] = mean(specScores[category])
     
