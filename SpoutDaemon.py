@@ -1,6 +1,7 @@
 import sys
 sys.path.insert(0, 'libraries')
 import subprocess
+import cPickle
 from time import sleep
 from shutil import copyfile
 
@@ -53,15 +54,21 @@ while True:
                     foundUrl = process[process.index('https://'):]
                     print format+"RUNNING:",foundUrl,end
                     running.add(foundUrl)
-    
-    #if True:                
+               
     if count%sleepEvery == 0:
+        pickleRef = 'caches/GeoPickle.txt'
+        print "%sBacking up geoPickle%s" % (format,end)
+        problem = 'pickle'
         try:
-            print "%sBacking up geoPickle%s" % (format,end)
+            tempIO = open(pickleRef,'rb')
+            tempPickle = cPickle.load(tempIO)
+            tempIO.close()
+            del tempPickle
+            problem = 'back up'
             copyfile('caches/GeoPickle.txt','caches/GeoPickleBackUp.txt')
             print "%sOperation succesful%s" % (format,end)
         except:
-            print "%sError, could not copy%s" % (format,end)
+            print "%sError, could not %s file%s" % (format,problem,end)
     
     notRunning = set.difference(urls,running)
     for item in notRunning:

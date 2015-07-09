@@ -62,7 +62,7 @@ def loadWhenReady(fileRef,dictionary):
     while True:
         try:
             sleep(10 * random.random())
-            pickleIn = open(fileRef,'r')
+            pickleIn = open(fileRef,'rb')
             pickleLoaded = load(pickleIn)
             pickleIn.close()
             break
@@ -89,7 +89,7 @@ def dumpWhenReady(fileRef, dictionary):
         try:
             sleep(2 * random.random())
             pickleOut = open(fileRef, "wb")
-            dump(dictionary, pickleOut)
+            dump(dictionary, pickleOut,protocol=2)
             pickleOut.close()
             sleep(2)
             break

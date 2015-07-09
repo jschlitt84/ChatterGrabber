@@ -1136,7 +1136,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
         collectedContent = []
         fileList = filter(lambda i: not os.path.isdir(directory+i), fileList)
         random.shuffle(fileList)
-        cores = cpu_count()
+        cores = max(cpu_count()/2,2)
         cfg['Cores'] = cores
         out_q = Queue()
         block =  int(ceil(len(fileList)/float(cores)))

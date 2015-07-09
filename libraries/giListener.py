@@ -319,6 +319,9 @@ class giSeeker():
 					placeTemp = placeCache[place]
 					print "Place id", placeTemp[0].id, "pulled from cache for place", place
 				else:
+				    if place == 'null':
+				        placeCache['place'] = placeTemp = 'null'    
+				    else:
 		    			placeTemp = tempApi.geo_search(query=place.replace('_',' ').replace('-',' '), granularity=self.cfg['LocationGranularity'])	
 					if len(placeTemp) != 0:
 						placeCache[place] = placeTemp
@@ -330,13 +333,19 @@ class giSeeker():
 				print "Error:", e
 				time.sleep(120)
 		    if len(placeTemp) != 0:
-		    	places.append(placeTemp[0].id)
+		        if placeTemp == 'null':
+		            places.append('null')
+		        else:
+		    	    places.append(placeTemp[0].id)
 		    else:
 			print "No place found for", place
 		queriesTemp = []
 		for query in self.queries:
 			for place in places:
+			    if place != 'null' and place != '':
 				queriesTemp.append('place:%s ' % place + query)
+			    else:
+			        queriesTemp.append(query)
 		self.queries = queriesTemp
             
         for item in self.queries:

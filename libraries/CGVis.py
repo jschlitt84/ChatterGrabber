@@ -753,6 +753,9 @@ def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
         writer = animation.writers['ffmpeg'](fps=1)
         anim.save(fileName+'.mp4',writer=writer,dpi=80)
         sleep(5)
+        del writer
+        del anim
+        anim = 'null'
     
     plt.close()    
     return anim,fileName,extraFig
