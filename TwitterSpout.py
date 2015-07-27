@@ -141,7 +141,7 @@ def main():
             login = getLogins(directory,[temp['login']])[temp['login']]
         cfg['Directory'] = directory
         geoCache = dict()
-        updateGeoPickle(geoCache,directory+'caches/'+pickleName)
+        geoCache = updateGeoPickle(geoCache,getPickleName(cfg),cfg)
         
         if cfg['OnlyKeepNLP'] != False:
             temp = cfg['OnlyKeepNLP']
@@ -161,7 +161,7 @@ def main():
         
         if not skipReformat:
 	    reformatOld(directory,lists,cfg,geoCache,NLPClassifier)
-	    updateGeoPickle(geoCache,directory+'caches/'+pickleName)
+	    geoCache = updateGeoPickle(geoCache,getPickleName(cfg),cfg)
         if quickReformat or oneTimeDump or quickSend:
             quit()        	
         
@@ -173,12 +173,12 @@ def main():
         logins = getLogins(directory, cfg['Logins'])
         lists = updateWordBanks(directory, cfg)
         geoCache = dict()
-        updateGeoPickle(geoCache,directory+'caches/'+pickleName)
+        geoCache = updateGeoPickle(geoCache,directory+'caches/'+pickleName)
 	if not skipReformat:        
 		reformatOld(directory,lists,cfg,geoCache,NLPClassifier) 
 		if quickReformat:
 			quit()        
-		updateGeoPickle(geoCache,directory+'caches/'+pickleName)
+		geoCache = updateGeoPickle(geoCache,directory+'caches/'+pickleName)
         
         
         print "\nPlease choose login number:"

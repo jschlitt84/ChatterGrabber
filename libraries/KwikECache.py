@@ -5,19 +5,33 @@ from time import sleep
 import random
 import optimizeClassifier
 
-def updateCache(dictionary,fileRef,limit):
+def updateCache(dictionary,fileRef,limit,expectDict = True):
     """Updates file & memory version of cache"""
     loadedLength = length1 = len(dictionary.keys())
     pickleExists = path.isfile(fileRef)
+    badDict = badPickle = False
+    if expectDict and type(dictionary) is not dict:
+        print "Error, expected dictionary [out], type is", type(dictionary)
+        dictionary = dict()
+        badDict = True
     if pickleExists:
         pickleLoaded = loadWhenReady(fileRef,dictionary)
-        #failed = pickleLoaded == 'null'
-        length1 = len(pickleLoaded.keys())
-        if dictionary.keys() != pickleLoaded.keys():
+        if expectDict and type(pickleLoaded) is not dict:
+            badPickle = True
+            print "Error, expected dictionary [in], type is", type(pickleLoaded)
+        if badDict and badPickle:
+            print "Double error, setting dictionary to empty"
+        elif badDict:
             dictionary.update(pickleLoaded)
+        elif badPickle:
             needsWrite = True
         else:
-            needsWrite = False
+            length1 = len(pickleLoaded.keys())
+            if dictionary.keys() != pickleLoaded.keys():
+                dictionary.update(pickleLoaded)
+                needsWrite = True
+            else:
+                needsWrite = False
     else:
         needsWrite = True
     length2 = len(dictionary.keys())

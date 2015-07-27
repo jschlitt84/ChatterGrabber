@@ -63,6 +63,9 @@ while True:
             tempIO = open(pickleRef,'rb')
             tempPickle = cPickle.load(tempIO)
             tempIO.close()
+            if type(tempPickle) is str or type(tempPickle) is unicode:
+                problem = 'recognize'
+                1/0
             del tempPickle
             problem = 'back up'
             copyfile('caches/GeoPickle.txt','caches/GeoPickleBackUp.txt')

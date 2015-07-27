@@ -250,7 +250,7 @@ class giSeeker():
         else:
             print "No tweets found for date"
         print "Updating geoPickle"
-        updateGeoPickle(self.geoCache,self.cfg['Directory']+'caches/'+pickleName)
+        self.geoCache = updateGeoPickle(self.geoCache,getPickleName(self.cfg),self.cfg)
 
 
 
@@ -755,7 +755,7 @@ class giListener(tweepy.StreamListener):
         outFile.close()
         giListener.flushTweets(self) 
         print "Updating geoPickle"
-        updateGeoPickle(self.geoCache,self.cfg['Directory']+'caches/'+pickleName) 
+        self.geoCache = updateGeoPickle(self.geoCache,self.cfg['Directory']+'caches/'+pickleName) 
     
     def on_status(self, status):
         try:

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-import json, csv
+import ujson as json
+import csv
 import random
 import datetime,time
 import os, shutil
@@ -11,6 +12,7 @@ import TweetMatch
 import zipfile
 import subprocess
 import shlex
+import dbm
 
 import hashlib
 hasher = hashlib.md5()
@@ -42,37 +44,39 @@ dbTime = '%Y-%m-%d %H-%M-%S'
 gdiEmail = 'Subscriber Email,CC Email'
 gdiParams = 'Param Name,Param Key'
 gdiLists = 'Conditions,Qualifiers,Exclusions'
-pickleName = "GeoPickle.txt"
 
 
 
-
-def updateGeoPickle(dictionary,fileRef):
-    """Updates file & memory version of geoPickle"""
-    kwik.updateCache(dictionary,fileRef,25)
-    #old code   
-    """loadedLength = length1 = len(dictionary.keys())
-    pickleExists = os.path.isfile(fileRef)
-    if pickleExists:
-        pickleIn = openWhenReady(fileRef, "rb")
-        pickleLoaded = cPickle.load(pickleIn)
-        length1 = len(pickleLoaded.keys())
-        pickleIn.close()
-        if dictionary.keys() != pickleLoaded.keys():
-            dictionary.update(pickleLoaded)
-            needsWrite = True
-        else:
-            needsWrite = False      
-    else:
-        needsWrite = True
+def getPickleName(cfg):
+    types = {'pickle':'.txt',
+                'dbm':'DBM'}
+    try:
+        prefix = cfg['DBLocation']+'/'
+    except:
+        prefix = cfg['Directory']+'caches/'
+    return prefix+"GeoPickle"+types[cfg['GeoFormat']]
     
-    length2 = len(dictionary.keys())
-    if needsWrite and loadedLength != 0 or (length2-length1) > 25:
-        print "Updating master geoPickle,", length2-length1,"new locations added with",length2,"total in cache"
-        pickleOut = openWhenReady(fileRef,"wb")
-        cPickle.dump(dictionary, pickleOut)
-        pickleOut.close()
-        time.sleep(.5)"""
+
+def geoWrite(geo,ref,value,cfg):
+    if cfg['GeoFormat'] == 'pickle':
+        geo[ref] = value
+    else:
+        geo[TweetMatch.stripUnicode(ref)] = json.dumps(value)
+    
+def geoRead(geo,ref,cfg):
+    if cfg['GeoFormat'] == 'pickle':
+        return geo[ref]
+    else:
+        return json.loads(geo[TweetMatch.stripUnicode(ref)])
+    
+    
+def updateGeoPickle(dictionary,fileRef,cfg):
+    """Updates file & memory version of geoPickle"""
+    if cfg['GeoFormat'] == 'pickle':
+        kwik.updateCache(dictionary,fileRef,25)
+    else:
+        dictionary = dbm.open(fileRef,'c')
+    return dictionary  
         
 
 
@@ -110,10 +114,8 @@ def fillBox(cfg,self):
     
     isOffset = False
     while lon < maxLon:
-        #print(str(lat) + ", " + str(lon))
         while lat < maxLat:
             lat += dlat * 180.0/pi
-            #print('\t' + str(lat) + ", " + str(lon))
             box.append([lat, lon, circumrMiles])
  
         lat = minLat
@@ -441,6 +443,7 @@ def loadGDIAccount(gDocURL,directory):
     """Pulls subscriber info & settings from local config file"""
     fileIn = open(directory+'daemonScripts/'+'gdiAccounts')
     content = fileIn.readlines()
+    fileIn.close()
     found = False
     public = True
     _userName_ = _password_ = 'null'
@@ -708,6 +711,7 @@ def getLogins(directory, files):
             except:
                 fileIn = open(directory+fileName)
             content = fileIn.readlines()
+            fileIn.close()
             for item in content:
                 if ' = ' in item:
                     while '  ' in item:
@@ -831,14 +835,16 @@ def patientGeoCoder(request,cfg):
         delay *= cfg['Cores']
     while True:
         try:
-            return gCoder.geocode(request)
+            return gCoder.geocode(TweetMatch.stripUnicode(request))
         except:
-            tries +=1
-            if tries == limit+1 or not cfg['PatientGeocoding']:
-                if 'Cores' not in cfg.keys():
-                    print "\nUnable to geoCode", request, '\n'
+            if not cfg['PatientGeocoding']:
+                return "timeOut", ('NaN','NaN')
+            elif tries == limit+2:
+                #if 'Cores' not in cfg.keys():
+                #    print "Unable to geoCode", request, '\n'
                 return "timeOut", ('NaN','NaN')
             time.sleep(delay)
+            tries +=1
             
             
             
@@ -865,7 +871,7 @@ def isInBox(cfg,geoCache,status):
         if type(coordinates) is dict:
             coordinates = coordinates['coordinates']
             hasCoords = True
-    
+
     oldRef = (unicode(coordinates) + unicode(userLoc)).lower()
     if oldRef in geoCache.keys():
         cacheRef = oldRef
@@ -874,7 +880,7 @@ def isInBox(cfg,geoCache,status):
     if cacheRef in geoCache.keys():
         if 'Cores' not in cfg.keys():
             print "GEOCACHE: Inboxed from memory", cacheRef
-        loaded = geoCache[cacheRef]
+        loaded = geoRead(geoCache,cacheRef,cfg)
         if loaded['lat'] != 'NaN' and loaded['lon'] != 'NaN':
             place = loaded['place']
             coordinates = [loaded['lon'],loaded['lat']]
@@ -886,11 +892,9 @@ def isInBox(cfg,geoCache,status):
     elif 'Cores' not in cfg.keys() or True:       
         print "GEOCACHE: Looking up", cacheRef, len(geoCache.keys())
     
-    
     if type(coordinates) is list:
         coordsWork = len(coordinates) == 2
-        
-            
+                
     if (type(userLoc) is unicode or type(userLoc) is str) and userLoc != None and userLoc != "None" and not coordsWork:
         userLoc = stripUnicode(userLoc)
         if ':' in userLoc:
@@ -910,15 +914,14 @@ def isInBox(cfg,geoCache,status):
                 hasCoords = True
             except:
                 output = {'inBox':False,'text':'NoCoords','place':'NaN','lat':'NaN','lon':'NaN','trueLoc':coordsWork}
-                geoCache[cacheRef] = output
+                geoWrite(geoCache,cacheRef,output,cfg)
                 return output
    
     if not hasCoords:
         output = {'inBox':False,'text':'NoCoords','place':'NaN','lat':'NaN','lon':'NaN','trueLoc':coordsWork}
-        geoCache[cacheRef] = output
+        geoWrite(geoCache,cacheRef,output,cfg)
         return output
     else:
-        #status['coordinates'] = coordinates
         if not hasPlace:
             try:
                 place, (lat, lng) = patientGeoCoder(str(coordinates[1])+','+str(coordinates[0]),cfg)
@@ -935,18 +938,18 @@ def isInBox(cfg,geoCache,status):
     try:
         if sorted([cfg['Lat1'],cfg['Lat2'],coordinates[1]])[1] != coordinates[1]:
             output = {'inBox':False,'text':'HasCoords','place':place,'lat':coordinates[1],'lon':coordinates[0],'trueLoc':coordsWork}
-            geoCache[cacheRef] = output
+            geoWrite(geoCache,cacheRef,output,cfg)
             return output
         if sorted([cfg['Lon1'],cfg['Lon2'],coordinates[0]])[1] != coordinates[0]:
             output = {'inBox':False,'text':'HasCoords','place':place,'lat':coordinates[1],'lon':coordinates[0],'trueLoc':coordsWork}
-            geoCache[cacheRef] = output
+            geoWrite(geoCache,cacheRef,output,cfg)
             return output
         output =  {'inBox':True,'text':'InBox','place':place,'lat':coordinates[1],'lon':coordinates[0],'trueLoc':coordsWork}
-        geoCache[cacheRef] = output
+        geoWrite(geoCache,cacheRef,output,cfg)
         return output
     except:
         output = {'inBox':False,'text':'Error','place':place,'lat':coordinates[1],'lon':coordinates[0],'trueLoc':coordsWork}
-        geoCache[cacheRef] = output
+        geoWrite(geoCache,cacheRef,output,cfg)
         return output
 
 
@@ -984,26 +987,17 @@ def getGeo(cfg):
 
 
 def checkTweet(conditions, qualifiers, exclusions, text, cfg):
-  """Checks if tweet matches search criteria"""
-  text = text.lower()
-  foundCondition = False
-  foundQualifier = False
-  foundExclusion = False
+    """Checks if tweet matches search criteria"""
+    if not cfg['CaseSensitive']:
+        text = text.lower()
   
-  if "rt @" in text and not cfg['KeepRetweets']:
-    return "retweet"
-  else:
-    for word in exclusions:
-      if word in text:
-        foundExclusion = True
-    for word in conditions:
-      if word in text:
-        foundCondition = True
-        break
-    for word in qualifiers:
-      if word in text:
-        foundQualifier = True
-        break
+    if "rt @" in text and not cfg['KeepRetweets']:
+        return "retweet"
+
+    foundExclusion = len([None for word in exclusions if word in text]) != 0
+    foundCondition = len([None for word in conditions if word in text]) != 0
+    foundQualifier = len([None for word in qualifiers if word in text]) != 0
+        
     if foundCondition and foundExclusion:
         return "excluded"
     elif foundCondition and foundQualifier:
@@ -1030,7 +1024,6 @@ def jsonToDictFix(jsonIn):
             
             
             
-            
 def dictToJsonFix(jsonOut):
      """Error tolerant json converter"""
      for row in range(len(jsonOut)):
@@ -1050,6 +1043,7 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList, core, out_q, keep
     for fileName in fileList:
             inFile = open(directory+fileName)
             content = json.load(inFile)
+            inFile.close()
             filteredContent = []
             
             print "Core", core, "reclassifying", fileName, "by updated lists"
@@ -1065,8 +1059,6 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList, core, out_q, keep
                 count += 1
                 if count%250 == 0:
                     print "\tCore",core,count,"tweets sorted"
-                if count%cfg['PickleEvery'] == 0:
-                    updateGeoPickle(geoPickle,cfg['Directory']+'caches/'+pickleName)
                 tweet['text'] = tweet['text'].replace('\n',' ')
                 tweetType = checkTweet(lists['conditions'],lists['qualifiers'],lists['exclusions'], tweet['text'], cfg)
                 if tweetType in keepTypes:
@@ -1103,7 +1095,6 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList, core, out_q, keep
                 outFile.close()
             
     collectedContent = cleanJson(collectedContent,cfg,collectedTypes)  
-    #out_q.put({'content'+str(core):collectedContent,'types'+str(core):collectedTypes})
     print "Core", core, "tasks complete!"
     out_q.put({'content'+str(core):collectedContent})        
 
@@ -1114,9 +1105,6 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
     """Keeps old content up to date with latests queries & settings"""
     keepTypes = ['accepted']*cfg['KeepAccepted']+['partial']*cfg['KeepPartial']+['excluded']*cfg['KeepExcluded']
     homeDirectory = directory
-    #manager = Manager()
-    #pickleMgmt = manager.dict(geoCache)
-    #pickleMgmt = geoCache
     
     print "Preparing to reformat from raw tweets..."
     if cfg['OutDir'] not in directory.lower():
@@ -1136,14 +1124,13 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
         collectedContent = []
         fileList = filter(lambda i: not os.path.isdir(directory+i), fileList)
         random.shuffle(fileList)
-        cores = max(cpu_count()/2,2)
+        cores = max(cpu_count()-2,2)
         cfg['Cores'] = cores
         out_q = Queue()
         block =  int(ceil(len(fileList)/float(cores)))
         processes = []
 
         for i in range(cores):
-        #for i in range(1):
             p = Process(target = getReformatted, args = (directory, lists, cfg, geoCache, fileList[block*i:block*(i+1)], i, out_q, keepTypes, NLPClassifier))
             processes.append(p)
             p.start() 
@@ -1156,17 +1143,13 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
         print "Processes complete, merging output"
            
         for i in range(cores):
-            #print merged['content'+str(i)]
 	    collectedContent += merged['content'+str(i)]
-            #collectedTypes.append(merged['types'+str(i)])
             
         print "Returning updated geoPickle"
-        #geoCache = dict(pickleMgmt.items())
-        updateGeoPickle(geoCache,cfg['Directory']+'caches/'+pickleName)
+        geoCache = updateGeoPickle(geoCache,getPickleName(cfg),cfg)
        
 	outName = cfg['FileName']+"_CollectedTweets"
-        
-	#print "DEBOOO1", len(collectedContent)
+    
 
         print "Writing collected tweets to "+outName+".json"
         with open(directory+outName+'.json', 'w') as outFile:
@@ -1174,9 +1157,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
         outFile.close()
         print "...complete"
         
-	#print "DEBOOO2", len(collectedContent)
         jsonToDictFix(collectedContent)
-	#print "DEBOOO3", len(collectedContent)
 	collectedContent = uniqueJson(collectedContent)        
         
         if len(collectedContent) == 0:
@@ -1201,19 +1182,17 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                         collectedContent[pos][key] = 'NaN'
                     else:
                         collectedContent[pos][key] = stripUnicode(collectedContent[pos][key])
-            #print "DEBOOO4", len(collectedContent)
+
             if cfg['OnlyKeepNLP'] != False and not cfg['KeepDiscardsNLP']:
   		collectedContent = [entry for entry in collectedContent if str(entry['NLPCat']) in cfg['OnlyKeepNLP']]
-  	    #print "DEBOOO5", len(collectedContent)
+
             if cfg['Sanitize'] != False:
                 collectedContent = [sanitizeTweet(tweet,cfg) for tweet in collectedContent]
-	    #print "DEBOOO6", len(collectedContent)
+
             
             fileName = directory+outName+'.csv'
             fileNameOld = directory+outName+'Old.csv'
             
-             
-            #csvFile = directory+outName+'.csv' 
                 
             print "Writing collected tweets to "+outName+".csv"   
             outFile = open(fileName, "w") 
@@ -1453,13 +1432,16 @@ def getConfig(directory):
 		'SendFigures':False,'SendAfter':0,
 		'ShowMap':'blue marble','ExtraCategories':'null',
 		'AutoUpdate':False,'MediaData':{},
-		'RunScript':False}
+		'RunScript':False,'GeoFormat':'dbm',
+		'DBLocation':'/Volumes/USB20FD/database/chattergrabber',
+		'CaseSensitive':False}
     
     if type(directory) is str:
         if directory == "null":
             directory = ''
         fileIn = open(directory)
         content = fileIn.readlines()
+        fileIn.close()
         useGDI = False
         for pos in range(len(content)):
             item = content[pos]
