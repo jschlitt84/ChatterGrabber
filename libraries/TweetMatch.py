@@ -379,7 +379,7 @@ def getClassifier(tweetfile,cfg):
 
             
 def getAccuracy(toRun,mode,degrees,n,percent,classifications,rOutput,cfg,core,out_q):
-	if True:
+	try:
 	    #print rOutput[0:3]
 	    sens = dict()
 	    spec = dict()
@@ -462,7 +462,7 @@ def getAccuracy(toRun,mode,degrees,n,percent,classifications,rOutput,cfg,core,ou
 	    
 	       
 	    out_q.put(outDict)
-	else:
+	except:
 		print "Subprocesses failed, returning error"
 		outDict['failed'] = True
 		out_q.put(outDict)
