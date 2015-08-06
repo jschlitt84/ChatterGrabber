@@ -1,5 +1,5 @@
 import sys
-from TweetMatch import *
+from TweetMatchTest import *
 from os import getcwd, mkdir, path
 from copy import deepcopy
 from pandas import read_csv
@@ -155,10 +155,11 @@ def main(args,user):
                 	sweepOut.write("percent,count,accuracy,stdDev,"+catCols+"\n")
                 	sweepOut.close()
                 for x in sweepRange:
-                    #accuracy,std,truePercent,count,sensScores,specScores = evalAccuracy(mode,degree,iterations,x,cores,deepcopy(classifications),outPut,cfg)
-		    temp = evalAccuracy(mode,degree,iterations,x,cores,deepcopy(classifications),outPut,cfg)
+                    temp = evalAccuracy(mode,degree,iterations,x,cores,deepcopy(classifications),outPut,cfg)
 		    if temp != 'failed':
-			accuracy,std,truePercent,count,sensScores,specScores = temp
+			#accuracy,std,truePercent,count,sensScores,specScores = temp
+                        truePercent,count,sensScores,specScores = temp
+                        accuracy = std = 'NaN'
                         if call != 'mendel':
 		                sweepOut = open(sweepFile,'a+b')
 		                summary = "Trainer: %s    Percent: %s    Mode: %s    Degrees: %s    Accuracy: %s    StdDev: %s" % (inFile,truePercent,mode,degree,str(accuracy)[0:5], str(std)[0:3])

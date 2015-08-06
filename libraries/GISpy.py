@@ -1433,7 +1433,7 @@ def getConfig(directory):
 		'ShowMap':'blue marble','ExtraCategories':'null',
 		'AutoUpdate':False,'MediaData':{},
 		'RunScript':False,'GeoFormat':'dbm',
-		'DBLocation':'/Volumes/USB20FD/database/chattergrabber',
+		'DBLocation':None,
 		'CaseSensitive':False}
     
     if type(directory) is str:
