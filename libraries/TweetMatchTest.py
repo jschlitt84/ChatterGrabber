@@ -405,7 +405,7 @@ def getAccuracy(toRun,mode,degrees,n,percent,classifications,rOutput,cfg,core,ou
 	    print "\033[1mReducing scoring set of size %s to %s%% random training set with %s entries for %s iterations and %s scored posts\033[0m\n" % (scored,percent*100,percentLength,n,remainder)	
 	
 	    for iteration in toRun:
-                scoringSet = deepcopy(index)[iteration*remainder::remainder]	
+                scoringSet = deepcopy(index)[iteration*remainder:(iteration+1)*remainder]	
 		trainingSet = list(set(index)-set(scoringSet))
 		
 		toTrain = [deepcopy(rOutput[item]) for item in trainingSet]
