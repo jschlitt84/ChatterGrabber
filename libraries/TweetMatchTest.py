@@ -411,9 +411,6 @@ def getAccuracy(toRun,mode,degrees,n,percent,classifications,rOutput,cfg,core,ou
 		toTrain = [deepcopy(rOutput[item]) for item in trainingSet]
 		toScore = [deepcopy(rOutput[item]) for item in scoringSet]
 		
-		print "DEBOOF",len(toTrain),len(toScore),toRun,remainder,iteration
-		print "DEBOOF2",len(scoringSet),len(trainingSet),toRun,remainder,iteration
-		
 		totals,classifications =  getTotals(toScore)
 		    
 		allCount = sum(totals.values())
@@ -457,9 +454,7 @@ def getAccuracy(toRun,mode,degrees,n,percent,classifications,rOutput,cfg,core,ou
                                                 
             
 def evalAccuracy(mode,degrees,n,percent,cores,classifications,outPut,cfg):
-    sensScores = dict(); specScores = dict()
-    scores = []
-    merged = {}
+    sensScores = dict(); specScores = dict(); merged = {}
     
     allCats = deepcopy(classifications)
     coreSweep = range(cores)
@@ -467,8 +462,7 @@ def evalAccuracy(mode,degrees,n,percent,cores,classifications,outPut,cfg):
     iterationNumber = range(n)
     out_q = Queue()
     block =  int(ceil(n/float(cores)))
-    processes = []
-    toDel = []
+    processes = []; toDel = []
     rOutput = deepcopy(outPut)
     shuffle(rOutput) 
     for i in range(cores):
@@ -495,18 +489,16 @@ def evalAccuracy(mode,degrees,n,percent,cores,classifications,outPut,cfg):
         specScores[category] = []
     
     for i in range(n):
-        scores.append(merged['scores'+str(i)])
         for category in allCats:
 	    if ('sensScores'+'_'+category+'_'+str(i)) in merged.keys():
         	sensScores[category].append(merged['sensScores'+'_'+category+'_'+str(i)])
         	specScores[category].append(merged['specScores'+'_'+category+'_'+str(i)])
     print "DEBOO", sensScores, specScores
     for category in allCats:
-        #print 'DEBOOO', category
         sensScores[category] = mean(sensScores[category])
         specScores[category] = mean(specScores[category])
     
-    return mean(scores),std(scores),percent,merged['toTrain0'],sensScores,specScores
+    return percent,merged['toTrain0'],sensScores,specScores
 
 
 
