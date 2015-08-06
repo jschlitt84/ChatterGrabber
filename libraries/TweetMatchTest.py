@@ -168,6 +168,10 @@ def getTotals(content):
         if category not in totals.keys():
             totals[category] = 0
         totals[category] += 1
+        
+    print "Unique classifications found:",classifications 
+    print "Occurrences:", totals
+        
     return totals,classifications
             
                       
@@ -175,9 +179,6 @@ def prepClassifications(content):
     prepped = dict()
     
     totals,classifications =  getTotals(content)
-        
-    print "Unique classifications found:",classifications 
-    print "Occurrences:", totals
         
     prepped = dict()
     for classification in classifications:
