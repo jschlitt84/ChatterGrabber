@@ -176,10 +176,7 @@ def getTotals(content):
             
                       
 def prepClassifications(content):
-    prepped = dict()
-    
-    totals,classifications =  getTotals(content)
-        
+    totals,classifications =  getTotals(content) 
     prepped = dict()
     for classification in classifications:
         prepped[classification] = [entry for entry in content if str(entry['category']) == classification]
@@ -413,6 +410,8 @@ def getAccuracy(toRun,mode,degrees,n,percent,classifications,rOutput,cfg,core,ou
 		
 		toTrain = [deepcopy(rOutput[item]) for item in trainingSet]
 		toScore = [deepcopy(rOutput[item]) for item in scoringSet]
+		
+		print "DEBOOF",len(toTrain),len(toScore)
 		
 		totals,classifications =  getTotals(toScore)
 		    
