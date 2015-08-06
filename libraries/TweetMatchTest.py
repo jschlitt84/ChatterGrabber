@@ -489,7 +489,7 @@ def evalAccuracy(mode,degrees,n,percent,cores,classifications,outPut,cfg):
 	    if ('sensScores'+'_'+category+'_'+str(i)) in merged.keys():
         	sensScores[category].append(merged['sensScores'+'_'+category+'_'+str(i)])
         	specScores[category].append(merged['specScores'+'_'+category+'_'+str(i)])
-    print "DEBOO", sensScores, specScores
+    #print "DEBOO", sensScores, specScores
     for category in allCats:
         sensScores[category] = mean(sensScores[category])
         specScores[category] = mean(specScores[category])
