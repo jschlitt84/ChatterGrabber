@@ -411,8 +411,8 @@ def getAccuracy(toRun,mode,degrees,n,percent,classifications,rOutput,cfg,core,ou
 		toTrain = [deepcopy(rOutput[item]) for item in trainingSet]
 		toScore = [deepcopy(rOutput[item]) for item in scoringSet]
 		
-		print "DEBOOF",len(toTrain),len(toScore),toRun,remainder
-		print "DEBOOF2",len(scoringSet),len(trainingSet),toRun,remainder
+		print "DEBOOF",len(toTrain),len(toScore),toRun,remainder,iteration
+		print "DEBOOF2",len(scoringSet),len(trainingSet),toRun,remainder,iteration
 		
 		totals,classifications =  getTotals(toScore)
 		    
