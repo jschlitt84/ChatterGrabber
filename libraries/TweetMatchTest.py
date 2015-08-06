@@ -415,13 +415,9 @@ def getAccuracy(toRun,mode,degrees,n,percent,classifications,rOutput,cfg,core,ou
 		    
 		allCount = sum(totals.values())
 		
-		print "DEBOOTOTALs",totals
 		for category in allCats:
 		    sens[category] = 100.; spec[category] = 100.
-		    if totals[category] != 0:          
-		        sensDelta[category] = 100./totals[category]
-		    else:
-		        sensDelta[category] = 'no one will ever see this...'
+		    sensDelta[category] = 100./totals[category]
 		    specDelta[category] = 100./(allCount-totals[category])
 		  
 		if type(cfg) != dict:
