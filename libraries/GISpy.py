@@ -59,6 +59,7 @@ def getPickleName(cfg):
 
 def geoWrite(geo,ref,value,cfg):
     #print "DEBOO WRITE START"
+    #print "DEBOO WRITE {%s, %s}" % (ref, TweetMatch.stripUnicode(ref))
     if cfg['GeoFormat'] == 'pickle':
         geo[ref] = value
     else:
@@ -321,14 +322,21 @@ def sendCSV(cfg, directory,extra = ''):
             figPrefix = directory+cfg['FileName']
             makeWeekFig = True
             
-            if trackCats or makeExtra:			               
+            if trackCats or makeExtra:	
+                #print "Debooo Check 2"; time.sleep(5)		               
     
                 fig = vis.groupHourly(weekSubsets, catListWeek, "%s Hourly Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,weekAgoLocal),  cfg['TimeOffset'], show = False, truncate = False)
+                #print "Debooo Check 2.1"; time.sleep(5)	
                 figureLinks.append(vis.cleanSave(fig,figPrefix+'WeekByHour'+format,'fig'))
+                #print "Debooo Check 2.2"; time.sleep(5)	
                 fig = vis.groupHourly(monthSubsets, catListMonth, "%s Hourly Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,monthAgoLocal),  cfg['TimeOffset'], show = False, truncate = False)  
+                #print "Debooo Check 2.3"; time.sleep(5)	
                 figureLinks.append(vis.cleanSave(fig,figPrefix+'MonthByHour'+format,'fig'))
+                #print "Debooo Check 2.4"; time.sleep(5)	
                 fig = vis.groupDaily(monthSubsets, catListMonth, "%s Daily Tweet Distribution from %s - %s" % (cfg['FileName'],nowLocal,monthAgoLocal),  cfg['TimeOffset'], show = False, truncate = False) 
+                #print "Debooo Check 2.5"; time.sleep(5)	
                 figureLinks.append(vis.cleanSave(fig,figPrefix+'MonthByDay'+format,'fig'))
+                #print "Debooo Check 2.6"; time.sleep(5)
                 try:
                     fig = vis.dailyDistributionPlot(monthSubsets,catListMonth,"%s Tweet Volume" % (cfg['FileName']),cfg['TimeOffset'],24,overlay = False,show = False)
                     figureLinks.append(vis.cleanSave(fig,figPrefix+'TimeSeries'+format,'fig'))
@@ -336,6 +344,7 @@ def sendCSV(cfg, directory,extra = ''):
                 except Exception as e:
                     print "Time series generation failed, error:", e
                     madeTS = False
+                #print "Debooo Check3"; time.sleep(5)
  
                 for pos in range(len(catListWeek)):
                     fig = vis.mapSubject(weekSubsets[pos],"Cat: "+catListWeek[pos], show = False, offset=cfg['TimeOffset'], background = cfg['ShowMap'])
@@ -346,6 +355,7 @@ def sendCSV(cfg, directory,extra = ''):
                         figureLinks.append(vis.cleanSave(fig,figPrefix+'WeekCloud_%s%s' % (catListWeek[pos],format),'fig'))
                     except:
                         None
+                #print "Debooo Check 4"; time.sleep(5)
                 for pos in range(len(catListMonth)):
                     anim, animFile, extrafig = vis.animateMap(monthSubsets[pos],"Cat: "+catListMonth[pos], show = False, makeGif=False, offset=cfg['TimeOffset'], background = cfg['ShowMap'])
                     figureLinks.append(animFile+'.mp4')
@@ -357,6 +367,7 @@ def sendCSV(cfg, directory,extra = ''):
                 
                     
             else:
+                #print "Debooo Check 5"; time.sleep(5)
                 monthName = monthData['name']
                 weekName = weekData['name']
                 weekData['name'] = weekName + " Hourly Tweet Distribution from %s - %s" % (nowLocal,weekAgoLocal)
@@ -384,7 +395,7 @@ def sendCSV(cfg, directory,extra = ''):
                 if extrafig != 'null':
                     figureLinks.append(vis.cleanSave(extrafig,figPrefix+'MonthCluster'+format,'fig'))
                 figureLinks.append(animFile+'.mp4')
-            
+            #print "Debooo Check 6"; time.sleep(5)
             if makeWeekFig:
                 fig = vis.mapSubject(weekData,"Keyword Search", show = False, offset=cfg['TimeOffset'], background = cfg['ShowMap'])
                 figureLinks.append(vis.cleanSave(fig,figPrefix+'WeekMapped'+format,'fig'))
@@ -392,30 +403,35 @@ def sendCSV(cfg, directory,extra = ''):
             else:
                 attachedMap = open(figPrefix+'WeekMapped_%s%s' % (catListWeek[0],format), 'rb') 
                 
-                
+            #print "Debooo Check 7"; time.sleep(5)   
             img = MIMEImage(attachedMap.read())
             img.add_header('Content-Disposition', 'attachment; filename="%sWeekMapped%s"' % (cfg['FileName'],format))
             msg.attach(img)
             attachedMap.close()
-            
+            #print "Debooo Check 8"; time.sleep(60)
             if madeTS:
+                #print "Debooo Check 8.1"; time.sleep(5)
                 attachedSeries = open(figPrefix+'TimeSeries'+format, 'rb') 
+                #print "Debooo Check 8.2"; time.sleep(5)
                 img = MIMEImage(attachedSeries.read())
+                #print "Debooo Check 8.3"; time.sleep(5)
                 img.add_header('Content-Disposition', 'attachment; filename="%sTimeSeries.%s"' % (cfg['FileName'],format))
+                #print "Debooo Check 8.4"; time.sleep(5)
                 msg.attach(img)
+                #print "Debooo Check 8.5"; time.sleep(5)
                 attachedSeries.close()
+                #print "Debooo Check 8.6"; time.sleep(5)
         else:    
         #except Exception as e:
             print "\n\nFigure generation failed, was this needed?"
-        #    print e,'\n\n\n'
 
     extra += reformatTags(getTags(cfg,weekSubsets,catListWeek),cfg)
-
+    #print "Debooo Check 8.7"; time.sleep(5)	
     if cfg['SendLinks']:
         extra += "\nLink analysis for the past 7 days for categories %s:\n" % str(worthShowing).replace("'",'')
         extra += vis.checkLinks(worthShowingWeek['data'],n=250, shown = 5, linkfreq=1, cfg=cfg)
         extra += '\n\nPlease note, with gmail and certain clients, link analysis links may appear as attachments.'
-    
+    #print "Debooo Check 9"; time.sleep(5)
     body += extra
     msg.attach(MIMEText(body))
     print extra
@@ -425,13 +441,13 @@ def sendCSV(cfg, directory,extra = ''):
     print "Preparing to send zipped CSV file:", attachmentZip           
     
     attachment = zipData([attachmentCsv]+figureLinks,directory,'CollectedTweets','',cfg, purge = True)
-
+    #print "Debooo Check 10"; time.sleep(5)
     #print '\n',msg.as_string()
     
     part = MIMEBase('application', 'octet-stream')
     part.set_payload(open(attachment, 'rb').read())
     Encoders.encode_base64(part)
-
+    #print "Debooo Check 11"; time.sleep(5)
     part.add_header('Content-Disposition',
             'attachment; filename="%s"' % os.path.basename(attachment))
     msg.attach(part)
@@ -444,7 +460,8 @@ def sendCSV(cfg, directory,extra = ''):
     mailServer.sendmail(cfg['GDI']['UserName'],recipients, msg.as_string())
  
     mailServer.close()
-    print "File sent succesfully!" 
+    print "File sent succesfully!"
+    quit() 
 
 
     
@@ -881,25 +898,23 @@ def isInBox(cfg,geoCache,status):
         if type(coordinates) is dict:
             coordinates = coordinates['coordinates']
             hasCoords = True
-    #print "DEBOO INBOX3"
     try:
-        #print "DEBOO INBOXA"
         oldRef = (unicode(coordinates) + unicode(userLoc)).lower()
         temp = geoCache[oldRef]
         cacheRef = oldRef
         hasKey = True
-        #print "DEBOO INBOXB"
     except:
-        #print "DEBOO INBOXC"
         cacheRef = stripUnicode(unicode(coordinates) + (not hasCoords)*unicode(userLoc)).lower()
-        hasKey = False
-        #print "DEBOO INBOXD"
+        try:
+            temp = geoCache[cacheRef]
+            hasKey = True
+        except:
+            hasKey = False
+            
     if hasKey:
-        #print "DEBOO INBOXF"
         if 'Cores' not in cfg.keys():
             print "GEOCACHE: Inboxed from memory", cacheRef
         loaded = geoRead(geoCache,cacheRef,cfg)
-        #print "DEBOO INBOXE"
         if loaded['lat'] != 'NaN' and loaded['lon'] != 'NaN':
             place = loaded['place']
             coordinates = [loaded['lon'],loaded['lat']]
@@ -907,12 +922,9 @@ def isInBox(cfg,geoCache,status):
             hasCoords = True
             coordsWork = True
         else:
-            #print "DEBOO INBOXF"
             return loaded
-    elif 'Cores' not in cfg.keys() or True:
-        #print "DEBOO INBOXG"       
+    elif 'Cores' not in cfg.keys() or True:    
         print "GEOCACHE: Looking up", cacheRef
-        #print "DEBOO INBOXH"
     
     if type(coordinates) is list:
         coordsWork = len(coordinates) == 2

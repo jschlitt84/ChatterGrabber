@@ -11,7 +11,7 @@ format = "\033[91m\033[1m"
 end = "\033[0m"
 secondsPerDay = 86400
 daysToRefresh = 3
-delay = 1800
+delay = 360
 count = 0
 sleepEvery = (secondsPerDay*daysToRefresh)/delay
 
@@ -44,16 +44,15 @@ while True:
     running = set()
     
     ps = subprocess.Popen(['ps', 'aux'], stdout=subprocess.PIPE).communicate()[0]
-    processes = ps.split('\n')
+    processes = [process for process in ps.split('\n') if 'python' in process.lower()]
     
     print "\n"
     for process in processes:
-        if 'python' in process:
-            for url in urls:
-                if url in process:
-                    foundUrl = process[process.index('https://'):]
-                    print format+"RUNNING:",foundUrl,end
-                    running.add(foundUrl)
+        for url in urls:
+            if url in process:
+                foundUrl = process[process.index('https://'):]
+                print format+"RUNNING:",foundUrl,end
+                running.add(foundUrl)
                
     if count%sleepEvery == 0:
         pickleRef = 'caches/GeoPickle.txt'
@@ -80,7 +79,7 @@ while True:
     for url in notRunning:
         try:
             subprocess.Popen(['python','TwitterSpout.py', url])
-            sleep(60)
+            sleep(20)
         except:
             print "Process",url,"has stopped"
             None

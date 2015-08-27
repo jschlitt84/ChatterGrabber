@@ -15,10 +15,10 @@ from dateutil import parser
 from matplotlib.dates import DateFormatter, date2num, num2date
 from copy import deepcopy
 from time import sleep
-from geopy.distance import great_circle, vincenty
-from math import sqrt,pow
+from geopy.distance import vincenty
+from math import pow
 
-from mpl_toolkits.basemap import Basemap, cm
+from mpl_toolkits.basemap import Basemap
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.animation as animation
 #from IPython.display import HTML
@@ -28,8 +28,6 @@ weekList = ['zero','Mon','Tue','Wed','Thu','Fri','Sat','Sun','null']
 weekNum = [-1,0,1,2,3,4,5,6,7]
 
 #Wordcloud dependencies
-import nltk
-import sys
 import unicodedata
 
 from nltk.stem.wordnet import WordNetLemmatizer
@@ -44,7 +42,6 @@ lmtzr = WordNetLemmatizer()
 
 #Timeline dependencies
 import subprocess
-import os
 
 def cleanSave(content,directory,mode,**kwargs):
     try:
@@ -59,7 +56,8 @@ def cleanSave(content,directory,mode,**kwargs):
         content.close()
     except Exception as e:
         print "Figure",directory,'save failed, error:', e
-        return 'null'
+        directory = 'null'
+    del content
     return directory
 
 def printSample(data,title,length):
@@ -197,7 +195,6 @@ def groupHourly(dataGroup, names, title, timeShift, stacked=True, show=True ,tru
     toPlot = []
     namesShown = []
     for pos in range(len(dataGroup)):
-    #for dataIn in dataGroup:
         if len(dataGroup[pos]['data']) > 0:
             if truncate:
                 data = truncData(dataGroup[pos]['data'],"hour")
@@ -665,7 +662,7 @@ def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
                timeStamp=False,highlight=False,heatmap=True,mark='r',
                cmap='YlOrRd',makeVideo=True,makeGif=True,show=True,
                offset=0, showCluster = True, background = 'none'):
-    
+    #print "HERE AND NOW"
     days = getDays(dataSet)
     length = len(days)
     plots = []; daySubs = []
