@@ -1,7 +1,7 @@
 import sys, os
 sys.path.insert(0, 'libraries')
 
-import json
+import ujson
 import tweepy
 import time
 import random
@@ -140,8 +140,8 @@ def main():
         else:
             login = getLogins(directory,[temp['login']])[temp['login']]
         cfg['Directory'] = directory
-        geoCache = dict()
-        geoCache = updateGeoPickle(geoCache,getPickleName(cfg),cfg)
+        #geoCache = dict()
+        geoCache = updateGeoPickle({},getPickleName(cfg),cfg)
         
         if cfg['OnlyKeepNLP'] != False:
             temp = cfg['OnlyKeepNLP']
@@ -172,8 +172,8 @@ def main():
         cfg['ConfigFile'] = configFile
         logins = getLogins(directory, cfg['Logins'])
         lists = updateWordBanks(directory, cfg)
-        geoCache = dict()
-        geoCache = updateGeoPickle(geoCache,directory+'caches/'+pickleName)
+        #geoCache = dict()
+        geoCache = updateGeoPickle({},directory+'caches/'+pickleName)
 	if not skipReformat:        
 		reformatOld(directory,lists,cfg,geoCache,NLPClassifier) 
 		if quickReformat:

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import ujson as json
+#import json
 import csv
 import random
 import datetime,time
@@ -7,7 +8,6 @@ import os, shutil
 import unicodedata
 import tweepy
 import smtplib
-import cPickle
 import TweetMatch
 import zipfile
 import subprocess
@@ -29,12 +29,12 @@ from email.mime.image import MIMEImage
 from email import Encoders
 #from base64 import encodebytes
 
-from copy import deepcopy, copy
+from copy import deepcopy
 from geopy.distance import great_circle
 from geopy import geocoders
 from dateutil import parser
 from math import pi, cos, ceil
-from multiprocessing import Process, Queue, cpu_count, Manager
+from multiprocessing import Process, Queue, cpu_count
 from operator import itemgetter
 from GetDeltas import getDeltas
 
@@ -54,28 +54,38 @@ def getPickleName(cfg):
         prefix = cfg['DBLocation']+'/'
     except:
         prefix = cfg['Directory']+'caches/'
-    return prefix+"GeoPickle"+types[cfg['GeoFormat']]
+    return prefix+"GeoPickle"+types[cfg['GeoFormat'].lower()]
     
 
 def geoWrite(geo,ref,value,cfg):
+    #print "DEBOO WRITE START"
     if cfg['GeoFormat'] == 'pickle':
         geo[ref] = value
     else:
         geo[TweetMatch.stripUnicode(ref)] = json.dumps(value)
+    #print "DEBOO WRITE FINISH"
     
 def geoRead(geo,ref,cfg):
+    #print "DEBOO READ START"
     if cfg['GeoFormat'] == 'pickle':
         return geo[ref]
     else:
-        return json.loads(geo[TweetMatch.stripUnicode(ref)])
+        try:
+            temp = json.loads(geo[TweetMatch.stripUnicode(ref)])
+        except:
+            temp = json.loads(geo[ref])
+    #print "DEBOO READ FINISH"
+    return temp
     
     
 def updateGeoPickle(dictionary,fileRef,cfg):
+    #print "DEBOO UPDATE START"
     """Updates file & memory version of geoPickle"""
     if cfg['GeoFormat'] == 'pickle':
         kwik.updateCache(dictionary,fileRef,25)
     else:
         dictionary = dbm.open(fileRef,'c')
+    #print "DEBOO UPDATE FINISH"
     return dictionary  
         
 
@@ -110,7 +120,7 @@ def fillBox(cfg,self):
     
     # coordinate offsets in radians
     dlat = (inr*2)/earthr
-    dlon = circumOffset/(earthr*cos(pi*lat/180))
+    #dlon = circumOffset/(earthr*cos(pi*lat/180))
     
     isOffset = False
     while lon < maxLon:
@@ -207,7 +217,7 @@ def sendCSV(cfg, directory,extra = ''):
 	dataSet = vis.getGeoSub(dataSet,box,'')
         
         try:
-            times =  [parser.parse(time) for time in list(dataSet['data']['created_at'])]
+            times =  [parser.parse(postTime) for postTime in list(dataSet['data']['created_at'])]
             now = max(times)
         except:
             times =  list(dataSet['data']['created_at'])
@@ -823,8 +833,6 @@ def geoString(geo):
     return str(geo).replace(' ','')[1:-1]+'mi'   
 
 
-
-
 def patientGeoCoder(request,cfg):
     """Patient geocoder, will wait if API rate limit hit"""
     gCoder = geocoders.GoogleV3()
@@ -835,7 +843,9 @@ def patientGeoCoder(request,cfg):
         delay *= cfg['Cores']
     while True:
         try:
-            return gCoder.geocode(TweetMatch.stripUnicode(request))
+            result = gCoder.geocode(TweetMatch.stripUnicode(request))
+            print '\t',result
+            return result
         except:
             if not cfg['PatientGeocoding']:
                 return "timeOut", ('NaN','NaN')
@@ -850,6 +860,7 @@ def patientGeoCoder(request,cfg):
             
 
 def isInBox(cfg,geoCache,status):
+    #print "DEBOO INBOX START"
     """Returns true if coord is within lat/lon box, false if not"""
     #http://code.google.com/p/geopy/wiki/GettingStarted
     #gCoder = geocoders.GoogleV3()
@@ -857,7 +868,6 @@ def isInBox(cfg,geoCache,status):
     hasPlace = False
     coordsWork = False
     place = 'NaN'
-    fromFile = False
 
     if type(status) is dict:
         userLoc = status['user']['location']
@@ -871,16 +881,25 @@ def isInBox(cfg,geoCache,status):
         if type(coordinates) is dict:
             coordinates = coordinates['coordinates']
             hasCoords = True
-
-    oldRef = (unicode(coordinates) + unicode(userLoc)).lower()
-    if oldRef in geoCache.keys():
+    #print "DEBOO INBOX3"
+    try:
+        #print "DEBOO INBOXA"
+        oldRef = (unicode(coordinates) + unicode(userLoc)).lower()
+        temp = geoCache[oldRef]
         cacheRef = oldRef
-    else:
-        cacheRef = (unicode(coordinates) + (not hasCoords)*unicode(userLoc)).lower()
-    if cacheRef in geoCache.keys():
+        hasKey = True
+        #print "DEBOO INBOXB"
+    except:
+        #print "DEBOO INBOXC"
+        cacheRef = stripUnicode(unicode(coordinates) + (not hasCoords)*unicode(userLoc)).lower()
+        hasKey = False
+        #print "DEBOO INBOXD"
+    if hasKey:
+        #print "DEBOO INBOXF"
         if 'Cores' not in cfg.keys():
             print "GEOCACHE: Inboxed from memory", cacheRef
         loaded = geoRead(geoCache,cacheRef,cfg)
+        #print "DEBOO INBOXE"
         if loaded['lat'] != 'NaN' and loaded['lon'] != 'NaN':
             place = loaded['place']
             coordinates = [loaded['lon'],loaded['lat']]
@@ -888,13 +907,16 @@ def isInBox(cfg,geoCache,status):
             hasCoords = True
             coordsWork = True
         else:
+            #print "DEBOO INBOXF"
             return loaded
-    elif 'Cores' not in cfg.keys() or True:       
-        print "GEOCACHE: Looking up", cacheRef, len(geoCache.keys())
+    elif 'Cores' not in cfg.keys() or True:
+        #print "DEBOO INBOXG"       
+        print "GEOCACHE: Looking up", cacheRef
+        #print "DEBOO INBOXH"
     
     if type(coordinates) is list:
         coordsWork = len(coordinates) == 2
-                
+    #print "DEBOO INBOX4"           
     if (type(userLoc) is unicode or type(userLoc) is str) and userLoc != None and userLoc != "None" and not coordsWork:
         userLoc = stripUnicode(userLoc)
         if ':' in userLoc:
@@ -907,16 +929,17 @@ def isInBox(cfg,geoCache,status):
         if not hasCoords:
             #lookup coords by location name
             try:
-                userLoc = str(userLoc).replace('Va','Virginia')
+                userLoc = str(userLoc)
                 place, (lat, lng) = patientGeoCoder(userLoc,cfg)
-                time.sleep(.15); coordinates = [lng,lat] 
+                time.sleep(.15)
+                coordinates = [lng,lat] 
                 hasPlace = True
                 hasCoords = True
-            except:
+            except Exception,err:
                 output = {'inBox':False,'text':'NoCoords','place':'NaN','lat':'NaN','lon':'NaN','trueLoc':coordsWork}
                 geoWrite(geoCache,cacheRef,output,cfg)
                 return output
-   
+    #print "DEBOO INBOX5"
     if not hasCoords:
         output = {'inBox':False,'text':'NoCoords','place':'NaN','lat':'NaN','lon':'NaN','trueLoc':coordsWork}
         geoWrite(geoCache,cacheRef,output,cfg)
@@ -932,6 +955,7 @@ def isInBox(cfg,geoCache,status):
     if place == None or place == 'None':
         place = 'NaN'
     
+    #print "DEBOO INBOX FINISH"
     if place == "timeOut":
         return {'inBox':False,'text':'NoCoords','place':'NaN','lat':'NaN','lon':'NaN','trueLoc':coordsWork}
         
@@ -948,6 +972,7 @@ def isInBox(cfg,geoCache,status):
         geoWrite(geoCache,cacheRef,output,cfg)
         return output
     except:
+        #print "DEBOOO3"
         output = {'inBox':False,'text':'Error','place':place,'lat':coordinates[1],'lon':coordinates[0],'trueLoc':coordsWork}
         geoWrite(geoCache,cacheRef,output,cfg)
         return output
@@ -1046,7 +1071,7 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList, core, out_q, keep
             inFile.close()
             filteredContent = []
             
-            print "Core", core, "reclassifying", fileName, "by updated lists"
+            print "Thread", core, "reclassifying", fileName, "by updated lists"
             
             if lists != "null":
                 jsonToDictFix(content)
@@ -1058,7 +1083,7 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList, core, out_q, keep
             for tweet in content:
                 count += 1
                 if count%250 == 0:
-                    print "\tCore",core,count,"tweets sorted"
+                    print "\tThread",core,count,"tweets sorted"
                 tweet['text'] = tweet['text'].replace('\n',' ')
                 tweetType = checkTweet(lists['conditions'],lists['qualifiers'],lists['exclusions'], tweet['text'], cfg)
                 if tweetType in keepTypes:
@@ -1095,7 +1120,7 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList, core, out_q, keep
                 outFile.close()
             
     collectedContent = cleanJson(collectedContent,cfg,collectedTypes)  
-    print "Core", core, "tasks complete!"
+    print "Thread", core, "tasks complete!"
     out_q.put({'content'+str(core):collectedContent})        
 
 
@@ -1114,7 +1139,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
         fileList = []
     else:
         fileList = os.listdir(directory)
-        oldFiltered = [i for i in fileList if i.lower().startswith('filteredtweets')]
+        #oldFiltered = [i for i in fileList if i.lower().startswith('filteredtweets')]
         fileList = [i for i in fileList if i.lower().startswith('raw')]
     
     if len(fileList) != 0:
@@ -1124,7 +1149,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
         collectedContent = []
         fileList = filter(lambda i: not os.path.isdir(directory+i), fileList)
         random.shuffle(fileList)
-        cores = max(cpu_count()-2,2)
+        cores = cpu_count()
         cfg['Cores'] = cores
         out_q = Queue()
         block =  int(ceil(len(fileList)/float(cores)))
@@ -1238,13 +1263,10 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             
             print "...complete"
             return 'null'
-            #return geoCache
-            
-             
+                 
     else:
         print "Directory empty, reformat skipped"
         return 'null'
-        #return geoCache
 
 
 
@@ -1254,7 +1276,7 @@ def getTags(cfg,data,dataCats):
     tags = dict()
     if len(data) == 0:
         return []
-    trackCats = 'NLPCat' in data[0].keys()
+    #trackCats = 'NLPCat' in data[0].keys()
     for pos in range(len(dataCats)):
         tags[dataCats[pos]] = countHashTags(data[pos]['data'],cfg['TrackHashCount'])
         print "Top 5 hashtags for past 7 days in category %s: %s"  % (dataCats[pos],tags[dataCats[pos]])
@@ -1599,7 +1621,7 @@ def stripAddress(address):
         return address
     splitAddy = str(address).split(' ')
     words = splitAddy[:-2]
-    ends = splitAddy[-2:]
+    #ends = splitAddy[-2:]
     protect = set()
     pairs = [[words[i],words[i+1]] for i in range(len(words)-1)]
     protect = set([pair[1] for pair in pairs if pair[0].lower() in routeWords])
@@ -1620,6 +1642,5 @@ def wordSwap(word):
     """Replaces user names with tag"""
     if len(word) > 0:
         if '@' in word:
-            #return "@ATweeter"
             return '@ATweeter_'+ getHash(word)
     return word

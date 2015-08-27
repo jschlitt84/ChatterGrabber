@@ -1,6 +1,7 @@
 import tweepy
 import datetime, time
-import json
+import ujson as json
+#import json
 import os
 
 from random import randint, uniform, choice
