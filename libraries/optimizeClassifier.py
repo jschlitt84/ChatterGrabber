@@ -1,5 +1,5 @@
 import sys
-from TweetMatchTest import *
+from TweetMatch import *
 from os import getcwd, mkdir, path
 from copy import deepcopy
 from pandas import read_csv

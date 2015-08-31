@@ -3,7 +3,6 @@ from os import path
 from time import sleep
 
 import random
-import optimizeClassifier
 
 def updateCache(dictionary,fileRef,limit,expectDict = True):
     """Updates file & memory version of cache"""
@@ -43,6 +42,7 @@ def updateCache(dictionary,fileRef,limit,expectDict = True):
 
 
 def getNLPScore(cacheKey,cache,cacheRef,args,updateLimit):
+        import optimizeClassifier
 	if cacheKey in cache.keys():
 		print "Returning score", cache[cacheKey], "from cache"
                 return cache[cacheKey]
