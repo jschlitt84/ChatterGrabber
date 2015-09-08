@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-#import ujson as json
-import json
+import ujson as json
+#import json
 import csv
 import random
 import datetime,time
@@ -12,7 +12,16 @@ import TweetMatch
 import zipfile
 import subprocess
 import shlex
-import dbm
+
+from sys import platform as _platform
+if _platform == "linux" or _platform == "linux2":
+    import gdbm as dbm
+    isLinux = True
+#elif _platform == "darwin":
+#    import dbm as dbm   
+else:
+    import dbm as dbm
+    isLinux = False
 
 import hashlib
 hasher = hashlib.md5()
@@ -54,17 +63,16 @@ def getPickleName(cfg):
         prefix = cfg['DBLocation']+'/'
     except:
         prefix = cfg['Directory']+'caches/'
+    
     return prefix+"GeoPickle"+types[cfg['GeoFormat'].lower()]
     
 
 def geoWrite(geo,ref,value,cfg):
-    #print "DEBOO WRITE START"
     #print "DEBOO WRITE {%s, %s}" % (ref, TweetMatch.stripUnicode(ref))
     if cfg['GeoFormat'] == 'pickle':
         geo[ref] = value
     else:
         geo[TweetMatch.stripUnicode(ref)] = json.dumps(value)
-    #print "DEBOO WRITE FINISH"
     
 def geoRead(geo,ref,cfg):
     #print "DEBOO READ START"
@@ -74,7 +82,14 @@ def geoRead(geo,ref,cfg):
         try:
             temp = json.loads(geo[TweetMatch.stripUnicode(ref)])
         except:
-            temp = json.loads(geo[ref])
+            try:
+		temp = json.loads(geo[ref])
+	    except:
+                print "Malformed entry, deleting:"
+		print "\tReference -", ref
+		print "\tContents -", geo[ref]
+		del geo[ref]
+		return None
     #print "DEBOO READ FINISH"
     return temp
     
@@ -85,8 +100,13 @@ def updateGeoPickle(dictionary,fileRef,cfg):
     if cfg['GeoFormat'] == 'pickle':
         kwik.updateCache(dictionary,fileRef,25)
     else:
-        dictionary = dbm.open(fileRef,'c')
-    #print "DEBOO UPDATE FINISH"
+ 	try:
+		dictionary = dbm.open(fileRef,'cf')
+		print "\nOpening db in gdbm fast mode\n"
+	except:
+		dictionary = dbm.open(fileRef,'c')
+		print "\nOpening db in create mode\n"
+	dictionary['null'] = 'null'
     return dictionary  
         
 
@@ -915,7 +935,9 @@ def isInBox(cfg,geoCache,status):
         if 'Cores' not in cfg.keys():
             print "GEOCACHE: Inboxed from memory", cacheRef
         loaded = geoRead(geoCache,cacheRef,cfg)
-        if loaded['lat'] != 'NaN' and loaded['lon'] != 'NaN':
+	hasKey = loaded != None
+    if hasKey:
+        if loaded['lat'] != 'NaN' and loaded['lon'] != 'NaN' and hasKey:
             place = loaded['place']
             coordinates = [loaded['lon'],loaded['lat']]
             hasPlace = True
@@ -923,7 +945,7 @@ def isInBox(cfg,geoCache,status):
             coordsWork = True
         else:
             return loaded
-    elif 'Cores' not in cfg.keys() or True:    
+    if (not hasKey and 'Cores' not in cfg.keys()) or True:    
         print "GEOCACHE: Looking up", cacheRef
     
     if type(coordinates) is list:
@@ -984,7 +1006,7 @@ def isInBox(cfg,geoCache,status):
         geoWrite(geoCache,cacheRef,output,cfg)
         return output
     except:
-        #print "DEBOOO3"
+        print "DEBOOO3"
         output = {'inBox':False,'text':'Error','place':place,'lat':coordinates[1],'lon':coordinates[0],'trueLoc':coordsWork}
         geoWrite(geoCache,cacheRef,output,cfg)
         return output
@@ -1161,7 +1183,10 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
         collectedContent = []
         fileList = filter(lambda i: not os.path.isdir(directory+i), fileList)
         random.shuffle(fileList)
-        cores = cpu_count()
+        #cores = max(cpu_count()-1,1)
+	cores = cpu_count()
+	if isLinux and cfg['GeoFormat'] == 'dbm':
+		cores = 1
         cfg['Cores'] = cores
         out_q = Queue()
         block =  int(ceil(len(fileList)/float(cores)))
