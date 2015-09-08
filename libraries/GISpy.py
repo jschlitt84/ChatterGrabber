@@ -887,8 +887,6 @@ def patientGeoCoder(request,cfg):
             if not cfg['PatientGeocoding']:
                 return "timeOut", ('NaN','NaN')
             elif tries == limit+2:
-                #if 'Cores' not in cfg.keys():
-                #    print "Unable to geoCode", request, '\n'
                 return "timeOut", ('NaN','NaN')
             time.sleep(delay)
             tries +=1
@@ -897,10 +895,7 @@ def patientGeoCoder(request,cfg):
             
 
 def isInBox(cfg,geoCache,status):
-    #print "DEBOO INBOX START"
     """Returns true if coord is within lat/lon box, false if not"""
-    #http://code.google.com/p/geopy/wiki/GettingStarted
-    #gCoder = geocoders.GoogleV3()
     hasCoords = False
     hasPlace = False
     coordsWork = False
@@ -945,12 +940,12 @@ def isInBox(cfg,geoCache,status):
             coordsWork = True
         else:
             return loaded
-    if (not hasKey and 'Cores' not in cfg.keys()) or True:    
+    if (not hasKey and 'Cores' not in cfg.keys()):    
         print "GEOCACHE: Looking up", cacheRef
     
     if type(coordinates) is list:
         coordsWork = len(coordinates) == 2
-    #print "DEBOO INBOX4"           
+         
     if (type(userLoc) is unicode or type(userLoc) is str) and userLoc != None and userLoc != "None" and not coordsWork:
         userLoc = stripUnicode(userLoc)
         if ':' in userLoc:
@@ -969,11 +964,11 @@ def isInBox(cfg,geoCache,status):
                 coordinates = [lng,lat] 
                 hasPlace = True
                 hasCoords = True
-            except Exception,err:
+            except:
                 output = {'inBox':False,'text':'NoCoords','place':'NaN','lat':'NaN','lon':'NaN','trueLoc':coordsWork}
                 geoWrite(geoCache,cacheRef,output,cfg)
                 return output
-    #print "DEBOO INBOX5"
+
     if not hasCoords:
         output = {'inBox':False,'text':'NoCoords','place':'NaN','lat':'NaN','lon':'NaN','trueLoc':coordsWork}
         geoWrite(geoCache,cacheRef,output,cfg)
@@ -1382,42 +1377,45 @@ def cleanJson(jsonOriginal, cfg, types):
     
     if len(tweetData + userData) > 0:
         for row in range(len(jsonOriginal)):
-            loaded = jsonToDictFix(deepcopy(jsonOriginal[row]))
-            ID = str(loaded['id'])
+            try:
+                loaded = jsonToDictFix(deepcopy(jsonOriginal[row]))
+                ID = str(loaded['id'])
+                
+   	        loadedUser = loaded['user']
+   	    
+   	        del loaded['user']
             
-	    loadedUser = loaded['user']
-	    
-	    del loaded['user']
+                tempJson = dict([(i, loaded[i]) for i in tweetData if i in loaded])
             
-            tempJson = dict([(i, loaded[i]) for i in tweetData if i in loaded])
-            
-            if keepUser:
-                userJson = dict([(i, loadedUser[i]) for i in userData if i in loadedUser])
-                for key in userJson.keys():
-                    tempJson['user_' + key] = userJson[key]
+                if keepUser:
+                    userJson = dict([(i, loadedUser[i]) for i in userData if i in loadedUser])
+                    for key in userJson.keys():
+                        tempJson['user_' + key] = userJson[key]
                     
-            if keepMedia:        
-                try:
-	           loadedMedia = loaded["entities"]['media'][0]
-	           del loaded["entities"]['media']
-	           mediaJson = dict([(i, getThing(loadedMedia,i)) for i in mediaData])
-	           for key in mediaJson.keys():
-	               tempJson['media1_' + key] = mediaJson[key]
-	        except:
-	           for key in mediaData:
-                        tempJson['media1_' + key] = 'False'
+                if keepMedia:        
+                    try:
+    	               loadedMedia = loaded["entities"]['media'][0]
+    	               del loaded["entities"]['media']
+    	               mediaJson = dict([(i, getThing(loadedMedia,i)) for i in mediaData])
+    	               for key in mediaJson.keys():
+    	                   tempJson['media1_' + key] = mediaJson[key]
+	            except:
+	               for key in mediaData:
+                            tempJson['media1_' + key] = 'False'
                     
-            if cfg['SendLinks']:
-                try:
-                    tempJson['link1'] = loaded["entities"]['urls'][0]['expanded_url']
-                except:
-                    tempJson['link1'] = 'False'
+                if cfg['SendLinks']:
+                    try:
+                        tempJson['link1'] = loaded["entities"]['urls'][0]['expanded_url']
+                    except:
+                        tempJson['link1'] = 'False'
                 
                      
-            jsonIn.append(tempJson)
-            if ID in types.keys():
-	        for key in types[ID].keys():
-                    jsonIn[row][key] = types[ID][key]
+                jsonIn.append(tempJson)
+                if ID in types.keys():
+	           for key in types[ID].keys():
+                        jsonIn[row][key] = types[ID][key]
+            except:
+                print "Error,tweet could not load:", jsonOriginal[row]
         
 	jsonIn = [row for row in jsonIn if str(row['id']) in types.keys()] 
         uniqueJson(jsonIn)

@@ -53,6 +53,11 @@ while True:
                 foundUrl = process[process.index('https://'):]
                 print format+"RUNNING:",foundUrl,end
                 running.add(foundUrl)
+                
+    if len(sys.argv)>= 2:
+        if sys.argv[1] in ['-c','-v']:
+            print
+            quit()
                
     if count%sleepEvery == 0:
         pickleRef = 'caches/GeoPickle.txt'
