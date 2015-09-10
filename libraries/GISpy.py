@@ -1508,7 +1508,7 @@ def getConfig(directory):
 		'AutoUpdate':False,'MediaData':{},
 		'RunScript':False,'GeoFormat':'dbm',
 		'DBLocation':None,'FilterType':'conditions',
-		'CaseSensitive':False}
+		'CaseSensitive':False,'method':'search'}
     
     if type(directory) is str:
         if directory == "null":
