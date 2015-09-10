@@ -1085,7 +1085,7 @@ def jsonToDictFix(jsonIn):
                     jsonIn[row] = json.loads(jsonIn[row])
                 except:
                     jsonIn[row] = 'null'
-        jsonIn = [entry for entry in jsonIn if entry != 'null' and type(entry) is not str]
+        jsonIn = [entry for entry in jsonIn if entry != 'null' and type(entry) not in [str,unicode]]
     elif type(jsonIn) is dict:
         None
     else:
