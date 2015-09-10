@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-import ujson as json
-#import json
+#import ujson as json
+import json
 import csv
 import random
 import datetime,time
@@ -68,14 +68,28 @@ def getPickleName(cfg):
     
 
 def geoWrite(geo,ref,value,cfg):
-    #print "DEBOO WRITE {%s, %s}" % (ref, TweetMatch.stripUnicode(ref))
     if cfg['GeoFormat'] == 'pickle':
         geo[ref] = value
     else:
-        geo[TweetMatch.stripUnicode(ref)] = json.dumps(value)
+        ref = TweetMatch.stripUnicode(ref)
+        try:
+            geo[ref]
+            return
+        except:
+            None
+            
+        toWrite = json.dumps(value)
+        tries = 0
+        while tries < 5:
+            try:
+                geo[TweetMatch.stripUnicode(ref)] = toWrite
+                return
+            except:
+                print "DEBOOO"
+                time.sleep(0.2)
+                tries += 1
     
 def geoRead(geo,ref,cfg):
-    #print "DEBOO READ START"
     if cfg['GeoFormat'] == 'pickle':
         return geo[ref]
     else:
@@ -90,7 +104,6 @@ def geoRead(geo,ref,cfg):
 		print "\tContents -", geo[ref]
 		del geo[ref]
 		return None
-    #print "DEBOO READ FINISH"
     return temp
     
     
@@ -1062,21 +1075,24 @@ def checkTweet(conditions, qualifiers, exclusions, text, cfg):
         return "irrelevant"
         
         
-        
-
+    
 def jsonToDictFix(jsonIn):
-    """Error hardy json converter"""
+    #Error hardy json converter
     if type(jsonIn) is list:
         for row in range(len(jsonIn)):
             if type(jsonIn[row]) is str or type(jsonIn[row]) is unicode:
-                jsonIn[row] = json.loads(jsonIn[row])
+                try:
+                    jsonIn[row] = json.loads(jsonIn[row])
+                except:
+                    jsonIn[row] = 'null'
+        jsonIn = [entry for entry in jsonIn if entry != 'null' and type(entry) is not str]
     elif type(jsonIn) is dict:
         None
     else:
 	jsonIn = json.loads(jsonIn)
-    return jsonIn    
-            
-            
+    return jsonIn  
+             
+                                                
             
 def dictToJsonFix(jsonOut):
      """Error tolerant json converter"""
@@ -1180,6 +1196,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
         random.shuffle(fileList)
         #cores = max(cpu_count()-1,1)
 	cores = cpu_count()
+	#cores = 1
 	if isLinux and cfg['GeoFormat'] == 'dbm':
 		cores = 1
         cfg['Cores'] = cores
@@ -1490,7 +1507,7 @@ def getConfig(directory):
 		'ShowMap':'blue marble','ExtraCategories':'null',
 		'AutoUpdate':False,'MediaData':{},
 		'RunScript':False,'GeoFormat':'dbm',
-		'DBLocation':None,
+		'DBLocation':None,'FilterType':'conditions',
 		'CaseSensitive':False}
     
     if type(directory) is str:
