@@ -461,9 +461,12 @@ def sendCSV(cfg, directory,extra = ''):
     extra += reformatTags(getTags(cfg,weekSubsets,catListWeek),cfg)
     #print "Debooo Check 8.7"; time.sleep(5)	
     if cfg['SendLinks']:
-        extra += "\nLink analysis for the past 7 days for categories %s:\n" % str(worthShowing).replace("'",'')
-        extra += vis.checkLinks(worthShowingWeek['data'],n=250, shown = 5, linkfreq=1, cfg=cfg)
-        extra += '\n\nPlease note, with gmail and certain clients, link analysis links may appear as attachments.'
+        try:
+            extra += "\nLink analysis for the past 7 days for categories %s:\n" % str(worthShowing).replace("'",'')
+            extra += vis.checkLinks(worthShowingWeek['data'],n=250, shown = 5, linkfreq=1, cfg=cfg)
+            extra += '\n\nPlease note, with gmail and certain clients, link analysis links may appear as attachments.'
+        except:
+            extra += "Error, link analysis could not be completed"
     #print "Debooo Check 9"; time.sleep(5)
     body += extra
     msg.attach(MIMEText(body))
