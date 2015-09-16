@@ -6,9 +6,16 @@ import os
 
 import requests
 
+import hashlib
+hasher = hashlib.md5()
+
 isPrivate = True
 
 
+def getNameHash(fileName):
+    hasher.update(fileName+'movie theatre popcorn')
+    print "DEEBOOOO", fileName, hasher.hexdigest()
+    return 'gdiSheets/%s.csv' % hasher.hexdigest()
 
 # CONNECTS TO OWNED PRIVATE SPREADSHEET
 
@@ -64,7 +71,10 @@ def getFile(userName, __password, fileName):
     print "Accessing Spreadsheet ID:", spreadsheet_id
     feed = spreadsheets_client.GetWorksheetsFeed(spreadsheet_id)
     
-    tempFile = "googtemp.csv"
+    #tempFile = "googtemp.csv"
+    
+    tempFile = getNameHash(fileName)
+      
     #https://docs.google.com/feeds/default/private/changes?v=3
     uri = 'https://docs.google.com/feeds/documents/private/full/%s' % spreadsheet_id
 
@@ -94,19 +104,34 @@ def getPublicFile(userName, fileName, localFile):
 
     print "\nLoading public file", fileName
     
-    response = requests.get(fileName)
-    print "gData Response status code:",response.status_code
+    
+    nameHash = getNameHash(fileName)
+    
     try:
+        response = requests.get(fileName)
+        print "gData Response status code:",response.status_code
         assert response.status_code == 200, 'Wrong status code'
         data = response.content.split('\n')
+        
+        print "Saving local copy to", nameHash
+        fileOut = open(nameHash,'w')
+        fileOut.write(response.content)
+        fileOut.close()
+        
     except:
         if localFile != 'null':
             fileIn = open(localFile)
             data = fileIn.readlines()
             fileIn.close()
         else:
-            print "Error, cannot contact google and no local file found"
-            quit()
+            try:
+                print "Loading local copy of %s from %s" % (fileName,nameHash)
+                fileIn = open(nameHash)
+                data = fileIn.readlines()
+                fileIn.close()
+            except:
+                print "Error, cannot contact google and no local file found"
+                quit()
 
     toDelete = []
     for pos in range(len(data)):
@@ -168,12 +193,13 @@ def getPos (start, stop, script):
        
 # LOADS DATA FROM PUBLIC LIST OR PRIVATE TEMP FILE, PARSES BY CLEANTYPE & RETURNS LIST OF NUMERIC VALUES OR STRINGS  
     
-def loadNClean(isPrivate,publicData, start, end, cleanType):
+def loadNClean(fileName,isPrivate,publicData, start, end, cleanType):
+    nameHash = getNameHash(fileName)
     if isPrivate:
-        tempFile = open("googtemp.csv")
+        tempFile = open(nameHash)
         script = tempFile.readlines()
         tempFile.close()
-        os.remove("googtemp.csv")
+        #os.remove(nameHash)
     else:
         script = publicData
     
@@ -311,7 +337,7 @@ def getLine(userName, __password, fileName, line, localFile = 'null', isPoly = F
            
     __password = None
     
-    return loadNClean(isPrivate, publicData, line, 0, "single line")      
+    return loadNClean(fileName, isPrivate, publicData, line, 0, "single line")      
 
 
 # RETURNS SCRIPT/ VALUES BASED UPON PASSED LOADTYPE                  
@@ -332,7 +358,7 @@ def getScript(userName, __password, fileName, start, end, loadType, localFile = 
         
     __password = None
 
-    return loadNClean(isPrivate, publicData, start, end, loadType)            
+    return loadNClean(fileName, isPrivate, publicData, start, end, loadType)            
     
     
 if __name__ == '__main__':

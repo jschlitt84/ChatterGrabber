@@ -485,15 +485,19 @@ def sendCSV(cfg, directory,extra = ''):
             'attachment; filename="%s"' % os.path.basename(attachment))
     msg.attach(part)
     
-    mailServer = smtplib.SMTP("smtp.gmail.com", 587)
-    mailServer.ehlo()
-    mailServer.starttls()
-    mailServer.ehlo()
-    mailServer.login(cfg['GDI']['UserName'], cfg['GDI']['Password'])
-    mailServer.sendmail(cfg['GDI']['UserName'],recipients, msg.as_string())
- 
-    mailServer.close()
-    print "File sent succesfully!"
+    try:
+        mailServer = smtplib.SMTP("smtp.gmail.com", 587)
+        mailServer.ehlo()
+        mailServer.starttls()
+        mailServer.ehlo()
+        mailServer.login(cfg['GDI']['UserName'], cfg['GDI']['Password'])
+        mailServer.sendmail(cfg['GDI']['UserName'],recipients, msg.as_string())
+    
+        mailServer.close()
+        print "File sent succesfully!"
+    except:
+        print "Email could not be sent at this time"
+    
     quit() 
 
 
@@ -1085,7 +1089,7 @@ def jsonToDictFix(jsonIn):
                     jsonIn[row] = json.loads(jsonIn[row])
                 except:
                     jsonIn[row] = 'null'
-        jsonIn = [entry for entry in jsonIn if entry != 'null' and type(entry) not in [str,unicode]]
+        jsonIn = [entry for entry in jsonIn if type(entry) not in [str,unicode]]
     elif type(jsonIn) is dict:
         None
     else:
@@ -1123,6 +1127,7 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList, core, out_q, keep
             
             if  cfg['DaysBack'] != 'all' and type(cfg['DaysBack']) is int:
                 leftBound = datetime.datetime.utcnow() - datetime.timedelta(days = cfg['DaysBack'])
+                content = [item for item in content if type(item) not in [str,unicode]]
                 content = [item for item in content if parser.parse(item['created_at']).replace(tzinfo=None) > leftBound]
             
             for tweet in content:
@@ -1195,8 +1200,8 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
         fileList = filter(lambda i: not os.path.isdir(directory+i), fileList)
         random.shuffle(fileList)
         #cores = max(cpu_count()-1,1)
-	cores = cpu_count()
-	#cores = 1
+	#cores = cpu_count()
+	cores = 1
 	if isLinux and cfg['GeoFormat'] == 'dbm':
 		cores = 1
         cfg['Cores'] = cores
@@ -1432,7 +1437,7 @@ def cleanJson(jsonOriginal, cfg, types):
 	           for key in types[ID].keys():
                         jsonIn[row][key] = types[ID][key]
             except:
-                print "Error,tweet could not load:", jsonOriginal[row]
+                print "Error, tweet could not load:", jsonOriginal[row]
         
 	jsonIn = [row for row in jsonIn if str(row['id']) in types.keys()] 
         uniqueJson(jsonIn)
