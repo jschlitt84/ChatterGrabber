@@ -496,7 +496,7 @@ def sendCSV(cfg, directory,extra = ''):
         mailServer.close()
         print "File sent succesfully!"
     except:
-        print "Email could not be sent at this time"
+        print "Email could not be sent at this time, are you offline?"
     
     quit() 
 
