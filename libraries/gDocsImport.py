@@ -13,8 +13,9 @@ isPrivate = True
 
 
 def getNameHash(fileName):
+    if not os.path.exists('gdiSheets'):
+        os.makedirs('gdiSheets')
     hasher.update(fileName+'movie theatre popcorn')
-    print "DEEBOOOO", fileName, hasher.hexdigest()
     return 'gdiSheets/%s.csv' % hasher.hexdigest()
 
 # CONNECTS TO OWNED PRIVATE SPREADSHEET
