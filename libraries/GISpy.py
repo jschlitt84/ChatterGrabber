@@ -3,7 +3,7 @@
 import json
 import csv
 import random
-import datetime,time
+import datetime
 import os, shutil
 import unicodedata
 import tweepy
@@ -1290,7 +1290,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             if cfg['MakeDBFeed'] or cfg['OneTimeDump'] or cfg['QuickSend']:
                 time.sleep(0.2)
                 shutil.copyfile(fileName, fileNameOld)
-                if cfg['MakeDBFee']:
+                if cfg['MakeDBFeed']:
                 	getDeltas(fileNameOld, fileName, cfg, cfg['OutDir'])
             
             print "Freeing memory..."
