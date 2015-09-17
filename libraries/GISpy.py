@@ -46,6 +46,7 @@ from math import pi, cos, ceil
 from multiprocessing import Process, Queue, cpu_count
 from operator import itemgetter
 from GetDeltas import getDeltas
+from time import sleep
 
 timeArgs = '%a %d %b %Y %H:%M:%S'
 dbTime = '%Y-%m-%d %H-%M-%S'
@@ -86,7 +87,7 @@ def geoWrite(geo,ref,value,cfg):
                 return
             except:
                 print "DEBOOO"
-                time.sleep(0.2)
+                sleep(0.2)
                 tries += 1
     
 def geoRead(geo,ref,cfg):
@@ -875,7 +876,7 @@ def openWhenReady(directory, mode):
             fileOut = open(directory,mode)
             break
         except:
-            time.sleep(5)
+            sleep(5)
             attempts += 1
             if attempts == 1000:
                 print "Error: Unable to open", directory, "for 5000 seconds, quiting now"
@@ -908,7 +909,7 @@ def patientGeoCoder(request,cfg):
                 return "timeOut", ('NaN','NaN')
             elif tries == limit+2:
                 return "timeOut", ('NaN','NaN')
-            time.sleep(delay)
+            sleep(delay)
             tries +=1
             
             
@@ -980,7 +981,7 @@ def isInBox(cfg,geoCache,status):
             try:
                 userLoc = str(userLoc)
                 place, (lat, lng) = patientGeoCoder(userLoc,cfg)
-                time.sleep(.15)
+                sleep(.15)
                 coordinates = [lng,lat] 
                 hasPlace = True
                 hasCoords = True
@@ -997,7 +998,7 @@ def isInBox(cfg,geoCache,status):
         if not hasPlace:
             try:
                 place, (lat, lng) = patientGeoCoder(str(coordinates[1])+','+str(coordinates[0]),cfg)
-                time.sleep(.15)
+                sleep(.15)
             except:
                 None
     
@@ -1288,7 +1289,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                 process = subprocess.Popen(cfg['RunScript'], shell=True)                        
                                                                             
             if cfg['MakeDBFeed'] or cfg['OneTimeDump'] or cfg['QuickSend']:
-                time.sleep(0.2)
+                sleep(0.2)
                 shutil.copyfile(fileName, fileNameOld)
                 if cfg['MakeDBFeed']:
                 	getDeltas(fileNameOld, fileName, cfg, cfg['OutDir'])
@@ -1300,7 +1301,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
                 print "Quick sending email"
                 sendCSV(cfg,directory)
             
-            time.sleep(1)
+            sleep(1)
             
             if cfg['Dashboard']:
                 print "Attempting to update database with wordcloud & csv"
