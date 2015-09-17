@@ -1400,7 +1400,7 @@ def cleanJson(jsonOriginal, cfg, types):
     keepMedia = len(mediaData) > 0 and 'media' not in tweetData
     jsonIn = []
     
-    if len(tweetData + userData) > 0:
+    if len(tweetData) + len(userData) > 0:
         for row in range(len(jsonOriginal)):
             try:
                 loaded = jsonToDictFix(deepcopy(jsonOriginal[row]))
