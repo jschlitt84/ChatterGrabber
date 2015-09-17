@@ -1517,7 +1517,7 @@ def getConfig(directory):
 		'RunScript':False,'GeoFormat':'dbm',
 		'DBLocation':None,'FilterType':'conditions',
 		'CaseSensitive':False,'Method':'search',
-		'Lat1':-90,'Lon2':90,
+		'Lat1':-90,'Lat2':90,
 		'Lon1':-180,'Lon2':180}
     
     if type(directory) is str:
