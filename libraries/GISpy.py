@@ -1488,7 +1488,7 @@ def getComplex(line):
 def getConfig(directory):
     """Loads configuration from file config"""
     hidden = ['Sanitize','login']
-    TweetData = 'all'
+    TweetData = {'text','id','created_at','retweet_count','favorite_count'}
     UserData = {}
     #default values
     params = {'StopTime':0,'StopCount':15,'KeepRaw':True,
