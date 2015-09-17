@@ -72,6 +72,8 @@ def geoWrite(geo,ref,value,cfg):
     if cfg['GeoFormat'] == 'pickle':
         geo[ref] = value
     else:
+    	if cfg['QuickSend']:
+    		return
         ref = TweetMatch.stripUnicode(ref)
         try:
             geo[ref]
@@ -1208,6 +1210,8 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
 	cores = 1
 	if isLinux and cfg['GeoFormat'] == 'dbm':
 		cores = 1
+	if cfg['QuickSend']:
+		cores = max(cpu_count()-1,1)
         cfg['Cores'] = cores
         out_q = Queue()
         block =  int(ceil(len(fileList)/float(cores)))
