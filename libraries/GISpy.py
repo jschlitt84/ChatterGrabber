@@ -1137,7 +1137,7 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList, core, out_q, keep
             for tweet in content:
                 count += 1
                 if count%250 == 0:
-                    print "\tThread",core,count,"tweets sorted"
+                    print "Thread",core,count,"tweets sorted"
                 tweet['text'] = tweet['text'].replace('\n',' ')
                 tweetType = checkTweet(lists['conditions'],lists['qualifiers'],lists['exclusions'], tweet['text'], cfg)
                 if tweetType in keepTypes:
