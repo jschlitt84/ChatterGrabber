@@ -1290,7 +1290,8 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
             if cfg['MakeDBFeed'] or cfg['OneTimeDump'] or cfg['QuickSend']:
                 time.sleep(0.2)
                 shutil.copyfile(fileName, fileNameOld)
-                getDeltas(fileNameOld, fileName, cfg, cfg['OutDir'])
+                if cfg['MakeDBFee']:
+                	getDeltas(fileNameOld, fileName, cfg, cfg['OutDir'])
             
             print "Freeing memory..."
             del collectedContent
@@ -1496,7 +1497,7 @@ def getConfig(directory):
                 'KeepExcluded':True, 'method':'search',
                 'Logins':'NoLoginsFound','UseGDI':False,
                 'UseStacking':False,'KeepUnlocated':False,
-                'PickleInterval':500,'PatientGeocoding':True,
+                'PickleInterval':500,'PatientGeocoding':False,
                 'OnlyKeepNLP':False,'MultiLogin':False,
                 'KeepRetweets':False,'StrictGeoFilter':False,
                 'StrictWordFilter':False,'Sanitize':False,
