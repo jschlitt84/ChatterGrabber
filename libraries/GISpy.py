@@ -1510,7 +1510,7 @@ def getConfig(directory):
 		'QuickSend':False,'Dashboard':False,
 		'EpidashDir':'epidash/webapp','HomeDir':"/home/jschlitt",
 		'LocationName':'United_States','LocationGranularity':'country',
-		'RegionSearch':False,'SendLinks':False,
+		'RegionSearch':True,'SendLinks':False,
 		'SendFigures':False,'SendAfter':0,
 		'ShowMap':'blue marble','ExtraCategories':'null',
 		'AutoUpdate':False,'MediaData':{},
