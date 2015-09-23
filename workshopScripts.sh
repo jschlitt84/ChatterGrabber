@@ -71,7 +71,20 @@ closeDemo
 runDemo3b() {
 prepDemo
 python TwitterSpout.py 'https://docs.google.com/spreadsheets/d/1oGAnVf3tRbirLGlndot7DzlfCpFDzSghA_YtyAqnRR8/' -e
-export EXPT='3a'
+export EXPT='3b'
+closeDemo
+}
+
+#Move sheet for 3c
+moveSheet() {
+mv ~/Downloads/EbolaScores1.csv\ -\ EbolaScores1.csv.csv ~/Desktop/ChatterGrabber_Demo/nlpTrainers/EbolaScores1.csv
+}
+
+#Runs demo 3c
+runDemo3c() {
+prepDemo
+python TwitterSpout.py 'https://docs.google.com/spreadsheets/d/143XGZvKfMEm2vpNXUA--jvY11lxNt9lp7ZiVKxfQJdQ/' -e
+export EXPT='3c'
 closeDemo
 }
 
