@@ -864,13 +864,36 @@ def makeTimeLine(inFile,
     
     
     
-def showWordCloud(text,show=True):
+"""def showWordCloud(text,show=True):
     plt.figure(figsize=(8,8)).gca()
     fontPath = '/Library/Fonts/Microsoft/'
     font = 'Verdana.ttf'
     wc = WordCloud(background_color="white", max_words=2000,font_path=fontPath+font,stopwords=['ebola','link','atweeter','user'],
                    height = 800, width = 800)
     wc.generate(text)
+    plt.imshow(wc)
+    plt.axis("off")
+    if show:
+        plt.show()
+    else:
+        return plt"""
+
+def showWordCloud(text,show=True):
+    plt.figure(figsize=(8,8)).gca()
+    stopWordsNew = ['link','atweeter','user','rt']
+    try:
+	    fontPath = '/Library/Fonts/Microsoft/'
+	    font = 'Verdana.ttf'
+	    wc = WordCloud(background_color="white", max_words=2000,font_path=fontPath+font,stopwords=stopWordsNew,
+		           height = 800, width = 800)
+	    wc.generate(text)
+    except:
+	    fontPath = '/usr/share/fonts/truetype/ubuntu-font-family'
+	    font = 'Ubuntu-L.ttf'
+	    wc = WordCloud(background_color="white", max_words=2000,stopwords=stopWordsNew,
+		           height = 800, width = 800)
+	    wc.generate(text)
+
     plt.imshow(wc)
     plt.axis("off")
     if show:
