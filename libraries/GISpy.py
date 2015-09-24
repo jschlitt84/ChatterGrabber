@@ -1495,7 +1495,7 @@ def getConfig(directory):
     TweetData = {'text','id','created_at','retweet_count','favorite_count'}
     UserData = {}
     #default values
-    params = {'StopTime':0,'StopCount':15,'KeepRaw':True,
+    params = {'StopTime':0,'StopCount':250,'KeepRaw':True,
                 'TweetData':TweetData, 'UserData':UserData,
                 'FileName':'filtered','OutDir':'outPut/',
                 'KeepAccepted':True,'KeepPartial':True,
