@@ -88,6 +88,21 @@ export EXPT='3c'
 closeDemo
 }
 
+#Runs demo 4
+runDemo4() {
+prepDemo
+python TwitterSpout.py 'https://docs.google.com/spreadsheets/d/15FKEpeAc-l9pPoBYGBhPNfm0JpqUr7WRT4HJEgg8A24/' -e
+export EXPT='4'
+closeDemo
+}
+
+#Runs Final
+finalDemo() {
+prepDemo
+python TwitterSpout.py 'https://docs.google.com/spreadsheets/d/1N5j04MDFL-2tOXezQyZStnBLnaWXgJwn0LmN5dH0wrw/' -e
+export EXPT='Final'
+closeDemo
+}
 
 rickRoll() {
 firefox 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
