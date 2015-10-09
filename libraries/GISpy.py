@@ -85,7 +85,6 @@ def geoWrite(geo,ref,value,cfg):
         while tries < 5:
             try:
                 geo[TweetMatch.stripUnicode(ref)] = toWrite
-                return
             except:
                 print "DEBOOO"
                 sleep(0.2)
@@ -1507,7 +1506,7 @@ def getConfig(directory):
                 'StrictWordFilter':False,'Sanitize':False,
                 'KeepDiscardsNLP':False,'DiscardSampleNLP':0,
                 'MakeFilteredJson':False,'SendEvery':1,
-                'TrackHashTags':False,'TrackHashDays':10,
+                'TrackHashTags':True,'TrackHashDays':10,
                 'TrackHashCount':5,'DaysBack':90,
                 'NLPnGrams':[1,2,3,4],'NLPMode':'naive bayes',
 		'NLPFreqLimit':[2],'SVMNumber':1,
