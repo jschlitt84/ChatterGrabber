@@ -32,7 +32,9 @@ def countTopic(ref):
     
 def countAll(listed):
     for entry in listed:
-        countTopic(entry)
-    
+	try:        
+		countTopic(entry)
+        except:
+		None
     
 countAll(studyDirs)
