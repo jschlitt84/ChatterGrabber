@@ -697,8 +697,12 @@ def giSpyGDILoad(gDocURL,directory):
     conditions = []
     qualifiers = set()
     exclusions = set()
+    
+    if uglyLists == 'null':
+	uglyLists = []
     for pos in range(len(uglyLists)):
         row = uglyLists[pos]
+	
         if len(str(row[0])) != 0:
             conditions.append(row[0])
         if len(str(row[1])) != 0:
@@ -1090,6 +1094,7 @@ def getGeo(cfg):
 
 def checkTweet(conditions, qualifiers, exclusions, text, cfg):
     """Checks if tweet matches search criteria"""
+    
     if not cfg['CaseSensitive']:
         text = text.lower()
   
@@ -1097,8 +1102,8 @@ def checkTweet(conditions, qualifiers, exclusions, text, cfg):
         return "retweet"
 
     foundExclusion = len([None for word in exclusions if word in text]) != 0
-    foundCondition = len([None for word in conditions if word in text]) != 0
-    foundQualifier = len([None for word in qualifiers if word in text]) != 0
+    foundCondition = len([None for word in conditions if word in text]) != 0 or conditions == []
+    foundQualifier = len([None for word in qualifiers if word in text]) != 0 or qualifiers == []
         
     if foundCondition and foundExclusion:
         return "excluded"
