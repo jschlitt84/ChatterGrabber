@@ -282,7 +282,10 @@ class giSeeker():
     def makeQueries(self):
         """Formats query list and splits into < 1k character segments"""
         self.queries = []
-        text = '"'+self.conditions[0]+'"'
+	if self.conditions != []:
+        	text = '"'+self.conditions[0]+'"'
+	else:
+		text = ''
         
         for item in self.conditions[1:]:
             entry = ' OR "' + item + '"'
