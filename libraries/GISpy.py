@@ -79,16 +79,32 @@ def geoWrite(geo,ref,value,cfg):
             return
         except:
             None
-            
-        toWrite = json.dumps(value)
-        tries = 0
-        while tries < 5:
-            try:
-                geo[TweetMatch.stripUnicode(ref)] = toWrite
-            except:
-                print "DEBOOO"
-                sleep(0.2)
-                tries += 1
+
+        writeDB(getPickleName(cfg),ref,value,cfg)
+        
+        
+def writeDB(fileRef,ref,value,cfg):
+    dbOut = selectDB(fileRef,'w',cfg)
+    try:
+        dbOut[ref]
+        dbOut.close()
+        return
+    except:
+        None
+        
+    toWrite = json.dumps(value)
+    tries = 0
+    while tries < 5:
+        if True:
+            dbOut[ref] = toWrite
+            return
+        else:
+            print "DEBOOO"
+            sleep(0.2)
+            tries += 1
+    dbOut.close()
+        
+
     
 def geoRead(geo,ref,cfg):
     if cfg['GeoFormat'] == 'pickle':
@@ -106,7 +122,25 @@ def geoRead(geo,ref,cfg):
 		del geo[ref]
 		return None
     return temp
+
+
+def selectDB(fileRef,mode,cfg):
+    accessModes = {'w':[['cf','gdbm fast mode'],['w','write mode']],
+                  'r':[['r','read only'],['c','create mode']]}[mode]
+    try:
+		dictionary = dbm.open(fileRef,accessModes[0][0])
+		outText = accessModes[0][1]
+    except:
+		dictionary = dbm.open(fileRef,accessModes[1][0])
+		outText = accessModes[1][1]
+    print "Opening db in %s.\n" % outText
+    if mode != 'r':
+        dictionary['null'] = 'null'
+    return dictionary
     
+
+
+        
     
 def updateGeoPickle(dictionary,fileRef,cfg):
     #print "DEBOO UPDATE START"
@@ -114,14 +148,7 @@ def updateGeoPickle(dictionary,fileRef,cfg):
     if cfg['GeoFormat'] == 'pickle':
         kwik.updateCache(dictionary,fileRef,25)
     else:
- 	try:
-		dictionary = dbm.open(fileRef,'cf')
-		print "\nOpening db in gdbm fast mode\n"
-	except:
-		dictionary = dbm.open(fileRef,'c')
-		print "\nOpening db in create mode\n"
-	dictionary['null'] = 'null'
-    return dictionary  
+ 	return selectDB(fileRef,'r',cfg)
         
 
 
