@@ -1555,7 +1555,7 @@ def getConfig(directory):
 		'CaseSensitive':False,'Method':'search',
 		'Lat1':-90,'Lat2':90,
 		'Lon1':-180,'Lon2':180,
-		'TimeOffset':0}
+		'TimeOffset':0,'Salt':'l33t4lyf3}
     
     if type(directory) is str:
         if directory == "null":
@@ -1733,7 +1733,7 @@ def stripAddress(address):
     
 
 def getHash(text):
-    hasher.update(text+'movie theatre popcorn')
+    hasher.update(text+cfg['Salt'])
     return hasher.hexdigest()
 
     
