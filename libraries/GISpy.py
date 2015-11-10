@@ -84,22 +84,27 @@ def geoWrite(geo,ref,value,cfg):
         
         
 def writeDB(fileRef,ref,value,cfg):
-    dbOut = selectDB(fileRef,'w',cfg)
+    try:
+    	dbOut = selectDB(fileRef,'w',cfg)
+    except:
+	print "Error: Cannot access DB for write"
+	return
     try:
         dbOut[ref]
         dbOut.close()
         return
     except:
-        None
+        pass
         
     toWrite = json.dumps(value)
+
     tries = 0
     while tries < 5:
-        if True:
+        try:
             dbOut[ref] = toWrite
+	    dbOut.close()
             return
-        else:
-            print "DEBOOO"
+        except:
             sleep(0.2)
             tries += 1
     dbOut.close()
@@ -275,6 +280,8 @@ def sendCSV(cfg, directory,extra = ''):
              'file':attachmentCsv,
              'cats':'null',
              'data':pd.DataFrame.from_csv(directory+outName+'.csv',index_col='id')}
+	
+	dataSet['data'] = dataSet['data'][pd.notnull(dataSet['data']['text'])]
 
 	dataSet = vis.getGeoSub(dataSet,box,'')
         
@@ -489,11 +496,11 @@ def sendCSV(cfg, directory,extra = ''):
     extra += reformatTags(getTags(cfg,weekSubsets,catListWeek),cfg)
     #print "Debooo Check 8.7"; time.sleep(5)	
     if cfg['SendLinks']:
-        try:
+        if True:
             extra += "\nLink analysis for the past 7 days for categories %s:\n" % str(worthShowing).replace("'",'')
             extra += vis.checkLinks(worthShowingWeek['data'],n=250, shown = 5, linkfreq=1, cfg=cfg)
             extra += '\n\nPlease note, with gmail and certain clients, link analysis links may appear as attachments.'
-        except:
+        else:
             extra += "Error, link analysis could not be completed"
     #print "Debooo Check 9"; time.sleep(5)
     body += extra
@@ -1376,27 +1383,6 @@ def getTags(cfg,data,dataCats):
     return tags
 
 
-
-
-def getTagsOld(cfg,data):
-    """Pulls top n tags for last m days"""
-    dates = [parser.parse(entry['created_at']) for entry in data]
-    if dates == []:
-        return []
-    rightBound = max(dates)
-    leftBound = rightBound - datetime.timedelta(days = cfg['TrackHashDays'])
-    data = [entry for entry in data if leftBound < parser.parse(entry['created_at']) < rightBound]
-    trackCats = 'NLPCat' in data[0].keys()
-    if trackCats:
-        cats = sorted(list(set([entry['NLPCat'] for entry in data])))
-        tags =  dict()
-        for cat in cats:
-            tags[cat] = countHashTags([entry for entry in data if entry['NLPCat'] == cat],cfg['TrackHashCount'])
-            print "Top %s hashtags for past %s days in category %s: %s"  % (cfg['TrackHashCount'],cfg['TrackHashDays'],cat,tags[cat])
-    else:
-        tags = countHashTags(data,cfg['TrackHashCount'])
-        print "Top",cfg['TrackHashCount'], "hashtags for past", cfg['TrackHashDays'], "days:", tags
-    return tags
     
     
     
@@ -1408,13 +1394,13 @@ def countHashTags(data,number):
     counts = dict()
     toReturn = []
     for entry in entries:
-        words = entry.split(' ')
-        for word in words:
-            if word.startswith('#'):
-                if word not in counts.keys():
-                    counts[word] = 1
-                else:
-                    counts[word] += 1
+	words = entry.split(' ')
+	for word in words:
+	    if word.startswith('#'):
+	        if word not in counts.keys():
+	            counts[word] = 1
+	        else:
+	            counts[word] += 1
                     
     sortedCounts= sorted(counts.iteritems(), key=itemgetter(-1))[-number:]
     return [count[0] for count in reversed(sortedCounts)]
@@ -1686,12 +1672,12 @@ def textToList(string):
 def sanitizeTweet(tweet,cfg):
     """Strips tweet of personally identifying information"""
     words = tweet['text'].split(' ')
-    words = [wordSwap(word) for word in words]
+    words = [wordSwap(word,cfg) for word in words]
     tweet['text'] = ' '.join(words)
     tweet['place'] = stripAddress(tweet['place'])
     if 'user_screen_name' in tweet.keys():
         #tweet['user_screen_name'] = "ATweeter"
-        tweet['user_screen_name'] = '@ATweeter_'+getHash(tweet['user_screen_name'])
+        tweet['user_screen_name'] = '@ATweeter_'+getHash(tweet['user_screen_name'],cfg)
     if str(tweet['lat']).lower() != 'nan' and len(str(tweet['lat'])) > 6:
         tweet['lat'] = float(str(tweet['lat'])[:-2])
     if str(tweet['lon']).lower() != 'nan' and len(str(tweet['lon'])) > 6:
@@ -1732,14 +1718,14 @@ def stripAddress(address):
         return address
     
 
-def getHash(text):
+def getHash(text,cfg):
     hasher.update(text+cfg['Salt'])
     return hasher.hexdigest()
 
     
-def wordSwap(word):
+def wordSwap(word,cfg):
     """Replaces user names with tag"""
     if len(word) > 0:
         if '@' in word:
-            return '@ATweeter_'+ getHash(word)
+            return '@ATweeter_'+ getHash(word,cfg)
     return word
