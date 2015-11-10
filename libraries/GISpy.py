@@ -1555,7 +1555,7 @@ def getConfig(directory):
 		'CaseSensitive':False,'Method':'search',
 		'Lat1':-90,'Lat2':90,
 		'Lon1':-180,'Lon2':180,
-		'TimeOffset':0,'Salt':'l33t4lyf3}
+		'TimeOffset':0,'Salt':'movie theatre popcorn'}
     
     if type(directory) is str:
         if directory == "null":
