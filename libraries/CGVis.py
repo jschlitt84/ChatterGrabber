@@ -154,21 +154,21 @@ def getTime(time):
 
 def truncData(dataIn,mode):
     data = deepcopy(dataIn)
-    firstDay = data.irow(0)['day']
-    firstTime = getTime(data.irow(0)['time'])
+    firstDay = data.iloc[0]['day']
+    firstTime = getTime(data.iloc[0]['time'])
     limit = len(data)
     pos = limit-1
     if mode == "hour":
-        while getTime(data.irow(pos)['time']) > firstTime or getTime(data.irow(pos-1)['time']) < firstTime and pos > 0 :
+        while getTime(data.iloc[pos]['time']) > firstTime or getTime(data.iloc[pos-1]['time']) < firstTime and pos > 0 :
             pos -= 1
     elif mode == "day":
-        while getTime(data.irow(pos)['time']) > firstTime or getTime(data.irow(pos-1)['time']) < firstTime or firstDay !=data.irow(pos-1)['day'] and pos > 0:
+        while getTime(data.iloc[pos]['time']) > firstTime or getTime(data.iloc[pos-1]['time']) < firstTime or firstDay !=data.iloc[pos-1]['day'] and pos > 0:
                 pos -= 1
     if pos == -1:
         pos = limit
             
                 
-    dayDiff = parser.parse(data.irow(pos)['created_at']).timetuple().tm_yday - parser.parse(data.irow(0)['created_at']).timetuple().tm_yday
+    dayDiff = parser.parse(data.iloc[pos]['created_at']).timetuple().tm_yday - parser.parse(data.iloc[0]['created_at']).timetuple().tm_yday
     timeLim = 7*(mode=='day')+1*(mode=='hour')
     if dayDiff < timeLim:
         print "Cannot truncate to %s*n complete days, using full data range instead" % timeLim
@@ -218,7 +218,7 @@ def groupHourly(dataGroup, names, title, timeShift, stacked=True, show=True ,tru
     if len(namesShown) != 0:
         plt.title(title,size = 12)
         plt.hist(toPlot,bins=numbers,stacked=stacked, alpha=0.5, label=names, align='mid')
-        plt.legend(namesShown,"best")
+        plt.legend([str(entry) for entry in namesShown],loc="best")
         if show:
             plt.show()
     return plt
@@ -264,7 +264,7 @@ def groupDaily(dataGroup, names, title, timeShift, stacked=True, show=True, trun
     if len(namesShown) != 0:
         plt.title(title,size = 12)
         plt.hist(toPlot,bins=weekNum,stacked=stacked, alpha=0.5, label=names, align='left')
-        plt.legend(namesShown,"best")
+        plt.legend([str(entry) for entry in namesShown],loc="best")
         if show:
             plt.show()
     return plt
@@ -326,7 +326,7 @@ def dailyDistributionPlot(dataIn,titles,bigTitle,timeShift,divFactor=24,overlay 
     plt.xlabel("Date/time (GMT %s)" % timeShift)
     plt.gca().set_xlim([plotMin,plotMax])
     plt.ylabel("Number of tweets")
-    plt.legend(titles,"best")
+    plt.legend([str(entry) for entry in titles],loc="best")
     plt.title(bigTitle+timeSuffix,size=16)
     ax.xaxis.set_major_formatter(DateFormatter('%m/%d %H'))
     
@@ -654,13 +654,13 @@ def findCenter(dataSet):
 	minDist = 999999999999
 	lowest = 'null'
 	for pos in range(len(dataSet['data'])):
-		lat = dataSet['data'].irow(pos)['lat']
-		lon = dataSet['data'].irow(pos)['lon']
+		lat = dataSet['data'].iloc[pos]['lat']
+		lon = dataSet['data'].iloc[pos]['lon']
 		distance = vincenty((mlon,mlat),(lon,lat))
 		if distance < minDist:
 			lowest = pos
 			minDist = distance
-	return dataSet['data'].irow(lowest)
+	return dataSet['data'].iloc[lowest]
 		
 
 def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
