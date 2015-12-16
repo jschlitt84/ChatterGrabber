@@ -3,10 +3,23 @@ import datetime, time
 import ujson as json
 #import json
 import os
+import tempfile
 
 from random import randint, uniform, choice
 from GISpy import *
 from KwikECache import updateCache
+
+def setLastRan(self):
+    pid = os.getpid()
+    procName = "TwitterSpout_%s" % pid
+    strTime = str(int(time.time()))
+    print procName,strTime,self.cfg['OutDir']
+    #os.environ[procName]=strTime
+    if not os.path.exists('lastRan'):
+        os.makedirs('lastRan')
+    fileOut = open("lastRan/%s" % procName,'w')
+    fileOut.write(strTime)
+    fileOut.close()
 
 
 class giSeeker():
@@ -562,7 +575,8 @@ class giSeeker():
             inBox = mappable = 0
             
             hasResults = len(collected) != 0
-            
+
+            setLastRan(self)
             
             if hasResults:
                 collected = uniqueJson(collected)

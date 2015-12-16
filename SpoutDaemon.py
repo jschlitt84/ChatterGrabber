@@ -1,9 +1,13 @@
 import sys
 sys.path.insert(0, 'libraries')
 import subprocess
+import os
 import cPickle
-from time import sleep
+import psutil
+from time import sleep, time
 from shutil import copyfile
+from dateutil import parser
+
 
 
 
@@ -12,8 +16,11 @@ end = "\033[0m"
 secondsPerDay = 86400
 daysToRefresh = 3
 delay = 360
+#delay = 20
 count = 0
 sleepEvery = (secondsPerDay*daysToRefresh)/delay
+cpuTimes = 'null'
+killTime = 60*30
 
 while True:
     count += 1
@@ -43,8 +50,12 @@ while True:
         print format + "GDI URL:", url,end
     running = set()
     
-    ps = subprocess.Popen(['ps', 'aux'], stdout=subprocess.PIPE).communicate()[0]
+    ps = subprocess.Popen(['ps', 'aux'], shell=False, stdout=subprocess.PIPE).communicate()[0]
     processes = [process for process in ps.split('\n') if 'python' in process.lower()]
+    
+    spoutEnv = {key for key in os.environ.keys() if key.startswith('TwitterSpout_')}
+    envPids = {entry.split('_')[-1] for entry in spoutEnv}
+    runningPids = set()
     
     print "\n"
     for process in processes:
@@ -53,11 +64,34 @@ while True:
                 foundUrl = process[process.index('https://'):]
                 print format+"RUNNING:",foundUrl,end
                 running.add(foundUrl)
-                
+                runningPids.add(process.split()[1])
+    
     if len(sys.argv)>= 2:
         if sys.argv[1] in ['-c','-v']:
             print
             quit()
+            
+    for pid in runningPids:
+        success = False
+        if True:
+            fileIn = open('lastRan/TwitterSpout_%s' % pid)
+            text = fileIn.read()
+            fileIn.close()
+            lastRan = int(text)
+            tDiff = time()-lastRan
+            if (time()-lastRan) < killTime:
+                success = True
+            reason = "stalled"
+        else:
+            reason = "non-communicative"
+        if not success:
+            print "%s Killing %s process %s%s" % (format,reason,pid,end)
+            p =  psutil.Process(int(pid))
+            p.terminate()
+        else:
+            print "%sProcess %s running normally%s" % (format,pid,end)
+        
+            
                
     if count%sleepEvery == 0:
         pickleRef = 'caches/GeoPickle.txt'
