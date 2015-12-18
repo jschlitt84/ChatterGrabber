@@ -6,7 +6,6 @@ import cPickle
 import psutil
 from time import sleep, time
 from shutil import copyfile
-from dateutil import parser
 
 
 
@@ -70,10 +69,11 @@ while True:
         if sys.argv[1] in ['-c','-v']:
             print
             quit()
-            
+    
+    print '\n'
     for pid in runningPids:
         success = False
-        if True:
+        try:
             fileIn = open('lastRan/TwitterSpout_%s' % pid)
             text = fileIn.read()
             fileIn.close()
@@ -82,7 +82,7 @@ while True:
             if (time()-lastRan) < killTime:
                 success = True
             reason = "stalled"
-        else:
+        except:
             reason = "non-communicative"
         if not success:
             print "%s Killing %s process %s%s" % (format,reason,pid,end)
@@ -93,7 +93,7 @@ while True:
         
             
                
-    if count%sleepEvery == 0:
+    """if count%sleepEvery == 0:
         pickleRef = 'caches/GeoPickle.txt'
         print "%sBacking up geoPickle%s" % (format,end)
         problem = 'pickle'
@@ -109,9 +109,10 @@ while True:
             copyfile('caches/GeoPickle.txt','caches/GeoPickleBackUp.txt')
             print "%sOperation succesful%s" % (format,end)
         except:
-            print "%sError, could not %s file%s" % (format,problem,end)
+            print "%sError, could not %s file%s" % (format,problem,end)"""
     
     notRunning = set.difference(urls,running)
+    #print format,"Deboo1",notRunning,end
     for item in notRunning:
         print format+"NOT RUNNING:",item.replace('\n',''),end
     print "\n"
