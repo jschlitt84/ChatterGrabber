@@ -9,10 +9,10 @@ from random import randint, uniform, choice
 from GISpy import *
 from KwikECache import updateCache
 
-def setLastRan(self):
+def setLastRan(self,pad=0):
     pid = os.getpid()
     procName = "TwitterSpout_%s" % pid
-    strTime = str(int(time.time()))
+    strTime = str(int(time.time())+pad)
     print procName,strTime,self.cfg['OutDir']
     #os.environ[procName]=strTime
     if not os.path.exists('lastRan'):
@@ -114,6 +114,7 @@ class giSeeker():
     
     
     def closeDay(self):
+	setLastRan(self,pad=1800)
         print "Closing tweet collection for", self.startDay, '\n'
         fileOut = openWhenReady(self.pathOut + 'checkbits','w')
         directory = self.cfg['Directory']

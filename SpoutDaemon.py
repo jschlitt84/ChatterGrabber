@@ -63,7 +63,8 @@ while True:
                 foundUrl = process[process.index('https://'):]
                 print format+"RUNNING:",foundUrl,end
                 running.add(foundUrl)
-                runningPids.add(process.split()[1])
+		if ' -e' not in process:
+                	runningPids.add(process.split()[1])
     
     if len(sys.argv)>= 2:
         if sys.argv[1] in ['-c','-v']:
