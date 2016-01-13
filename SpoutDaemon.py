@@ -19,7 +19,7 @@ delay = 360
 count = 0
 sleepEvery = (secondsPerDay*daysToRefresh)/delay
 cpuTimes = 'null'
-killTime = 60*30
+killTime = 60*60
 
 while True:
     count += 1
