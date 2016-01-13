@@ -1248,7 +1248,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
 	if isLinux and cfg['GeoFormat'] == 'dbm':
 		cores = 1
 	if cfg['QuickSend']:
-		cores = min(max(cpu_count()-1,1),cfg['ThreadLimit']
+		cores = min(max(cpu_count()-1,1),cfg['ThreadLimit'])
         cfg['Cores'] = cores
         out_q = Queue()
         block =  int(ceil(len(fileList)/float(cores)))
