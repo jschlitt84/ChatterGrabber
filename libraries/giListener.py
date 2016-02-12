@@ -4,6 +4,7 @@ import ujson as json
 #import json
 import os
 import tempfile
+import subprocess
 
 from random import randint, uniform, choice
 from GISpy import *
@@ -13,8 +14,6 @@ def setLastRan(self,pad=0):
     pid = os.getpid()
     procName = "TwitterSpout_%s" % pid
     strTime = str(int(time.time())+pad)
-    print procName,strTime,self.cfg['OutDir']
-    #os.environ[procName]=strTime
     if not os.path.exists('lastRan'):
         os.makedirs('lastRan')
     fileOut = open("lastRan/%s" % procName,'w')
@@ -55,10 +54,7 @@ class giSeeker():
 	    if type(self.cfg['OnlyKeepNLP']) is not list:
 		self.cfg['OnlyKeepNLP'] = [str(temp)]
             self.cfg['OnlyKeepNLP'] = [str(key) for key in self.cfg['OnlyKeepNLP']]
-            
-            #if '-f' not in cfg['args']:
-            #	self.NLP = TweetMatch.getClassifier(cfg['NLPFile'])
-                
+
 
 	if type(api) is dict:
             print "Using multiple API login method"
@@ -177,14 +173,15 @@ class giSeeker():
                 self.cfg['_login_'] = login
                 
                 self.cfg['Directory'] = directory
-                reformatOld(directory, lists, self.cfg, self.geoCache,self.NLP)
+                #reformatOld(directory, lists, self.cfg, self.geoCache,self.NLP)
                 
                 tillSend =  datetime.datetime.now().day % int(self.cfg['SendEvery'])
                 self.sendStatus = 'sent'
                 if tillSend == 0:
                     print "Sending results to GDI user"
                     if True:
-                        sendCSV(self.cfg,directory,self.extra)
+                        subprocess.Popen(['python','TwitterSpout.py',self.cfg['GDI']['URL'],'-e'])
+                        #sendCSV(self.cfg,directory,self.extra)
                         if self.cfg['AutoUpdate']:
                             os.system('git pull')
                             quit()
