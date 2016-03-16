@@ -40,7 +40,7 @@ from nltk.corpus import stopwords
 from wordcloud import WordCloud
 
 
-blockKeys = ['$!','$?','$...','#yesallwomen']
+blockKeys = ['$!','$?','$...']
 stopWords = stopwords.words('english')
 lmtzr = WordNetLemmatizer()
 
