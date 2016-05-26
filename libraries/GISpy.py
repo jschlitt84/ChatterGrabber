@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# encoding=utf8  
+import sys  
+
+reload(sys)  
+sys.setdefaultencoding('utf8')
+
 import json
 import csv
 import random
@@ -940,7 +945,10 @@ def patientGeoCoder(request,cfg):
     while True:
         try:
             result = gCoder.geocode(TweetMatch.stripUnicode(request))
-            print '\t',result
+            try:
+                print '\t',result
+            except:
+                print "Unprintable result"
             return result
         except:
             if not cfg['PatientGeocoding']:
@@ -1720,7 +1728,8 @@ def stripAddress(address):
     
 
 def getHash(text,cfg):
-    hasher.update(text+cfg['Salt'])
+    str(hashlib.sha224(text+cfg['Salt']).hexdigest())
+    #hasher.update(text+cfg['Salt'])
     return hasher.hexdigest()
 
     

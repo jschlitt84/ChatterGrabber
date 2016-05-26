@@ -1,3 +1,9 @@
+# encoding=utf8  
+import sys  
+
+reload(sys)  
+sys.setdefaultencoding('utf8')
+
 import tweepy
 import datetime, time
 import ujson as json
@@ -288,18 +294,34 @@ class giSeeker():
             self.lastTweet = 0
         print "\tLast tweet:", self.lastTweet
     
-    
+    def reincodeList(self,list,decoder='utf-8',encoder='latin1'):
+ 	print "DEBOO1",list
+	if decoder != 'null':
+		list = [entry.decode(decoder) for entry in list]
+	if encoder != 'null':
+		list = [entry.encode(encoder) for entry in list]
+	print "DEBOO2",list
+	return list	
+
+
+    def reincodeTerms(self):
+	self.conditions = self.reincodeList(self.conditions)
+	self.qualifiers = self.reincodeList(self.qualifiers)
+	self.exclusions = self.reincodeList(self.exclusions)
     
     def makeQueries(self):
         """Formats query list and splits into < 1k character segments"""
         self.queries = []
+
+	#self.reincodeTerms()
+
 	if self.conditions != []:
-        	text = '"'+self.conditions[0]+'"'
+        	text = u'"'+self.conditions[0]+'"'
 	else:
-		text = ''
+		text = u''
         
         for item in self.conditions[1:]:
-            entry = ' OR "' + item + '"'
+            entry = u' OR "' + item + u'"'
             if len(text + entry) >= 300:
                 
                 if not self.cfg['KeepRetweets']:
@@ -307,7 +329,7 @@ class giSeeker():
                 else:
                     self.queries.append(text)
                 
-                text = '"'+item+'"'
+                text = u'"'+item+'"'
             else:
                 text += entry
                 
@@ -364,7 +386,8 @@ class giSeeker():
 		self.queries = queriesTemp
             
         for item in self.queries:
-            print "Query Length: %s\tContents:\n%s\n" % (len(item), item)
+	    #print "Deboo",str(item)
+            print "Query Length: %s\tContents:\n%s\n" % (len(item),str(item))
                 
     def run(self):
         newDay = False
@@ -429,7 +452,6 @@ class giSeeker():
                                 
                                 for cell in cellCollected:
                                     foundIDs.add(cell.id)
-				    #print cell.text,"CLASS:", TweetMatch.classifySingle(cell.text,self.NLP) 
                                 
                                 if len(cellCollected)>0:
                                     collected += cellCollected
@@ -481,20 +503,6 @@ class giSeeker():
                             #Issue of stream pagination currently unresolved
                             #https://github.com/tweepy/tweepy/pull/296#commitcomment-3404913
                             
-                            #Method 1: Unlimited backstream, may have overlap or rate limiting issues
-                            """for tweet in tweepy.Cursor(self.api.search,q=query,
-                                geocode= self.geo,
-                                since_id= str(0),
-                                result_type="recent").items():
-                                
-                                print tweet.text
-                                collected.append(tweet)
-                                
-                            for item in collected:
-                                print item.text, item.coordinates, item.geo"""
-            
-                            #Method 2: Since id stream, may miss if keyword set yields over 100 new results
-    
                             if self.multiAPI:
                                 numOffline = sum((1 for key in APIoffline if APIoffline[key] != 0))
                                 APIoffline = {key:max(value-1,0) for key,value in APIoffline.iteritems()}
@@ -612,29 +620,36 @@ class giSeeker():
                 loginInfo = "\033[94m%s:%s:%s%%\033[0m" % (self.name,geoType['text'],percentFilled)
                 if geoType['inBox'] or self.cfg['KeepUnlocated']:
                     if tweetType == "accepted":
-                        print loginInfo, "\033[1m%s\t%s\t%s\t%s\033[0m" % (text, 
-                                    status.author.screen_name, 
-                                    tweetLocalTime['full'], 
-                                    status.source,)
+                        tweetPrint = "%s \033[1m%s\t%s\t%s\t%s\033[0m" % (loginInfo,
+									text, 
+                                    					status.author.screen_name, 
+                                 			      	  	tweetLocalTime['full'], 
+                        				                status.source)
+			print str(tweetPrint)
                         if geoStrictKeep:
                             mappable += 1    
                             self.tweetCount += self.cfg['KeepAccepted']
                             self.acceptedCount += 1
                             self.jsonAccepted.append(status.json)
                     elif tweetType == "excluded":
-                        print loginInfo, "\033[91m%s\t%s\t%s\t%s\033[0m" % (text, 
-                                    status.author.screen_name, 
-                                    tweetLocalTime['full'], 
-                                    status.source,)
-                        if geoStrictKeep and wordStrictKeep:
+                        tweetPrint = "%s \033[1m%s\t%s\t%s\t%s\033[0m" % (loginInfo,
+                                                                         text,
+                                                                         status.author.screen_name,
+                                                                         tweetLocalTime['full'],
+                                                                         status.source)
+                        print str(tweetPrint)
+
+			if geoStrictKeep and wordStrictKeep:
                             self.tweetCount += self.cfg['KeepExcluded']
                             self.excludedCount += 1
                             self.jsonExcluded.append(status.json)
                     elif tweetType == "partial":
-                        print loginInfo, "%s\t%s\t%s\t%s" % (text, 
-                                    status.author.screen_name, 
-                                    tweetLocalTime['full'], 
-                                    status.source,)
+			tweetPrint = u"%s %s\t%s\t%s\t%s" % (loginInfo,
+			               			    text, 
+			                                    status.author.screen_name, 
+                                    			    tweetLocalTime['full'], 
+                                    			    status.source)
+			print str(tweetPrint)
                         if geoStrictKeep:
                             self.tweetCount += self.cfg['KeepPartial']
                             self.partialCount += 1
