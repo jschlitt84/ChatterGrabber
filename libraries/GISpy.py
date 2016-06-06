@@ -1165,6 +1165,16 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList, core, out_q, keep
     
     useNLP = NLPClassifier != 'null' and NLPClassifier != False
     
+    def canLoad(dir,ref):
+        try:
+            inFile = open(dir+ref)
+            json.load(inFile)
+            return True
+        except:
+            return False
+
+    fileList = [fileRef for fileRef in fileList if canLoad(directory,fileRef)]
+    
     for fileName in fileList:
             inFile = open(directory+fileName)
             content = json.load(inFile)
@@ -1728,9 +1738,8 @@ def stripAddress(address):
     
 
 def getHash(text,cfg):
-    str(hashlib.sha224(text+cfg['Salt']).hexdigest())
-    #hasher.update(text+cfg['Salt'])
-    return hasher.hexdigest()
+    hashed = str(hashlib.sha224(text+cfg['Salt']).hexdigest())
+    return hashed
 
     
 def wordSwap(word,cfg):
