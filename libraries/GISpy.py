@@ -918,7 +918,8 @@ def openWhenReady(directory, mode):
         try:
             fileOut = open(directory,mode)
             break
-        except:
+        except Exception, e:
+            print str(e)
             sleep(5)
             attempts += 1
             if attempts == 1000:
