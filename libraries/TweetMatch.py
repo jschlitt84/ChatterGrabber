@@ -300,6 +300,7 @@ def prepSVMAll(readyToSend,priority,allCats,cfg):
                          
 def getClassifier(tweetfile,cfg):
     degreesToUse = cfg['NLPnGrams']
+    print "DEBOOOOO", degreesToUse, type(degreesToUse)
     classMode = cfg['NLPMode'].replace('-',' ').replace('_',' ')
     shortClass = classMode.replace(' ','').lower()
     loadNeeded = True 
