@@ -413,6 +413,9 @@ class giSeeker():
             
             queryCount = -1
             for query in self.queries:
+                if queryCount % 50 == 0:
+                    setLastRan(self)
+                
                 if self.cfg['UseStacking']:
                     geoCount = 0; queryCount += 1
                     
