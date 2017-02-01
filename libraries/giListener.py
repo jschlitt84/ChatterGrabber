@@ -413,8 +413,8 @@ class giSeeker():
             
             queryCount = -1
             for query in self.queries:
-                if queryCount % 50 == 0:
-                    setLastRan(self)
+                #if queryCount % 50 == 0:
+                #    setLastRan(self)
                 
                 if self.cfg['UseStacking']:
                     geoCount = 0; queryCount += 1
@@ -422,15 +422,20 @@ class giSeeker():
                     for geoPoint in self.stackPoints:
                         loggedIn = True
                         ranSearch = False
+                        
                         while not loggedIn or not ranSearch:  
+                            if geoCount % 20 == 0:
+                                setLastRan(self)
+                                
                             try:
                                 if self.multiAPI:
                                     numOffline = sum((1 for key in APIoffline if APIoffline[key] != 0))
                                     APIoffline = {key:max(value-1,0) for key,value in APIoffline.iteritems()}
 				    chooseable = [key for key,value in APIoffline.iteritems() if value == 0]
-				    #print "DEBOO CHOOSABLE", chooseable, "NUMOFFLINE", numOffline, "APIoffline", APIoffline
+	
 				    if len(chooseable) > 0:
-					chosen = choice(chooseable)
+                                        chosen = choice(chooseable)
+                                        
 				    cellCollected = self.api[chosen]['api'].search(q = query, 
                                                         since_id = self.stackLastTweet[queryCount][geoCount],  
                                                         geocode = geoString(geoPoint),
