@@ -721,6 +721,12 @@ def giSpyGDILoad(gDocURL,directory):
             qualifiers.add(row[1])
         if len(str(row[2])) != 0:
             exclusions.add(row[2])
+
+    if not cfg['CaseSensitive']:
+        conditions = [i.lower() for i in conditions]
+        qualifiers = [i.lower() for i in qualifiers]
+        exclusions = [i.lower() for i in exclusions]
+
     lists = {'conditions':conditions,'qualifiers':qualifiers,'exclusions':exclusions}
     return {'lists':lists,'config':cfg,'login':account['login']}
     
