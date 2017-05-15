@@ -9,6 +9,7 @@ import TweetMatch
 
 from GISpy import *
 from giListener import *
+from dateutil import parser
 
 #from multiprocessing import Process, Queue
 
@@ -99,11 +100,22 @@ def main():
     NLPClassifier = 'null'
     keepKeys = 'null'
     extra = dict()
+    manualTime = 'null'
     
     skipReformat = '-s' in sys.argv
     quickReformat = '-r' in sys.argv and not skipReformat
     oneTimeDump = '-o' in sys.argv and not skipReformat
     quickSend = '-e' in sys.argv and not skipReformat
+    if quickSend:
+        quickPos = sys.argv.index('-e')
+        if quickPos != len(sys.argv):
+            tArg = sys.argv[quickPos+1]
+            try:
+                manualTime = parser.parse(tArg)
+                print "Sending historic one time report for time %s" % manualTime
+            except:
+                pass
+    
     
     skipReformat = not(quickReformat or oneTimeDump or quickSend) or skipReformat
     
@@ -160,7 +172,7 @@ def main():
                 cfg['DaysBack'] = 'all'
         
         if not skipReformat:
-	    reformatOld(directory,lists,cfg,geoCache,NLPClassifier)
+	    reformatOld(directory,lists,cfg,geoCache,NLPClassifier,manualTime=manualTime)
 	    geoCache = updateGeoPickle(geoCache,getPickleName(cfg),cfg)
         if quickReformat or oneTimeDump or quickSend:
             quit()        	
@@ -175,7 +187,7 @@ def main():
         #geoCache = dict()
         geoCache = updateGeoPickle({},directory+'caches/'+pickleName)
 	if not skipReformat:        
-		reformatOld(directory,lists,cfg,geoCache,NLPClassifier) 
+		reformatOld(directory,lists,cfg,geoCache,NLPClassifier,manualTime=manualTime) 
 		if quickReformat:
 			quit()        
 		geoCache = updateGeoPickle(geoCache,directory+'caches/'+pickleName)

@@ -1164,7 +1164,7 @@ def dictToJsonFix(jsonOut):
 
 
 
-def getReformatted(directory, lists, cfg, geoPickle, fileList, core, out_q, keepTypes, NLPClassifier):
+def getReformatted(directory, lists, cfg, geoPickle, fileList, core, out_q, keepTypes, NLPClassifier, manualTime):
     """Reformats tweet content from raw tweets"""
     count = 0
     collectedContent = []
@@ -1182,6 +1182,11 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList, core, out_q, keep
 
     fileList = [fileRef for fileRef in fileList if canLoad(directory,fileRef)]
     
+    if manualTime == 'null':
+        rightBound = datetime.datetime.utcnow()
+    else:
+        rightBound = manualTime
+        
     for fileName in fileList:
             inFile = open(directory+fileName)
             content = json.load(inFile)
@@ -1194,9 +1199,9 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList, core, out_q, keep
                 jsonToDictFix(content)
             
             if  cfg['DaysBack'] != 'all' and type(cfg['DaysBack']) is int:
-                leftBound = datetime.datetime.utcnow() - datetime.timedelta(days = cfg['DaysBack'])
+                leftBound = rightBound - datetime.timedelta(days = cfg['DaysBack'])
                 content = [item for item in content if type(item) not in [str,unicode]]
-                content = [item for item in content if parser.parse(item['created_at']).replace(tzinfo=None) > leftBound]
+                content = [item for item in content if rightBound > parser.parse(item['created_at']).replace(tzinfo=None) > leftBound]
             
             for tweet in content:
                 count += 1
@@ -1244,7 +1249,7 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList, core, out_q, keep
 
 
 
-def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
+def reformatOld(directory, lists, cfg, geoCache, NLPClassifier,manualTime='null'):
     """Keeps old content up to date with latests queries & settings"""
     keepTypes = ['accepted']*cfg['KeepAccepted']+['partial']*cfg['KeepPartial']+['excluded']*cfg['KeepExcluded']
     homeDirectory = directory
@@ -1280,7 +1285,7 @@ def reformatOld(directory, lists, cfg, geoCache, NLPClassifier):
         processes = []
 
         for i in range(cores):
-            p = Process(target = getReformatted, args = (directory, lists, cfg, geoCache, fileList[block*i:block*(i+1)], i, out_q, keepTypes, NLPClassifier))
+            p = Process(target = getReformatted, args = (directory, lists, cfg, geoCache, fileList[block*i:block*(i+1)], i, out_q, keepTypes, NLPClassifier, manualTime))
             processes.append(p)
             p.start() 
         merged = {}
