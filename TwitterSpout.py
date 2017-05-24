@@ -108,7 +108,7 @@ def main():
     quickSend = '-e' in sys.argv and not skipReformat
     if quickSend:
         quickPos = sys.argv.index('-e')
-        if quickPos != len(sys.argv):
+        if quickPos != len(sys.argv) - 1:
             tArg = sys.argv[quickPos+1]
             try:
                 manualTime = parser.parse(tArg)
