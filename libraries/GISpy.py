@@ -32,6 +32,7 @@ hasher = hashlib.md5()
 
 import gDocsImport as gd
 import CGVis as vis
+import ClusterVis as cv
 import pandas as pd
 import KwikECache as kwik
 
@@ -284,7 +285,7 @@ def sendCSV(cfg, directory,extra = ''):
         dataSet = {'name':cfg['FileName'],
              'file':attachmentCsv,
              'cats':'null',
-             'data':pd.DataFrame.from_csv(directory+outName+'.csv',index_col='id')}
+             'data':pd.DataFrame.from_csv(attachmentCsv,index_col='id')}
 	
 	dataSet['data'] = dataSet['data'][pd.notnull(dataSet['data']['text'])]
 
