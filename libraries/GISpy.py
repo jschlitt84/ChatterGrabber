@@ -90,9 +90,9 @@ def geoWrite(geo,ref,value,cfg):
         
         
 def writeDB(fileRef,ref,value,cfg):
-    try:
+    if True:
     	dbOut = selectDB(fileRef,'w',cfg)
-    except:
+    else:
 	print "Error: Cannot access DB for write"
 	return
     try:
@@ -138,12 +138,17 @@ def geoRead(geo,ref,cfg):
 def selectDB(fileRef,mode,cfg):
     accessModes = {'w':[['cf','gdbm fast mode'],['w','write mode']],
                   'r':[['r','read only'],['c','create mode']]}[mode]
+ 
+    suffix = 'u'*(isLinux and mode=='r')
+   
+
     try:
-		dictionary = dbm.open(fileRef,accessModes[0][0])
+		dictionary = dbm.open(fileRef,accessModes[0][0]+suffix)
 		outText = accessModes[0][1]
     except:
-		dictionary = dbm.open(fileRef,accessModes[1][0])
+		dictionary = dbm.open(fileRef,accessModes[1][0]+suffix)
 		outText = accessModes[1][1]
+
     print "Opening db in %s.\n" % outText
     if mode != 'r':
         dictionary['null'] = 'null'
