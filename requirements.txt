@@ -1,0 +1,12 @@
+gdata
+#gdbm
+geopy
+matplotlib
+nltk
+pandas
+psutil
+scipy
+sklearn
+tweepy
+ujson
+wordcloud
