@@ -17,7 +17,7 @@ def getNumProc(name, cluster):
 	else:
 		return 0
     else:
-        return len(os.popen("ps aux | grep "+name).read().split('\n')) - 1
+        return len(os.popen("ps aux | grep "+name).read().split('\n')) - 3
 
 
 def adjustError(diversity):
@@ -62,7 +62,7 @@ def makeFile(header, code, footer, name, lines, linesOut, scoreOut, number, isOf
     insert = ''
     if cluster:
         insert = workingDir
-        headTemp.insert(0,'clusterDir = '+'"'+workingDir+'"')
+    headTemp.insert(0,'clusterDir = '+'"'+workingDir+'"')
     headTemp.insert(-1,'fileName = "' + insert + scoreName(name,number) + '"')
     headTemp.insert(-1,'index = ' + str(number))
     headTemp.insert(-1,'gen = ' + str(generation))
@@ -267,7 +267,7 @@ def main():
             elif line.startswith("Max running = "):
                 maxRunning = int(line.replace('Max running = ','').replace('\n',''))
             elif line.startswith("Cluster = "):
-                cluster = bool(line.replace('Cluster = ','').replace('\n',''))
+                cluster = line.replace('Cluster = ','')[0].lower() == 'y'
             elif line.startswith("Qsub = "):
                 qsub = line.replace('Qsub = ','').replace('\n','')
             elif line.startswith("Pool = "):
@@ -410,7 +410,7 @@ def main():
         	            
         print "Waiting until processes complete"
         while getNumProc(name,cluster) > 0:
-        	time.sleep(30)
+        	time.sleep(15)
 
 	else:
 		reload = False

@@ -9,7 +9,7 @@ import nltk.classify.util
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.corpus import stopwords
 from os.path import isfile
-from random import shuffle
+from random import shuffle, seed
 from numpy import mean, std
 from copy import deepcopy
 from pandas import read_csv
@@ -442,7 +442,6 @@ def getAccuracy(toRun,mode,degrees,n,percent,classifications,rOutput,cfg,core,ou
 		    outDict['specScores'+'_'+category+'_'+str(iteration)]  = spec[category]
 	      
 	    out_q.put(outDict)
-	    
 	except:
 		print "Subprocesses failed, returning error, why is this crap not working!?!?!"
 		outDict['failed'] = True
