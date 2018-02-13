@@ -1190,6 +1190,7 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList,
             try:
                 inFile = open(dir+ref)
                 json.load(inFile)
+                inFile.close()
                 return True
             except:
                 return False
@@ -1202,7 +1203,7 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList,
         rightBound = manualTime
         
     for fileName in fileList:
-            if fileName == True:
+            if type(fileName) is str:
                 inFile = open(directory+fileName)
                 content = json.load(inFile)
                 inFile.close()
@@ -1217,7 +1218,11 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList,
                 print "Reclassifying json of length", len(content)
 
             if lists != "null":
-                jsonToDictFix(content)
+                try:
+                    jsonToDictFix(content)
+                except:
+                    print content
+                    quit()
             
             if  cfg['DaysBack'] != 'all' and type(cfg['DaysBack']) is int:
                 leftBound = rightBound - datetime.timedelta(days = cfg['DaysBack'])
