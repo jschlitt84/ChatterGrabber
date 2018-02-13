@@ -856,7 +856,7 @@ def makeTimeLine(inFile,
     process = subprocess.Popen(command, shell=True)
     output = process.communicate()[0]
     
-    fileDirect = os.getcwd()+'/'+outDir+'/timeline.html'
+    fileDirect = os.wd()+'/'+outDir+'/timeline.html'
     
     print "Operation complete, timeline available at:",fileDirect
     
