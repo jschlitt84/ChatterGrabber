@@ -140,7 +140,10 @@ def main():
         print "Taking default parameters"
         directory = os.getcwd() + '/'
         configFile = 'config'
-        
+    
+    if configFile = '-F':
+		configFile = 'config.txt'
+
     if usingGDoc:
         directory = os.getcwd() + '/'
         temp = giSpyGDILoad(gDocURL,directory)
