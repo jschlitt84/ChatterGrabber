@@ -141,7 +141,7 @@ def main():
         directory = os.getcwd() + '/'
         configFile = 'config'
     
-    if configFile = '-F':
+    if configFile == '-F':
 		configFile = 'config.txt'
 
     if usingGDoc:
