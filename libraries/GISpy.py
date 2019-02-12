@@ -8,7 +8,7 @@ import json
 import csv
 import random
 import datetime
-import os, shutil
+import os, sys, shutil
 import unicodedata
 import tweepy
 import smtplib
@@ -547,7 +547,7 @@ def sendCSV(cfg, directory,extra = ''):
     except:
         print "Email could not be sent at this time, are you offline?"
     
-    quit() 
+    sys.exit() 
 
 
     
