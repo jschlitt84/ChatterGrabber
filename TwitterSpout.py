@@ -129,6 +129,7 @@ def main():
         if temp.startswith('http'):
             usingGDoc = True
             gDocURL = temp
+	    configFile = 'null'
             print "Preparing GDI Remote Access Loader"
         else:
             print "\nTaking user parameters"
