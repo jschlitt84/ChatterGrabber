@@ -8,7 +8,7 @@ import json
 import csv
 import random
 import datetime
-import os, sys, shutil
+import os, shutil
 import unicodedata
 import tweepy
 import smtplib
