@@ -179,7 +179,7 @@ def main():
 	    reformatOld(directory,lists,cfg,geoCache,NLPClassifier,manualTime=manualTime)
 	    geoCache = updateGeoPickle(geoCache,getPickleName(cfg),cfg)
         if quickReformat or oneTimeDump or quickSend:
-            quit()        	
+            sys.exit()        	
         
     else: 
         print "Loading parameters from config file '%s' in directory '%s'" % (configFile, directory)
@@ -193,7 +193,7 @@ def main():
 	if not skipReformat:        
 		reformatOld(directory,lists,cfg,geoCache,NLPClassifier,manualTime=manualTime) 
 		if quickReformat:
-			quit()        
+			sys.exit()        
 		geoCache = updateGeoPickle(geoCache,directory+'caches/'+pickleName)
         
         
