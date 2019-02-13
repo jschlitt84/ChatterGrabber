@@ -1605,9 +1605,9 @@ def cleanJson(jsonOriginal, cfg, types):
                         for key in retweetJson.keys():
                             tempJson['retweeted_status_' + key] = retweetJson[key]
                     
-                        except:
-                            for key in retweetData:
-                                tempJson['retweeted_status_' + key] = 'False'
+                    except:
+                        for key in retweetData:
+                            tempJson['retweeted_status_' + key] = 'False'
                     
                 if cfg['SendLinks']:
                     try:
