@@ -1562,11 +1562,13 @@ def cleanJson(jsonOriginal, cfg, types):
     tweetData = cfg['TweetData']
     userData = cfg['UserData']
     mediaData = cfg['MediaData']
+    retweetData = cfg['RetweetData']
     keepUser = len(userData) > 0 and 'user' not in tweetData
     keepMedia = len(mediaData) > 0 and 'media' not in tweetData
+    keepRetweet = len(retweetData) > 0 and 'retweet' not in tweetData
     jsonIn = []
     
-    if len(tweetData) + len(userData) > 0:
+    if len(tweetData) + len(userData) + len(mediaData) + len(retweetData) > 0:
         for row in range(len(jsonOriginal)):
             try:
                 loaded = jsonToDictFix(deepcopy(jsonOriginal[row]))
@@ -1590,9 +1592,22 @@ def cleanJson(jsonOriginal, cfg, types):
     	               mediaJson = dict([(i, getThing(loadedMedia,i)) for i in mediaData])
     	               for key in mediaJson.keys():
     	                   tempJson['media1_' + key] = mediaJson[key]
-	            except:
-	               for key in mediaData:
-                            tempJson['media1_' + key] = 'False'
+                    
+                    except:
+                       for key in mediaData:
+                                tempJson['media1_' + key] = 'False'
+            
+                if keepRetweet:
+                    try:
+                        loadedRetweet = loaded["retweeted_status"]
+                        del loaded["retweeted_status"]
+                        retweetJson = dict([(i, getThing(loadedRetweet,i)) for i in retweetData])
+                        for key in retweetJson.keys():
+                            tempJson['retweeted_status_' + key] = retweetJson[key]
+                    
+                        except:
+                            for key in retweetData:
+                                tempJson['retweeted_status_' + key] = 'False'
                     
                 if cfg['SendLinks']:
                     try:
@@ -1654,6 +1669,7 @@ def getConfig(directory):
     hidden = ['Sanitize','login']
     TweetData = {'text','id','created_at','retweet_count','favorite_count'}
     UserData = {}
+    RetweetData = {}
     #default values
     params = {'StopTime':0,'StopCount':250,'KeepRaw':True,
                 'TweetData':TweetData, 'UserData':UserData,
@@ -1686,7 +1702,7 @@ def getConfig(directory):
 		'Lat1':-90,'Lat2':90,
 		'Lon1':-180,'Lon2':180,
 		'TimeOffset':0,'Salt':'movie theatre popcorn',
-		'ThreadLimit':8}
+        'ThreadLimit':8,'RetweetData':RetweetData}
     
     if type(directory) is str:
         if directory == "null":
@@ -1751,6 +1767,11 @@ def getConfig(directory):
         
     try:
         params['UserData'] = textToList(params['UserData'])
+    except:
+        None
+
+    try:
+        params['RetweetData'] = textToList(params['RetweetData'])
     except:
         None
         
