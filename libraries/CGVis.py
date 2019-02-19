@@ -138,8 +138,8 @@ def trimRange(start,end,collected,mode='text'):
     if start > end:
         start,end = end,start
     holder = deepcopy(collected)
-    #start = start.replace(tzinfo=None)
-    #end = end.replace(tzinfo=None)
+    start = start.replace(tzinfo=None)
+    end = end.replace(tzinfo=None)
     holder['data']['timeStamp'] = [parser.parse(point).replace(tzinfo=None) for point in holder['data']['created_at']]
     data = holder['data'][(holder['data']['timeStamp'] >= start) & (holder['data']['timeStamp'] <= end)]
     holder['data'] = data
