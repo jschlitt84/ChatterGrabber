@@ -138,10 +138,17 @@ def trimRange(start,end,collected,mode='text'):
     if start > end:
         start,end = end,start
     holder = deepcopy(collected)
-    start = start.replace(tzinfo=None)
-    end = end.replace(tzinfo=None)
-    holder['data']['timeStamp'] = [parser.parse(point).replace(tzinfo=None) for point in holder['data']['created_at']]
-    data = holder['data'][(holder['data']['timeStamp'] >= start) & (holder['data']['timeStamp'] <= end)]
+    #start = start.replace(tzinfo=None)
+    #end = end.replace(tzinfo=None)
+    if True:
+        holder['data']['timeStamp'] = [parser.parse(point) for point in holder['data']['created_at']]
+        #holder['data'] = holder['data'].dt.tz_convert(None)
+        data = holder['data'][(holder['data']['timeStamp'] >= start) & (holder['data']['timeStamp'] <= end)]
+    else:
+        print start,type(start)
+        print end, type(end)
+        print holder['data']['timeStamp'].tolist()[0], type(holder['data']['timeStamp'].tolist()[0])
+        1/0
     holder['data'] = data
     return holder
     
@@ -785,7 +792,7 @@ def makeTimeLine(inFile,
 
     
     if type(inFile) is str:
-        data =  pd.DataFrame.from_csv(inFile,index_col='id')
+        data =  pd.DataFrame.read_csv(inFile,index_col='id')
     elif type(inFile) is dict:
         data = inFile['data']
     else:

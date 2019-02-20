@@ -290,7 +290,7 @@ def sendCSV(cfg, directory,extra = ''):
         dataSet = {'name':cfg['FileName'],
              'file':attachmentCsv,
              'cats':'null',
-             'data':pd.DataFrame.from_csv(attachmentCsv,index_col='id')}
+             'data':pd.read_csv(attachmentCsv,index_col='id')}
 	
 	dataSet['data'] = dataSet['data'][pd.notnull(dataSet['data']['text'])]
 
@@ -387,6 +387,10 @@ def sendCSV(cfg, directory,extra = ''):
     body = "Please find csv spreadsheet file, maps, and figures attached for study: " + cfg['FileName']
     body += "\nParameters & configuration accessible at: " + cfg['GDI']['URL']
     body += "\n\nAll changed parameters are updated after midnight & will not influence collection & parsing until the following day.\n\n"
+    
+    if datetime.datetime.now() < parser.parse("3/15/2019"):
+        body += "Following recent outages, ChatterGrabber has been updated to account for changes to it's underlying dependencies and migrated to a distinct email address.\nPlease contact me at jschlitt@vt.edu if you have any questions.\n\n"
+    
         
     figureLinks = []
     format = '.jpg'
@@ -533,8 +537,9 @@ def sendCSV(cfg, directory,extra = ''):
     part.add_header('Content-Disposition',
             'attachment; filename="%s"' % os.path.basename(attachment))
     msg.attach(part)
-    
-    try:
+
+    print "|%s|%s" % (cfg['GDI']['UserName'],cfg['GDI']['Password'])
+    if True:
         mailServer = smtplib.SMTP("smtp.gmail.com", 587)
         mailServer.ehlo()
         mailServer.starttls()
@@ -544,7 +549,7 @@ def sendCSV(cfg, directory,extra = ''):
     
         mailServer.close()
         print "File sent succesfully!"
-    except:
+    else:
         print "Email could not be sent at this time, are you offline?"
     
     sys.exit() 
@@ -565,7 +570,7 @@ def loadGDIAccount(gDocURL,directory):
         if line.lower().startswith('username'):
             _userName_ = line.split(' = ')[1].replace(' ','').replace('\n','')
         if line.lower().startswith('password'):
-            _password_ = line.split(' = ')[1].replace(' ','').replace('\n','')
+            _password_ = line.split(' = ')[1].replace('\n','')
         if line.lower().startswith('public'):
             public = line.split(' = ')[1].lower().replace(' ','').startswith('true')
         
@@ -769,15 +774,15 @@ def outTime(dtobject):
         'date':dtobject.strftime('%m-%d-%y'),'time':dtobject.strftime('%H:%S'),
         'db':dtobject.strftime(dbTime)}
     
-    
-    
+
+
     
 def localTime(timeContainer, offset):
     """returns local time offset by timezone"""
     typeTC = type(timeContainer)
     if typeTC != datetime.datetime and typeTC != datetime.time and typeTC != datetime.date:
         if typeTC is dict:
-            utcTime =timeContainer['created_at']
+            utcTime = timeContainer['created_at']
         elif typeTC is str:
             utcTime = parser.parse(utcTime)
         else:
@@ -949,7 +954,7 @@ def geoString(geo):
 
 def patientGeoCoder(request,cfg):
     """Patient geocoder, will wait if API rate limit hit"""
-    gCoder = geocoders.GoogleV3()
+    gCoder = geocoders.GoogleV3(api_key=cfg['keyRing']['googleGeocoder'])
     tries = 0
     limit = 1
     delay = 2
@@ -1661,7 +1666,17 @@ def getComplex(line):
     return commands
             
 
-    
+def getOtherAPIs(directory, fileName='otherAPIs'):
+    """loads other api keys"""
+    fileIn = open("%s/logins/%s" % (directory, fileName))
+    keyRing = {}
+
+    for line in fileIn.readlines():
+        if ' = ' in line:
+            keyRing[line.split(' = ')[0]] = line.split(' = ')[1].replace('\n','')
+    fileIn.close()
+    return keyRing
+
     
     
 def getConfig(directory):
@@ -1687,22 +1702,24 @@ def getConfig(directory):
                 'TrackHashTags':True,'TrackHashDays':10,
                 'TrackHashCount':5,'DaysBack':90,
                 'NLPnGrams':[1,2,3,4],'NLPMode':'naive bayes',
-		'NLPFreqLimit':[2],'SVMNumber':1,
-		'MakeDBFeed':False,'OneTimeDump':False,
-		'QuickSend':False,'Dashboard':False,
-		'EpidashDir':'epidash/webapp','HomeDir':"/home/jschlitt",
-		'LocationName':'United_States','LocationGranularity':'country',
-		'RegionSearch':True,'SendLinks':False,
-		'SendFigures':False,'SendAfter':0,
-		'ShowMap':'blue marble','ExtraCategories':'null',
-		'AutoUpdate':False,'MediaData':{},
-		'RunScript':False,'GeoFormat':'dbm',
-		'DBLocation':None,'FilterType':'conditions',
-		'CaseSensitive':False,'Method':'search',
-		'Lat1':-90,'Lat2':90,
-		'Lon1':-180,'Lon2':180,
-		'TimeOffset':0,'Salt':'movie theatre popcorn',
-        'ThreadLimit':8,'RetweetData':RetweetData}
+                'NLPFreqLimit':[2],'SVMNumber':1,
+                'MakeDBFeed':False,'OneTimeDump':False,
+                'QuickSend':False,'Dashboard':False,
+                'EpidashDir':'epidash/webapp','HomeDir':"/home/jschlitt",
+                'LocationName':'United_States','LocationGranularity':'country',
+                'RegionSearch':True,'SendLinks':False,
+                'SendFigures':False,'SendAfter':0,
+                'ShowMap':'blue marble','ExtraCategories':'null',
+                'AutoUpdate':False,'MediaData':{},
+                'RunScript':False,'GeoFormat':'dbm',
+                'DBLocation':None,'FilterType':'conditions',
+                'CaseSensitive':False,'Method':'search',
+                'Lat1':-90,'Lat2':90,
+                'Lon1':-180,'Lon2':180,
+                'TimeOffset':0,'Salt':'movie theatre popcorn',
+                'ThreadLimit':8,'RetweetData':RetweetData,
+                'TimeZone':'US/Eastern'
+                }
     
     if type(directory) is str:
         if directory == "null":

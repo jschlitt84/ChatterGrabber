@@ -156,6 +156,7 @@ def main():
         else:
             login = getLogins(directory,[temp['login']])[temp['login']]
         cfg['Directory'] = directory
+        cfg['KeyRing'] = getOtherAPIs(directory)
         #geoCache = dict()
         geoCache = updateGeoPickle({},getPickleName(cfg),cfg)
         
@@ -187,6 +188,7 @@ def main():
         cfg['Directory'] = directory
         cfg['ConfigFile'] = configFile
         logins = getLogins(directory, cfg['Logins'])
+        cfg['KeyRing'] = getOtherAPIs(directory)
         lists = updateWordBanks(directory, cfg)
         #geoCache = dict()
         geoCache = updateGeoPickle({},directory+'caches/'+pickleName)

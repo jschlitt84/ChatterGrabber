@@ -1,0 +1,116 @@
+Name = ShakesNZFlu
+Number of seeds = 50
+Max running = 6
+Lines per seed = 20
+Score to win = 96
+Runs per query = 5
+Query delay = 5
+Kill = 10
+Mutate best = 0
+Mate error = 0.10
+Point mutations = 0.20
+New = 5
+Lines per out = 10
+Score per out = 1
+Terminate after = 5000
+Cluster = False
+Pool = Shakes
+
+Header start
+from sys import path
+from os import getcwd
+
+parent = '/'.join(getcwd().split('/')[:])
+
+if parent not in path:
+	path.insert(0, parent)
+import optimizeClassifier
+
+files = ['FluScoresTrainingSet.csv']
+cores = 1
+iterations = 1
+sweepRange = [0.9]
+degrees =  []
+SVMMode = 'number'
+SVMNumber = 1000
+NLPFreqLimit = []
+stops = 0
+prefix = ''
+
+
+
+
+Header end
+
+
+Footer start
+if degrees == []:
+	print "No degrees found, quitting"
+	outFile.write('0')
+	outFile.close()
+	quit()
+
+NLPFreqLimit = [max(2,entry) for entry in NLPFreqLimit]
+
+cfg = {'SVMMode':SVMMode,
+	'SVMNumber':SVMNumber,
+	'NLPFreqLimit':NLPFreqLimit}
+
+args = {'cores':cores,
+	'iterations':iterations,
+	'sweepRange':sweepRange,
+	'degrees':[list(set(degrees))],
+	'mode':mode,
+	'cfg':cfg,
+	'stops':stops,
+	'prefix':prefix,
+	'files':files,
+	'workingDir':clusterDir,
+	'cluster':True}
+
+try:
+	score = int(optimizeClassifier.main(args,'mendel'))
+	outFile.write(str(score))
+except:
+	outFile.write('0')
+
+outFile.close()
+
+
+
+
+Footer end
+
+Words1 = 1
+Words1 = 2
+Words1 = 3
+Words1 = 4
+Words1 = 5
+Words1 = 6
+Words1 = 7
+Words2 = 0.1
+Words2 = 0.2
+Words2 = 0.3
+Words2 = 0.4
+Words2 = 0.5
+Words2 = 0.6
+Words2 = 0.7
+Words2 = 0.8
+Words2 = 0.9
+Words2 = 0.99
+Words3 = "naive bayes"
+Words3 = "svm"
+Words3 = "max ent"
+Words4 = 'all'
+Words4 = 'number'
+Words4 = 'ratio'
+Words5 = 1
+Words5 = 2
+Words5 = 3
+Words5 = 4
+Words5 = 5
+Code = degrees.append(@1)
+Code = mode = [@3]
+Code = SVMMode = @4
+Code = SVMNumber = int(3000*@1*@2*@2)
+Code = NLPFreqLimit.append(@5)
