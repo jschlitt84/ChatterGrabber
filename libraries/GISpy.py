@@ -538,7 +538,6 @@ def sendCSV(cfg, directory,extra = ''):
             'attachment; filename="%s"' % os.path.basename(attachment))
     msg.attach(part)
 
-    print "|%s|%s" % (cfg['GDI']['UserName'],cfg['GDI']['Password'])
     if True:
         mailServer = smtplib.SMTP("smtp.gmail.com", 587)
         mailServer.ehlo()
