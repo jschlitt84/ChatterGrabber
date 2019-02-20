@@ -953,7 +953,7 @@ def geoString(geo):
 
 def patientGeoCoder(request,cfg):
     """Patient geocoder, will wait if API rate limit hit"""
-    gCoder = geocoders.GoogleV3(api_key=cfg['keyRing']['googleGeocoder'])
+    gCoder = geocoders.GoogleV3(api_key=cfg['KeyRing']['googleGeocoder'])
     tries = 0
     limit = 1
     delay = 2
@@ -997,19 +997,15 @@ def isInBox(cfg,geoCache,status):
         if type(coordinates) is dict:
             coordinates = coordinates['coordinates']
             hasCoords = True
+
+    cacheRef = stripUnicode(unicode(coordinates) + (not hasCoords)*unicode(userLoc)).lower()
     try:
-        oldRef = (unicode(coordinates) + unicode(userLoc)).lower()
-        temp = geoCache[oldRef]
-        cacheRef = oldRef
+        temp = geoCache[cacheRef]
         hasKey = True
     except:
-        cacheRef = stripUnicode(unicode(coordinates) + (not hasCoords)*unicode(userLoc)).lower()
-        try:
-            temp = geoCache[cacheRef]
-            hasKey = True
-        except:
-            hasKey = False
-            
+        temp = ''
+        hasKey = False
+
     if hasKey:
         if 'Cores' not in cfg.keys():
             print "GEOCACHE: Inboxed from memory", cacheRef
@@ -1044,7 +1040,6 @@ def isInBox(cfg,geoCache,status):
             try:
                 userLoc = str(userLoc)
                 place, (lat, lng) = patientGeoCoder(userLoc,cfg)
-                sleep(.15)
                 coordinates = [lng,lat] 
                 hasPlace = True
                 hasCoords = True
@@ -1061,7 +1056,6 @@ def isInBox(cfg,geoCache,status):
         if not hasPlace:
             try:
                 place, (lat, lng) = patientGeoCoder(str(coordinates[1])+','+str(coordinates[0]),cfg)
-                sleep(.15)
             except:
                 None
     
