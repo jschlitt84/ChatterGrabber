@@ -64,7 +64,7 @@ gdiLists = 'Conditions,Qualifiers,Exclusions'
 
 def getPickleName(cfg):
     types = {'pickle':'.txt',
-                'dbm':'DBM'}
+                'dbm':'DBM.sqlite'}
     try:
         prefix = cfg['DBLocation']+'/'
     except:
@@ -389,7 +389,7 @@ def sendCSV(cfg, directory,extra = ''):
     body += "\n\nAll changed parameters are updated after midnight & will not influence collection & parsing until the following day.\n\n"
     
     if datetime.datetime.now() < parser.parse("3/15/2019"):
-        body += "Following recent outages, ChatterGrabber has been updated to account for changes to it's underlying dependencies and migrated to a distinct email address.\nPlease contact me at jschlitt@vt.edu if you have any questions.\n\n"
+        body += "Following recent outages, ChatterGrabber has been updated to account for changes to its underlying dependencies and migrated to a distinct email address.\nPlease contact me at jschlitt@vt.edu if you have any questions.\n\n"
     
         
     figureLinks = []
