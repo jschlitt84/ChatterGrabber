@@ -90,11 +90,7 @@ def geoWrite(geo,ref,value,cfg):
         
         
 def writeDB(fileRef,ref,value,cfg):
-    if True:
-    	dbOut = selectDB(fileRef,'w',cfg)
-    else:
-	print "Error: Cannot access DB for write"
-	return
+    dbOut = selectDB(fileRef,'w',cfg)
     try:
         dbOut[ref]
         dbOut.close()
@@ -511,11 +507,11 @@ def sendCSV(cfg, directory,extra = ''):
     extra += reformatTags(getTags(cfg,weekSubsets,catListWeek),cfg)
     #print "Debooo Check 8.7"; time.sleep(5)	
     if cfg['SendLinks']:
-        if True:
+        try:
             extra += "\nLink analysis for the past 7 days for categories %s:\n" % str(worthShowing).replace("'",'')
             extra += vis.checkLinks(worthShowingWeek['data'],n=250, shown = 5, linkfreq=1, cfg=cfg)
             extra += '\n\nPlease note, with gmail and certain clients, link analysis links may appear as attachments.'
-        else:
+        except:
             extra += "Error, link analysis could not be completed"
     #print "Debooo Check 9"; time.sleep(5)
     body += extra
@@ -538,19 +534,14 @@ def sendCSV(cfg, directory,extra = ''):
             'attachment; filename="%s"' % os.path.basename(attachment))
     msg.attach(part)
 
-    if True:
-        mailServer = smtplib.SMTP("smtp.gmail.com", 587)
-        mailServer.ehlo()
-        mailServer.starttls()
-        mailServer.ehlo()
-        mailServer.login(cfg['GDI']['UserName'], cfg['GDI']['Password'])
-        mailServer.sendmail(cfg['GDI']['UserName'],recipients, msg.as_string())
-    
-        mailServer.close()
-        print "File sent succesfully!"
-    else:
-        print "Email could not be sent at this time, are you offline?"
-    
+    mailServer = smtplib.SMTP("smtp.gmail.com", 587)
+    mailServer.ehlo()
+    mailServer.starttls()
+    mailServer.ehlo()
+    mailServer.login(cfg['GDI']['UserName'], cfg['GDI']['Password'])
+    mailServer.sendmail(cfg['GDI']['UserName'],recipients, msg.as_string())
+    mailServer.close()
+
     sys.exit() 
 
 
@@ -1180,7 +1171,7 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList,
     count = 0
     collectedContent = []
     collectedTypes = {}
-    
+    cfg['KeyRing'] = getOtherAPIs(directory)
     useNLP = NLPClassifier != 'null' and NLPClassifier != False
     
     def getLoadType(dir,ref):
