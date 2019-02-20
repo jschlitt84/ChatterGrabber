@@ -694,7 +694,7 @@ def giSpyGDILoad(gDocURL,directory):
         config = gd.getScript(account['userName'], account['password'], account['fileName'], gdiParams, gdiLists, "default", localFile = account['local'])
     else:
         config = gd.getScript('null', 'null', gDocURL, gdiParams, gdiLists, "default", localFile = account['local'])
-        
+     
     cfg = getConfig(config)
     cfg['OutDir'] = account['name'] + '/'
     cfg['FileName'] = account['name']
@@ -1062,6 +1062,8 @@ def isInBox(cfg,geoCache,status):
     if place == None or place == 'None':
         place = 'NaN'
 
+    #print "DEBOOO COORDINATES NEED WORK", {'inBox':False,'text':'HasCoords','place':place,'lat':coordinates[1],'lon':coordinates[0],'trueLoc':coordsWork}
+
     #print "DEBOO INBOX FINISH"
     if place == "timeOut":
         return {'inBox':False,'text':'NoCoords','place':'NaN','lat':'NaN','lon':'NaN','trueLoc':coordsWork}
@@ -1363,6 +1365,9 @@ def getReformattedOld(directory, lists, cfg, geoPickle, fileList, core, out_q, k
 
 def reformatOld(directory, lists, cfg, geoCache, NLPClassifier,manualTime='null'):
     """Keeps old content up to date with latests queries & settings"""
+    
+    cfg['KeyRing'] = getOtherAPIs(directory)
+
     keepTypes = ['accepted']*cfg['KeepAccepted']+['partial']*cfg['KeepPartial']+['excluded']*cfg['KeepExcluded']
     homeDirectory = directory
     
@@ -1668,7 +1673,17 @@ def getOtherAPIs(directory, fileName='otherAPIs'):
         if ' = ' in line:
             keyRing[line.split(' = ')[0]] = line.split(' = ')[1].replace('\n','')
     fileIn.close()
+
+    try:
+        gCoder = geocoders.GoogleV3(api_key=keyRing['googleGeocoder'])
+        gCoder.geocode("Blacksburg, Virginia")
+        print "Succesfully logged into geocoder API"
+    except:
+        print """\n\nUh oh, it looks like you don't have a properly configured Google Maps API key!\n\nRecent changes to the geocoding API used by ChatterGrabber require a personal API key for all queries. An API account may be configured by this guide: https://developers.google.com/maps/documentation/android-sdk/signup . Once you have an API key, you'll need to delete the caches/GeoPickle* so ChatterGrabber can start a fresh database. Then, create a file at logins/otherAPIs with the contents "googleGeocoder = YOURNEWAPIKEY". Once these steps are complete you should no longer see this message. Failure to delete the GeoPickle files may result in certain locations permanently failing to geocode as erroneous values may have been stored.\n\n\n"""
+        sys.exit()
+
     return keyRing
+
 
     
     
@@ -1714,14 +1729,6 @@ def getConfig(directory):
                 'TimeZone':'US/Eastern'
                 }
     
-    params['KeyRing'] = getOtherAPIs(directory)
-    try:
-        gCoder = geocoders.GoogleV3(api_key=cfg['KeyRing']['googleGeocoder'])
-        gCoder.geocode("Blacksburg, Virginia")
-        print "Succesfully logged into geocoder API"
-    except:
-        print """\n\nUh oh, tt looks like you don't have a properly configured Google Maps API key!\n\nRecent changes to the geocoding API used by ChatterGrabber require a personal API key for all queries. An API account may be configured by this guide: https://developers.google.com/maps/documentation/android-sdk/signup . Once you have an API key, you'll need to delete the caches/GeoPickle* so ChatterGrabber can start a fresh database. Then, create a file at logins/otherAPIs with the contents "googleGeocoder = YOURNEWAPIKEY". Once these steps are complete you should no longer see this message. Failure to delete the GeoPickle files may result in certain locations permanently failing to geocode as erroneous values may have been stored.\n\n\n"""
-        sys.exit()
     
     if type(directory) is str:
         if directory == "null":
