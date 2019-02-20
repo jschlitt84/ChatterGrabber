@@ -156,14 +156,6 @@ def main():
         else:
             login = getLogins(directory,[temp['login']])[temp['login']]
         cfg['Directory'] = directory
-        cfg['KeyRing'] = getOtherAPIs(directory)
-        try:
-            gCoder = geocoders.GoogleV3(api_key=cfg['KeyRing']['googleGeocoder'])
-            gCoder.geocode("Blacksburg, Virginia")
-            print "Succesfully logged into geocoder API"
-        except:
-            print """\n\nUh oh, tt looks like you don't have a properly configured Google Maps API key!\n\nRecent changes to the geocoding API used by ChatterGrabber require a personal API key for all queries. An API account may be configured by this guide: https://developers.google.com/maps/documentation/android-sdk/signup . Once you have an API key, you'll need to delete the caches/GeoPickle* so ChatterGrabber can start a fresh database. Then, create a file at logins/otherAPIs with the contents "googleGeocoder = YOURNEWAPIKEY". Once these steps are complete you should no longer see this message. Failure to delete the GeoPickle files may result in certain locations permanently failing to geocode as erroneous values may have been stored.\n\n\n"""
-            sys.exit()
     
         #geoCache = dict()
         geoCache = updateGeoPickle({},getPickleName(cfg),cfg)

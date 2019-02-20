@@ -1061,7 +1061,7 @@ def isInBox(cfg,geoCache,status):
     
     if place == None or place == 'None':
         place = 'NaN'
-    
+
     #print "DEBOO INBOX FINISH"
     if place == "timeOut":
         return {'inBox':False,'text':'NoCoords','place':'NaN','lat':'NaN','lon':'NaN','trueLoc':coordsWork}
@@ -1713,6 +1713,15 @@ def getConfig(directory):
                 'ThreadLimit':8,'RetweetData':RetweetData,
                 'TimeZone':'US/Eastern'
                 }
+    
+    params['KeyRing'] = getOtherAPIs(directory)
+    try:
+        gCoder = geocoders.GoogleV3(api_key=cfg['KeyRing']['googleGeocoder'])
+        gCoder.geocode("Blacksburg, Virginia")
+        print "Succesfully logged into geocoder API"
+    except:
+        print """\n\nUh oh, tt looks like you don't have a properly configured Google Maps API key!\n\nRecent changes to the geocoding API used by ChatterGrabber require a personal API key for all queries. An API account may be configured by this guide: https://developers.google.com/maps/documentation/android-sdk/signup . Once you have an API key, you'll need to delete the caches/GeoPickle* so ChatterGrabber can start a fresh database. Then, create a file at logins/otherAPIs with the contents "googleGeocoder = YOURNEWAPIKEY". Once these steps are complete you should no longer see this message. Failure to delete the GeoPickle files may result in certain locations permanently failing to geocode as erroneous values may have been stored.\n\n\n"""
+        sys.exit()
     
     if type(directory) is str:
         if directory == "null":
