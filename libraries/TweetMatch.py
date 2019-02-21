@@ -69,7 +69,8 @@ def loadFile(text):
     
 
 def lemList(listed):
-    listed = list(set([lmtzr.lemmatize(word) for word in listed if len(word)>1]))
+    listedOut = list(set([lmtzr.lemmatize(word) for word in listed if len(word)>1]))
+    return listedOut
     
     
 def prepText(content):
@@ -140,7 +141,7 @@ def prepTweet(word):
     #toAdd.add('$wordLength'+str(wordLength))
    
         
-    lemList(listed) #Lemmatize list to common stem words
+    listed = lemList(listed) #Lemmatize list to common stem words
     
     toDel = set()
     for word in listed:
