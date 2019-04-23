@@ -1657,7 +1657,7 @@ def getComplex(line):
 
 def getOtherAPIs(directory, fileName='otherAPIs'):
     """loads other api keys"""
-    fileIn = open("%s/logins/%s" % (directory, fileName)).replace('//','/')
+    fileIn = open(("%s/logins/%s" % (directory, fileName)).replace('//','/'))
     keyRing = {}
 
     for line in fileIn.readlines():
