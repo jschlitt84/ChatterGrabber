@@ -534,8 +534,7 @@ def sendCSV(cfg, directory,extra = ''):
             'attachment; filename="%s"' % os.path.basename(attachment))
     msg.attach(part)
 
-    print cfg['GDI']
-    mailServer = smtplib.SMTP("smtp.gmail.com", 587, None, 30)
+    mailServer = smtplib.SMTP("smtp.gmail.com", 587, None, 120)
     mailServer.ehlo()
     mailServer.starttls()
     mailServer.ehlo()
