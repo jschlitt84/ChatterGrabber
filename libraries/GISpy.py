@@ -297,7 +297,8 @@ def sendCSV(cfg, directory,extra = ''):
             now = max(times)
         except:
             times =  list(dataSet['data']['created_at'])
-            now = max(times)
+            #now = max(times)
+            now = datetime.datetime.now()
             
         weekAgo = now - datetime.timedelta(days=7)
         monthAgo = now - datetime.timedelta(days=31)
