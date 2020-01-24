@@ -55,7 +55,8 @@ def cleanSave(content,directory,mode,**kwargs):
         pass
     try:
         if mode == 'fig':
-            content.savefig(directory,**kwargs)
+            plt.tight_layout()
+            content.savefig(directory,bbox_inches='tight',**kwargs)
         elif mode == 'anim':
             content.save(directory,**kwargs)
         content.close()
@@ -239,7 +240,7 @@ def chartDaily(dataIn, timeShift, show=True):
     dates = [parser.parse(date) for date in dates]
     dayList = [(t+timedelta(hours=timeShift)).weekday() for t in dates]
     plt.xticks(weekNum, weekList)
-    plt.title(dataIn['name'],size = 12)
+    plt.title(dataIn['name'])
     plt.xlabel("Day (GMT %s)" % timeShift)
     plt.ylabel("Tweets")
     plt.hist(dayList,bins=weekNum,align='left',alpha=0.5)
@@ -571,18 +572,19 @@ def mapSubject(dataset,subject,box='tight',level='auto',
     if smallest < 5:
         mapped.drawcountries(zorder=3,linewidth = 2)
         mapped.drawstates(zorder=3, linewidth = 1.5)
-        mapped.drawcounties(zorder=3,linewidth = 1)
+        try:
+            mapped.drawcounties(zorder=20,linewidth = 1)
+        except:
+            print "Counties rendering still broken"
+            #https://github.com/matplotlib/basemap/pull/459
     else:
         mapped.drawcountries(zorder=3,linewidth = 1.5)
         mapped.drawstates(zorder=3, linewidth = 1)
     
     if heatmap:
-        # ######################################################################
-        # http://stackoverflow.com/questions/11507575/basemap-and-density-plots)
         density, lon_bins, lat_bins = getDensity(box,lats,lons,longest)
         lon_bins_2d, lat_bins_2d = np.meshgrid(lon_bins, lat_bins)
         xs, ys = mapped(lon_bins_2d, lat_bins_2d) # will be plotted using pcolormesh
-        # ######################################################################
         
         if level == 'auto':
             level = np.amax(density)
