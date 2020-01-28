@@ -15,16 +15,18 @@ from dateutil import parser
 from matplotlib.dates import DateFormatter, date2num, num2date
 from copy import deepcopy
 from time import sleep
-from geopy.distance import vincenty
+from geopy.distance import distance
 from math import pow
 
 from mpl_toolkits.basemap import Basemap
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import seaborn as sb
 import matplotlib.animation as animation
 
 import warnings
 import matplotlib.cbook
 warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation)
+sb.set_context("paper")
 
 #from IPython.display import HTML
 
@@ -194,7 +196,7 @@ def chartHourly(dataIn, timeShift,show=True):
     numbers=[x for x in xrange(0,25)]
     labels=map(lambda x: str(x), numbers)
     plt.xticks(numbers, labels)
-    plt.title(dataIn['name'],size = 12)
+    plt.title(dataIn['name'])
     plt.xlabel("Hour (GMT %s)" % timeShift)
     plt.ylabel("Tweets")
     plt.hist(hour_list,bins=numbers, alpha=0.5, align='mid')
@@ -224,7 +226,7 @@ def groupHourly(dataGroup, names, title, timeShift, stacked=True, show=True ,tru
             plt.xlabel("Hour (GMT %s)" % timeShift)
             plt.ylabel("Tweets")
     if len(namesShown) != 0:
-        plt.title(title,size = 12)
+        plt.title(title)
         plt.hist(toPlot,bins=numbers,stacked=stacked, alpha=0.5, label=names, align='mid')
         plt.legend([str(entry) for entry in namesShown],loc="best")
         if show:
@@ -266,11 +268,11 @@ def groupDaily(dataGroup, names, title, timeShift, stacked=True, show=True, trun
             toPlot.append(dayList)
             namesShown.append(names[pos])
             plt.xticks(weekNum, weekList)
-            plt.title(dataGroup[pos],size = 12)
+            plt.title(dataGroup[pos])
             plt.xlabel("Day (GMT %s)" % timeShift)
             plt.ylabel("Tweets")
     if len(namesShown) != 0:
-        plt.title(title,size = 12)
+        plt.title(title)
         plt.hist(toPlot,bins=weekNum,stacked=stacked, alpha=0.5, label=names, align='left')
         plt.legend([str(entry) for entry in namesShown],loc="best")
         if show:
@@ -335,7 +337,7 @@ def dailyDistributionPlot(dataIn,titles,bigTitle,timeShift,divFactor=24,overlay 
     plt.gca().set_xlim([plotMin,plotMax])
     plt.ylabel("Number of tweets")
     plt.legend([str(entry) for entry in titles],loc="best")
-    plt.title(bigTitle+timeSuffix,size=16)
+    plt.title(bigTitle+timeSuffix)
     ax.xaxis.set_major_formatter(DateFormatter('%m/%d %H'))
     
     if show:
@@ -526,11 +528,22 @@ def mapColors(grid,level,cmap):
 	return temp
 	
 
-def mapSubject(dataset,subject,box='tight',level='auto',
+def filterMapNans(dataSetIn):
+    dataSet = deepcopy(dataSetIn)
+    data = dataSet['data']
+    data = data[data.lat.astype('str') != 'NaN']
+    dataSet['data'] = data
+    return dataSet
+
+
+def mapSubject(dataSetIn,subject,box='tight',level='auto',
                longest=20,call='default',highlight=False,
                heatmap=True, mark = 'r', cmap='YlOrRd',
                show = True, offset = 0, subtitle = '', geobox = 'null',
 	       important = 'null',background = 'none'):
+
+
+    dataset = filterMapNans(dataSetIn)
 
     if call == 'animate':
         plt.clf()
@@ -610,13 +623,15 @@ def mapSubject(dataset,subject,box='tight',level='auto',
 	gridIncrement = 1.0
     elif smallest < 10:
 	gridIncrement = 2.5
+    elif smallest < 50:
+        gridIncrement = 5.0
     else:
-	gridIncrement = 5.0
+        gridIncrement = 45
 
     parallels = np.arange(-90.,90.,gridIncrement)
-    mapped.drawparallels(parallels,labels=[1,0,0,0],fontsize=10, alpha = .75)
+    mapped.drawparallels(parallels,labels=[1,0,0,0], alpha = .75)
     meridians = np.arange(-180.,180.,gridIncrement)
-    mapped.drawmeridians(meridians,labels=[0,0,0,1],fontsize=10, alpha = .75)
+    mapped.drawmeridians(meridians,labels=[0,0,0,1], alpha = .75)
 
     if important != 'null':
 	xI,yI = mapped(important[0],important[1])
@@ -630,11 +645,11 @@ def mapSubject(dataset,subject,box='tight',level='auto',
         mapped.plot(x, y, 'o', markersize=4,zorder=6, markerfacecolor=highlight,markeredgecolor="none", alpha=0.03)
 
     
-    title = '%s search for "%s",\n%s Related Tweets Found from\n%s to %s' % (dataset['name'],
+    title = '%s Search for "%s" with %s Related\nTweets Found from%s to %s' % (dataset['name'],
                                                                             subject,
                                                                             len(dataset['data']),
-                                                                            times[0],
-                                                                            times[-1])
+                                                                            times[0].strftime("%a %m/%d/%y"),
+                                                                            times[-1].strftime("%a %m/%d/%y"))
     plt.title(title)
     if subtitle != '':
    	 plt.xlabel(subtitle)
@@ -665,18 +680,24 @@ def findCenter(dataSet):
 	for pos in range(len(dataSet['data'])):
 		lat = dataSet['data'].iloc[pos]['lat']
 		lon = dataSet['data'].iloc[pos]['lon']
-		distance = vincenty((mlon,mlat),(lon,lat))
-		if distance < minDist:
+        try:
+            distanceI = distance((mlat,mlon),(lat,lon))
+        except:
+            print mlon,mlat,lon,lat
+        if distanceI < minDist:
 			lowest = pos
-			minDist = distance
+			minDist = distanceI
 	return dataSet['data'].iloc[lowest]
 		
 
-def animateMap(dataSet,subject,box='tight',level='auto',longest=20,
+def animateMap(dataSetIn,subject,box='tight',level='auto',longest=20,
                timeStamp=False,highlight=False,heatmap=True,mark='r',
                cmap='YlOrRd',makeVideo=True,makeGif=True,show=True,
                offset=0, showCluster = True, background = 'none'):
     #print "HERE AND NOW"
+
+    dataSet = filterMapNans(dataSetIn)
+
     days = getDays(dataSet)
     length = len(days)
     plots = []; daySubs = []
@@ -894,13 +915,13 @@ def showWordCloud(text,show=True):
 	    fontPath = '/Library/Fonts/Microsoft/'
 	    font = 'Verdana.ttf'
 	    wc = WordCloud(background_color="white", max_words=2000,font_path=fontPath+font,stopwords=stopWordsNew,
-		           height = 800, width = 800)
+		           height = 1600, width = 1600)
 	    wc.generate(text)
     except:
 	    fontPath = '/usr/share/fonts/truetype/ubuntu-font-family'
 	    font = 'Ubuntu-L.ttf'
 	    wc = WordCloud(background_color="white", max_words=2000,stopwords=stopWordsNew,
-		           height = 800, width = 800)
+		           height = 1600, width = 1600)
 	    wc.generate(text)
 
     plt.imshow(wc)
