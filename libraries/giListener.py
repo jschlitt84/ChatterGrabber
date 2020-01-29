@@ -295,12 +295,10 @@ class giSeeker():
         print "\tLast tweet:", self.lastTweet
     
     def reincodeList(self,list,decoder='utf-8',encoder='latin1'):
- 	print "DEBOO1",list
 	if decoder != 'null':
 		list = [entry.decode(decoder) for entry in list]
 	if encoder != 'null':
 		list = [entry.encode(encoder) for entry in list]
-	print "DEBOO2",list
 	return list	
 
 
@@ -412,6 +410,7 @@ class giSeeker():
                     print "Running %s geoStack queries at 1 query every %s seconds" % (self.stackQueries,stackDelay)
             
             queryCount = -1
+
             for query in self.queries:
                 #if queryCount % 50 == 0:
                 #    setLastRan(self)
@@ -440,7 +439,8 @@ class giSeeker():
                                                         since_id = self.stackLastTweet[queryCount][geoCount],  
                                                         geocode = geoString(geoPoint),
                                                         result_type="recent",
-                                                        count = 100)
+                                                        count = 100,
+                                                        tweet_mode='extended')
                                     failCount[chosen] = 0
 				    time.sleep(uniform(0,.05))
                                     
@@ -449,14 +449,15 @@ class giSeeker():
                                                             since_id = self.stackLastTweet[queryCount][geoCount],  
                                                             geocode = geoString(geoPoint),
                                                             result_type="recent",
-                                                            count = 100)
+                                                            count = 100,
+                                                            tweet_mode='extended')
                                 
                                 allFound += len(cellCollected)
 				if self.useNLP:
 				    if self.cfg['KeepDiscardsNLP']:
-				        cellCollected = [status for status in cellCollected if status.id not in foundIDs and (TweetMatch.classifySingle(status.text,self.NLP,self.cfg['NLPnGrams']) in self.cfg['OnlyKeepNLP'] or uniform(0,1)<self.cfg['DiscardSampleNLP'])]
+				        cellCollected = [status for status in cellCollected if status.id not in foundIDs and (TweetMatch.classifySingle(status.full_text,self.NLP,self.cfg['NLPnGrams']) in self.cfg['OnlyKeepNLP'] or uniform(0,1)<self.cfg['DiscardSampleNLP'])]
 				    else:
-                                        cellCollected = [status for status in cellCollected if TweetMatch.classifySingle(status.text,self.NLP,self.cfg['NLPnGrams']) in self.cfg['OnlyKeepNLP'] and status.id not in foundIDs]
+                                        cellCollected = [status for status in cellCollected if TweetMatch.classifySingle(status.full_text,self.NLP,self.cfg['NLPnGrams']) in self.cfg['OnlyKeepNLP'] and status.id not in foundIDs]
                                 
                                 for cell in cellCollected:
                                     foundIDs.add(cell.id)
@@ -522,13 +523,15 @@ class giSeeker():
 					cellCollected = self.api[chosen]['api'].search(q = query, 
                                             since_id = self.lastTweet,
                                             result_type="recent",
-                                            count = 100)
+                                            count = 100,
+                                            tweet_mode='extended')
 				    else:
 				        cellCollected = self.api[chosen]['api'].search(q = query, 
                                             since_id = self.lastTweet,  
                                             geocode = self.geo,
                                             result_type="recent",
-                                            count = 100)
+                                            count = 100,
+                                            tweet_mode='extended')
                                 failCount[chosen] = 0
 				time.sleep(uniform(0,.05))
                                     
@@ -537,19 +540,21 @@ class giSeeker():
 				    cellCollected = self.api.search(q = query, 
                                                         since_id = self.lastTweet,
                                                         result_type="recent",
-                                                        count = 100)
+                                                        count = 100,
+                                                        tweet_mode='extended')
 				else:
                                     cellCollected = self.api.search(q = query, 
                                                         since_id = self.lastTweet,  
                                                         geocode = self.geo,
                                                         result_type="recent",
-                                                        count = 100)
+                                                        count = 100,
+                                                        tweet_mode='extended')
                                                     
                             if self.useNLP:
 				    if self.cfg['KeepDiscardsNLP']:
-				        cellCollected = [status for status in cellCollected if status.id not in foundIDs and (TweetMatch.classifySingle(status.text,self.NLP,self.cfg['NLPnGrams']) in self.cfg['OnlyKeepNLP'] or uniform(0,1)<self.cfg['DiscardSampleNLP'])]
+				        cellCollected = [status for status in cellCollected if status.id not in foundIDs and (TweetMatch.classifySingle(status.full_text,self.NLP,self.cfg['NLPnGrams']) in self.cfg['OnlyKeepNLP'] or uniform(0,1)<self.cfg['DiscardSampleNLP'])]
 				    else:
-                                        cellCollected = [status for status in cellCollected if TweetMatch.classifySingle(status.text,self.NLP,self.cfg['NLPnGrams']) in self.cfg['OnlyKeepNLP'] and status.id not in foundIDs]                        
+                                        cellCollected = [status for status in cellCollected if TweetMatch.classifySingle(status.full_text,self.NLP,self.cfg['NLPnGrams']) in self.cfg['OnlyKeepNLP'] and status.id not in foundIDs]                        
                                 
                             for cell in cellCollected:
                                 foundIDs.add(cell.id)
@@ -613,8 +618,8 @@ class giSeeker():
                     giSeeker.closeDay(self)
                     self.startDay = localTime(status.created_at,self.cfg).strftime("%A %d")
                     self.startTime = localTime(status.created_at,self.cfg).strftime(timeArgs)
-                    
-                text = status.text.replace('\n',' ')
+                  
+                text = status.full_text.replace('\n',' ')
                 tweetType = checkTweet(self.conditions, self.qualifiers, self.exclusions, text, self.cfg)
                 percentFilled = (self.tweetCount*100)/self.cfg['StopCount']
                 
@@ -678,7 +683,7 @@ class giSeeker():
                         'time':tweetLocalTime['time'],
                         'date':tweetLocalTime['date']}
                     if self.cfg['OnlyKeepNLP']:
-                        self.tweetTypes[str(status.id)]['NLPCat'] = TweetMatch.classifySingle(status.text,self.NLP,self.cfg['NLPnGrams'])
+                        self.tweetTypes[str(status.id)]['NLPCat'] = TweetMatch.classifySingle(status.full_text,self.NLP,self.cfg['NLPnGrams'])
                     
             
             if newDay and self.sendStatus == 'ready':
@@ -709,158 +714,3 @@ class giSeeker():
             
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-class giListener(tweepy.StreamListener):
-    def __init__(self, conditions, qualifiers, exclusions, api, cfg, name, testSpace, geoCache, NLPClassifier):
-        self.qualifiers = qualifiers
-        self.conditions = conditions
-        self.api = api
-        self.name = name
-        self.exclusions = exclusions
-        self.cfg = cfg
-        self.testSpace = testSpace
-        self.geoCache = geoCache
-        giListener.flushTweets(self)
-        print "Initiated listener '%s' with %s conditions, %s qualifiers, and %s exclusions" % (name, len(conditions), len(qualifiers), len(exclusions))
-        
-        self.pathOut = 'studies/'+self.cfg['OutDir']+'stream/'
-        if not os.path.exists(self.pathOut):
-            os.makedirs(self.pathOut)
-            
-        fileOut = openWhenReady(self.pathOut + 'checkbits','w')
-        fileOut.write('DayFinished = False')
-        fileOut.close()
-            
-    def closeDay(self):
-        fileOut = openWhenReady(self.pathOut + 'checkbits','w')
-        directory = self.cfg['Directory']
-        fileOut = open(self.pathOut + 'checkbits','w')
-        fileOut.write('DayFinished = True') 
-        fileOut.write('ConditionsVersion = ' + time.ctime(os.stat(directory + self.cfg['Conditions']).st_mtime))
-        fileOut.write('QualifiersVersion = ' + time.ctime(os.stat(directory + self.cfg['Qualifiers']).st_mtime))
-        fileOut.write('ExclusionsVersion = ' + time.ctime(os.stat(directory + self.cfg['Exclusions']).st_mtime))
-        fileOut.close()
-        
-        lists = updateWordBanks(directory, self.cfg)
-        self.conditions = lists['conditions']
-        self.qualifiers = lists['qualifiers']
-        self.exclusions = lists['exclusions']
-        
-        
-    def flushTweets(self):
-        self.tweetCount = 0
-        self.acceptedCount = 0
-        self.partialCount = 0
-        self.excludedCount = 0
-        self.irrelevantCount = 0
-        self.jsonRaw = []
-        self.jsonAccepted = []
-        self.jsonPartial = []
-        self.jsonExcluded = []
-        self.tweetTypes = {}
-        self.startTime = localTime(datetime.datetime.now(),self.cfg).strftime(timeArgs)
-        self.startDay = localTime(datetime.datetime.today(),self.cfg).strftime("%A")
-
-    
-    def saveTweets(self):
-        print "\nDumping tweets to file, contains %s tweets with %s accepted, %s rejected, %s partial matches, and %s irrelevant" % (self.cfg['StopCount'],
-                        self.acceptedCount,
-                        self.excludedCount,
-                        self.partialCount,
-                        self.irrelevantCount)
-        print '\tJson text dump complete....\n'
-                
-        meaningful =  self.jsonAccepted*self.cfg['KeepAccepted'] + self.jsonPartial*self.cfg['KeepPartial'] + self.jsonExcluded*self.cfg['KeepExcluded']
-        
-        if self.cfg['TweetData'] != 'all':
-            meaningful = cleanJson(meaningful,self.cfg,self.tweetTypes)
-            
-        timeStamp = self.startTime
-        
-        if self.cfg['KeepRaw']:
-            with open(self.pathOut+'Raw_'+self.cfg['FileName']+'_'+timeStamp+'.json', 'w') as outFile:
-                json.dump(self.jsonRaw,outFile)
-            outFile.close()
-
-        with open(self.pathOut+'FilteredTweets_'+self.cfg['FileName']+'_'+timeStamp+'.json', 'w') as outFile:
-            json.dump(meaningful,outFile)
-        outFile.close()
-        giListener.flushTweets(self) 
-        print "Updating geoPickle"
-        self.geoCache = updateGeoPickle(self.geoCache,self.cfg['Directory']+'caches/'+pickleName) 
-    
-    def on_status(self, status):
-        try:
-            if self.startDay != localTime(datetime.datetime.today(),self.cfg).strftime("%A") or self.tweetCount >= self.cfg['StopCount']:
-                giListener.saveTweets(self)
-            text = status.text.replace('\n',' ')
-            tweetType = checkTweet(self.conditions, self.qualifiers, self.exclusions, text, self.cfg)
-            
-            geoType =  isInBox(self.cfg, self.geoCache, status)
-
-            percentFilled = (self.tweetCount*100)/self.cfg['StopCount']
-            loginInfo = "\033[94m%s:%s%%\033[0m" % (self.name,percentFilled)
-            tweetLocalTime = outTime(localTime(status,self.cfg))
-            if geoType['inBox'] or self.cfg['KeepUnlocated']:
-                if tweetType == "accepted":
-                    print loginInfo, "\033[1m%s\t%s\t%s\t%s\033[0m" % (text, 
-                                status.author.screen_name, 
-                                tweetLocalTime['full'], 
-                                status.source,)
-                    self.tweetCount += self.cfg['KeepAccepted']
-                    self.acceptedCount += 1
-                    self.jsonAccepted.append(status.json)
-                elif tweetType == "excluded":
-                    print loginInfo, "\033[91m%s\t%s\t%s\t%s\033[0m" % (text, 
-                                status.author.screen_name, 
-                                tweetLocalTime['full'], 
-                                status.source,)
-                    self.tweetCount += self.cfg['KeepExcluded']
-                    self.excludedCount += 1
-                    self.jsonExcluded.append(status.json)
-                elif tweetType == "partial":
-                    print loginInfo, "%s\t%s\t%s\t%s" % (text, 
-                                status.author.screen_name, 
-                                tweetLocalTime['full'], 
-                                status.source,)
-                    self.tweetCount += self.cfg['KeepPartial']
-                    self.partialCount += 1
-                    self.jsonPartial.append(status.json)
-                elif tweetType == "retweet":
-                    None
-                else:
-                    self.irrelevantCount += 1
-            if tweetType != "retweet" and self.cfg['KeepRaw'] == True:
-                self.jsonRaw.append(status.json)
-                self.tweetTypes[str(status.id)] = {'tweetType':tweetType,
-                        'geoType':geoType['text'],
-                        'lat':geoType['lat'],
-                        'lon':geoType['lon'],
-                        'place':geoType['place'],
-                        'fineLocation':geoType['trueLoc'],
-                        'day':tweetLocalTime['day'],
-                        'time':tweetLocalTime['time'],
-                        'date':tweetLocalTime['date']} 
-                if self.cfg['OnlyKeepNLP']:
-                    self.tweetTypes[str(status.id)]['NLPCat'] = TweetMatch.classifySingle(status.text,self.NLP)            
-                
-        except Exception, e:
-            print "Encountered exception:", e
-            pass
-        except KeyboardInterrupt:
-            print "Got keyboard interrupt"
-
-    def on_error(self, status_code):
-        print "\033[91m***Stream '%s' encountered error with status code %s***\033[0m" % (self.name,status_code)
-        return True
-
-    def on_timeout(self):
-        print >> sys.stderr, 'Timeout...'
-        return True

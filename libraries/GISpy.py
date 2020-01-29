@@ -1225,7 +1225,7 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList,
                 count += 1
                 if count%250 == 0:
                     print "Thread",core,count,"tweets sorted"
-                tweet['text'] = tweet['text'].replace('\n',' ')
+                tweet['text'] = getText(tweet).replace('\n',' ')
                 tweetType = checkTweet(lists['conditions'],lists['qualifiers'],lists['exclusions'], tweet['text'], cfg)
                 if tweetType in keepTypes:
                     geoType = isInBox(cfg,geoPickle,tweet)
@@ -1267,91 +1267,6 @@ def getReformatted(directory, lists, cfg, geoPickle, fileList,
     	out_q.put({'content'+str(core):collectedContent}) 
     else:
         return collectedContent
-
-
-
-def getReformattedOld(directory, lists, cfg, geoPickle, fileList, core, out_q, keepTypes, NLPClassifier, manualTime):
-    """Reformats tweet content from raw tweets"""
-    count = 0
-    collectedContent = []
-    collectedTypes = {}
-    
-    useNLP = NLPClassifier != 'null' and NLPClassifier != False
-    
-    def canLoad(dir,ref):
-        try:
-            inFile = open(dir+ref)
-            json.load(inFile)
-            return True
-        except:
-            return False
-
-    fileList = [fileRef for fileRef in fileList if canLoad(directory,fileRef)]
-    
-    if manualTime == 'null':
-        rightBound = datetime.datetime.utcnow()
-    else:
-        rightBound = manualTime
-        
-    for fileName in fileList:
-            inFile = open(directory+fileName)
-            content = json.load(inFile)
-            inFile.close()
-            filteredContent = []
-            
-            print "Thread", core, "reclassifying", fileName, "by updated lists"
-            
-            if lists != "null":
-                jsonToDictFix(content)
-            
-            if  cfg['DaysBack'] != 'all' and type(cfg['DaysBack']) is int:
-                leftBound = rightBound - datetime.timedelta(days = cfg['DaysBack'])
-                content = [item for item in content if type(item) not in [str,unicode]]
-                content = [item for item in content if rightBound > parser.parse(item['created_at']).replace(tzinfo=None) > leftBound]
-            
-            for tweet in content:
-                count += 1
-                if count%250 == 0:
-                    print "Thread",core,count,"tweets sorted"
-                tweet['text'] = tweet['text'].replace('\n',' ')
-                tweetType = checkTweet(lists['conditions'],lists['qualifiers'],lists['exclusions'], tweet['text'], cfg)
-                if tweetType in keepTypes:
-                    geoType = isInBox(cfg,geoPickle,tweet)
-                    if geoType['inBox'] or cfg['KeepUnlocated']:
-                        timeData = outTime(localTime(tweet,cfg))
-                        collectedTypes[str(tweet['id'])] = {'tweetType':tweetType,
-                            'geoType':geoType['text'],
-                            'lat':geoType['lat'],
-                            'lon':geoType['lon'],
-                            'fineLocation':geoType['trueLoc'],
-                            'place':geoType['place'],
-                            'day':timeData['day'],
-                            'time':timeData['time'],
-                            'date':timeData['date']}
-                        if useNLP:
-                            collectedTypes[str(tweet['id'])]['NLPCat'] = str(TweetMatch.classifySingle(tweet['text'],NLPClassifier,cfg['NLPnGrams']))
-                        
-                    filteredContent.append(tweet)
-            
-            collectedContent += filteredContent  
-           
-            try:
-                filteredContent = cleanJson(filteredContent,cfg,collectedTypes)
-            except:
-                print "DEBOOO123", cfg['OnlyKeepNLP'],count,len(collectedContent),len(filteredContent), len(collectedTypes) 
-            
-            outName = fileName.replace('Raw','FilteredTweets')
-
-            if cfg['MakeFilteredJson']:
-                print "\tSaving file as", outName
-                with open(directory+'studies/'+outName, 'w') as outFile:
-                    json.dump(filteredContent,outFile)
-                outFile.close()
-            
-    collectedContent = cleanJson(collectedContent,cfg,collectedTypes)  
-    print "Thread", core, "tasks complete!"
-    out_q.put({'content'+str(core):collectedContent})        
-
 
 
 
@@ -1914,3 +1829,10 @@ def wordSwap(word,cfg):
         if '@' in word:
             return '@ATweeter_'+ getHash(word,cfg)
     return word
+
+
+def getText(tweet):
+    try:
+        return tweet['full_text']
+    except:
+        return tweet['text']
