@@ -183,7 +183,7 @@ class giSeeker():
                 
                 tillSend =  datetime.datetime.now().day % int(self.cfg['SendEvery'])
                 self.sendStatus = 'sent'
-                if tillSend == 0:
+                if tillSend == 0 and self.cfg['SendReports']:
                     print "Sending results to GDI user"
                     if True:
                         subprocess.Popen(['python','TwitterSpout.py',self.cfg['GDI']['URL'],'-e'])

@@ -1632,7 +1632,7 @@ def getConfig(directory):
                 'Lon1':-180,'Lon2':180,
                 'TimeOffset':0,'Salt':'movie theatre popcorn',
                 'ThreadLimit':8,'RetweetData':RetweetData,
-                'TimeZone':'US/Eastern'
+                'TimeZone':'US/Eastern','SendReports':True
                 }
     
     
